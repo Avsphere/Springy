@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  .flexWrapper
+    .d-flex.w-100
+      .col-3
+        .userInterface(style="margin-top:3%")
+          nav
+            #nav-tab.nav.nav-tabs(role='tablist')
+              a#nav-controls-tab.nav-item.nav-link.active.show(data-toggle='tab', href='#nav-controls', role='tab') Controls
+              a#nav-defaults-tab.nav-item.nav-link(data-toggle='tab', href='#nav-defaults', role='tab' ) Defaults
+              a#nav-profile-tab.nav-item.nav-link(data-toggle='tab', href='#nav-profile', role='tab') Profile
+          #nav-tabContent.tab-content
+            #nav-controls.tab-pane.fade.active.show(role='tabpanel', aria-labelledby='nav-controls-tab')
+              #controlsWrapper 
+                #controlsContainer
+                  .container.flagsContainer
+
+                    .controls
+            #nav-defaults.tab-pane.fade(role='tabpanel')
+              .defaultsWrapper
+            #nav-profile.tab-pane.fade(role='tabpanel')
+              .profileWrapper
+      .col-9#canvasContainer
+        canvas#plotCanvas( style="display:none;" )
+        canvas#springCanvas
+      

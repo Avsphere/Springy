@@ -1,0 +1,84 @@
+
+body {
+  margin: 0px;
+  /* overflow: hidden; */
+  font-family: Sans-Serif;
+}
+
+.learningCanvas {
+  /* border : 1px solid black; */
+  /* cursor : url('./circleCursor.png'), auto; */
+}
+
+#springCanvas {
+  border : 1px solid black;
+  margin-left: 2%;
+  /* cursor : url('./circleCursor.png'), auto; */
+}
+
+#plotCanvas {
+  border : 1px solid black;
+  margin-left: 2%;
+  margin-top: 2%;
+  /* cursor : url('./circleCursor.png'), auto; */
+}
+
+#canvasContainer {
+  border : 1px solid red;
+  /* cursor : url('./circleCursor.png'), auto; */
+}
+
+.hideControls {
+  display: none;
+}
+
+
+.header {
+  /* border : 1px solid red; */
+  height : 10%;
+  text-align: center;
+  padding-top: 5%;
+}
+#controlPanel {
+  /* border: 1px solid blue; */
+  overflow: hidden;
+}
+#controlsWrapper {
+  overflow: hidden;
+}
+
+#controlsWrapper {
+  /* border: 1px solid blue; */
+}
+
+#toggleControlPanel {
+  margin-top : 2%;
+}
+
+#controlsContainer {
+  max-height: 80%;
+  margin-top : 3%;
+  /* overflow-y: hidden; */
+  /* overflow-y : scroll; */
+}
+
+
+.controls {
+  height : 100%;
+  width : 100%;
+  overflow-y: hidden;
+  margin-top : 3%;
+  /* set later */
+  /* padding-right : 0px; */
+}
+
+/* .stylishScroll::-webkit-scrollbar-thumb {
+  overflow-y: hidden;
+  border-radius: 10px;
+  background-image: -webkit-gradient(linear,
+      left bottom,
+      left top,
+      color-stop(0.44, rgb(122, 153, 217)),
+      color-stop(0.72, rgb(73, 125, 189)),
+      color-stop(0.86, rgb(28, 58, 148)));
+} */
