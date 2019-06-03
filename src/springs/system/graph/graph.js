@@ -10,22 +10,29 @@ const State = () => ({
 }) 
 let state = State();
 
-const Edge = ({ mass }) => ({ mass : mass, spring : Spring({})}) 
+const Edge = ({ mass, spring }) => ({ mass, spring}) 
 
-logic.addMass = ({ x, y, mass, velocity}) => state.adjList.set( Mass({x, y, mass, velocity}), new Set() );
+logic.addMass = ({ x, y, mass, velocity }) => state.adjList.set(Mass({ x, y, mass, velocity }), [])
+
 
 logic.addEdge = ({ m1, m2, springK }) => {
     if (!springK) { springK = state.defaultSpringK}
-    const spring = Spring({ k : springK, masses : [m1, m2] })
+    const sharedSpring = Spring({ k: springK, masses: [m1, m2] })
+    
+    const n1 = state.adjList.get(m1).push( Edge({ mass: m2, spring: sharedSpring }) );
+    const n2 = state.adjList.get(m2).push( Edge({ mass: m1, spring: sharedSpring }) )
 
-    state.adjList.get(v).add(w);
-    state.adjList.get(w).add(v)
+    // if ( n1.adjList.find( node => node.mass.id === m2.id ) ) {
+
+    // }
+
 }
 
 logic.reset = () => {
     state = State();
 }
 
+logic.getState = () => state
 
 
 

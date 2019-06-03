@@ -32779,10 +32779,11 @@ var State = function State() {
 var state = State();
 
 var Edge = function Edge(_ref) {
-  var mass = _ref.mass;
+  var mass = _ref.mass,
+      spring = _ref.spring;
   return {
     mass: mass,
-    spring: Object(_spring__WEBPACK_IMPORTED_MODULE_1__["default"])({})
+    spring: spring
   };
 };
 
@@ -32796,7 +32797,7 @@ logic.addMass = function (_ref2) {
     y: y,
     mass: mass,
     velocity: velocity
-  }), new Set());
+  }), []);
 };
 
 logic.addEdge = function (_ref3) {
@@ -32808,16 +32809,27 @@ logic.addEdge = function (_ref3) {
     springK = state.defaultSpringK;
   }
 
-  var spring = Object(_spring__WEBPACK_IMPORTED_MODULE_1__["default"])({
+  var sharedSpring = Object(_spring__WEBPACK_IMPORTED_MODULE_1__["default"])({
     k: springK,
     masses: [m1, m2]
   });
-  state.adjList.get(v).add(w);
-  state.adjList.get(w).add(v);
+  var n1 = state.adjList.get(m1).push(Edge({
+    mass: m2,
+    spring: sharedSpring
+  }));
+  var n2 = state.adjList.get(m2).push(Edge({
+    mass: m1,
+    spring: sharedSpring
+  })); // if ( n1.adjList.find( node => node.mass.id === m2.id ) ) {
+  // }
 };
 
 logic.reset = function () {
   state = State();
+};
+
+logic.getState = function () {
+  return state;
 };
 
 
@@ -32860,7 +32872,7 @@ var updateOpacity = function updateOpacity(rgb, opacity) {
 var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
 
 var randomColor = function randomColor() {
-  return totalColors[Math.floor(Math.random() * totalColors.length)];
+  return toRgb(totalColors[Math.floor(Math.random() * totalColors.length)]);
 };
 
 var getRadiusFromMass = function getRadiusFromMass(m) {
@@ -32877,9 +32889,10 @@ var Mass = function Mass(_ref) {
   var x = _ref.x,
       y = _ref.y,
       mass = _ref.mass,
-      velocity = _ref.velocity;
+      velocity = _ref.velocity,
+      color = _ref.color;
 
-  if (!x || !y || !mass) {
+  if (!x || !y) {
     throw new Error('Error creating mass, incorrect args');
   }
 
@@ -32891,10 +32904,9 @@ var Mass = function Mass(_ref) {
     velocity: velocity,
     radius: getRadiusFromMass(mass),
     id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
-    mass: mass,
+    mass: mass || 10,
     type: 'mass',
-    color: color,
-    drawCount: rest.drawCount || 0,
+    color: color || randomColor(),
     display: {
       id: false,
       mass: true
@@ -33087,7 +33099,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/graph/graph */ "./src/springs/system/graph/graph.js");
 
 var test = {};
-console.log('here in test!');
+
+var addMasses = function addMasses() {
+  Array(10).fill(0).forEach(function (_) {
+    return _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addMass({
+      x: Math.random(),
+      y: Math.random(),
+      mass: Math.random() * 10,
+      velocity: Math.random() * 100
+    });
+  });
+  console.log('masses added ', _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"]);
+};
+
+var run = function run() {
+  addMasses();
+};
+
+run();
 
 
 /***/ }),
@@ -33137,8 +33166,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/avsp/dev/Springs/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! /home/avsp/dev/Springs/src/main.js */"./src/main.js");
+__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
 
 
 /***/ })

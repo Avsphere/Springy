@@ -23,15 +23,15 @@ const totalColors = [
 ];
 
 
-const randomColor = () => totalColors[Math.floor(Math.random() * totalColors.length)]
+const randomColor = () => toRgb(totalColors[Math.floor(Math.random() * totalColors.length)])
 
 const getRadiusFromMass = ( m ) => {
     if ( m < 5 ) { return 5 }
     else if ( m > 100 ) { return 100 }
     else { return m }
 }
-const Mass = ({ x, y, mass, velocity }) => {
-    if ( !x || !y || !mass ) { throw new Error('Error creating mass, incorrect args') }
+const Mass = ({ x, y, mass, velocity, color }) => {
+    if ( !x || !y ) { throw new Error('Error creating mass, incorrect args') }
     const state = {
         position : {
             x: x,
@@ -40,10 +40,9 @@ const Mass = ({ x, y, mass, velocity }) => {
         velocity: velocity,
         radius: getRadiusFromMass(mass),
         id: shortid.generate(),
-        mass: mass,
+        mass: mass || 10,
         type: 'mass',
-        color: color,
-        drawCount: rest.drawCount || 0,
+        color: color || randomColor(),
         display : {
             id : false,
             mass : true,
