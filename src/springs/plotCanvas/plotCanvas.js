@@ -14,9 +14,9 @@ const State = () => Object.assign({
     controlFlags: {
         showPlot: true,
         cursorStats: false,
-        showMassIds: false,
+        showWeightIds: false,
         showSpringIds: false,
-        showMassDetails: true,
+        showWeightDetails: true,
         showSpringDetails: true,
         showGrid: false,
         lockY: true

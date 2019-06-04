@@ -1,8 +1,8 @@
 import { parse as urlParse } from 'url'
 import view from './view.js';
+import system from './system/system.js';
 import shortid from 'shortid';
 import tests from './tests/allTests';
-import system from './system/system';
 
 const logic = {}
 
@@ -23,11 +23,12 @@ logic.init = async() => {
         systemIndex: 0,
     }
     window.view = {};
-    window.dbug = {};
+    window.dbug = {
+        system: system
+    };
     window.tests = tests
     window.springCanvas = document.getElementById('springCanvas')
     window.springCanvas.ctx = window.springCanvas.getContext('2d');
-    window.System = system
     view.init(); //top level
 
 }

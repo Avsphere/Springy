@@ -1,6 +1,9 @@
 import handlers from './handlers'
 import listeners from './listeners'
+import system from '../system/system'
 import grid from './grid'
+import drawWeight from './drawWeight'
+import drawSpring from './drawSpring'
 
 const State = () => Object.assign({
     canvasSettings: {
@@ -13,13 +16,19 @@ const State = () => Object.assign({
     activeHandlers: { //specifically temp handlers
         drag: false //false or the handler
     },
-    transforms: {},
-    controlFlags: {
+    transforms : {
+        shift : {
+            x : 0,
+            y : 0
+        },
+        scale : 0
+    }, //maintains shift and scale
+    displayFlags : {
         showPlot: true,
         cursorStats: false,
-        showMassIds: false,
+        showWeightIds: false,
         showSpringIds: false,
-        showMassDetails: true,
+        showWeightDetails: true,
         showSpringDetails: true,
         showGrid: false,
         lockY: true
@@ -40,13 +49,15 @@ const setCanvasDimensions = () => {
 
 }
 
+
 const getMousePosition = (ev) => ({
     x: ev.clientX - state.canvas.getBoundingClientRect().left,
     y: ev.clientY - state.canvas.getBoundingClientRect().top,
 })
 
 const updateTransforms = () => {
-    state.transforms.shift = state.canvas.width - System.getCenter();
+    state.transforms.shift.x = state.canvas.width - system.getCenter();
+    state.transforms.shift.x = state.canvas.height - system.getCenter();
 }
 
 logic.clearCanvas = ({ x, y, x1, y1 }) => {
@@ -65,10 +76,12 @@ logic.debug = () => {
     }
 }
 
-/* draws the grid / masses*/
+/* draws the grid / weights*/
 logic.draw = () => {
-    updateTransforms();
-    System.draw({ transforms : state.transforms })
+    const { springs, weights } = system.getObjs()
+
+    weights.forEach(weight => weight({ state, weight, shift }) )
+    springs.forEach( spring => drawSpring({ state, spring, shift }) )
 }
 
 

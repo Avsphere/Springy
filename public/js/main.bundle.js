@@ -26478,110 +26478,6 @@ return jQuery;
 
 /***/ }),
 
-/***/ "./node_modules/map-age-cleaner/dist/index.js":
-/*!****************************************************!*\
-  !*** ./node_modules/map-age-cleaner/dist/index.js ***!
-  \****************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const p_defer_1 = __importDefault(__webpack_require__(/*! p-defer */ "./node_modules/p-defer/index.js"));
-function mapAgeCleaner(map, property = 'maxAge') {
-    let processingKey;
-    let processingTimer;
-    let processingDeferred;
-    const cleanup = () => __awaiter(this, void 0, void 0, function* () {
-        if (processingKey !== undefined) {
-            // If we are already processing an item, we can safely exit
-            return;
-        }
-        const setupTimer = (item) => __awaiter(this, void 0, void 0, function* () {
-            processingDeferred = p_defer_1.default();
-            const delay = item[1][property] - Date.now();
-            if (delay <= 0) {
-                // Remove the item immediately if the delay is equal to or below 0
-                map.delete(item[0]);
-                processingDeferred.resolve();
-                return;
-            }
-            // Keep track of the current processed key
-            processingKey = item[0];
-            processingTimer = setTimeout(() => {
-                // Remove the item when the timeout fires
-                map.delete(item[0]);
-                if (processingDeferred) {
-                    processingDeferred.resolve();
-                }
-            }, delay);
-            // tslint:disable-next-line:strict-type-predicates
-            if (typeof processingTimer.unref === 'function') {
-                // Don't hold up the process from exiting
-                processingTimer.unref();
-            }
-            return processingDeferred.promise;
-        });
-        try {
-            for (const entry of map) {
-                yield setupTimer(entry);
-            }
-        }
-        catch (_a) {
-            // Do nothing if an error occurs, this means the timer was cleaned up and we should stop processing
-        }
-        processingKey = undefined;
-    });
-    const reset = () => {
-        processingKey = undefined;
-        if (processingTimer !== undefined) {
-            clearTimeout(processingTimer);
-            processingTimer = undefined;
-        }
-        if (processingDeferred !== undefined) { // tslint:disable-line:early-exit
-            processingDeferred.reject(undefined);
-            processingDeferred = undefined;
-        }
-    };
-    const originalSet = map.set.bind(map);
-    map.set = (key, value) => {
-        if (map.has(key)) {
-            // If the key already exist, remove it so we can add it back at the end of the map.
-            map.delete(key);
-        }
-        // Call the original `map.set`
-        const result = originalSet(key, value);
-        // If we are already processing a key and the key added is the current processed key, stop processing it
-        if (processingKey && processingKey === key) {
-            reset();
-        }
-        // Always run the cleanup method in case it wasn't started yet
-        cleanup(); // tslint:disable-line:no-floating-promises
-        return result;
-    };
-    cleanup(); // tslint:disable-line:no-floating-promises
-    return map;
-}
-exports.default = mapAgeCleaner;
-// Add support for CJS
-module.exports = mapAgeCleaner;
-module.exports.default = mapAgeCleaner;
-
-
-/***/ }),
-
 /***/ "./node_modules/nanoid/format.js":
 /*!***************************************!*\
   !*** ./node_modules/nanoid/format.js ***!
@@ -26643,24 +26539,61 @@ module.exports = function (random, alphabet, size) {
 
 /***/ }),
 
-/***/ "./node_modules/p-defer/index.js":
-/*!***************************************!*\
-  !*** ./node_modules/p-defer/index.js ***!
-  \***************************************/
+/***/ "./node_modules/os-browserify/browser.js":
+/*!***********************************************!*\
+  !*** ./node_modules/os-browserify/browser.js ***!
+  \***********************************************/
 /*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-"use strict";
+exports.endianness = function () { return 'LE' };
 
-module.exports = () => {
-	const ret = {};
+exports.hostname = function () {
+    if (typeof location !== 'undefined') {
+        return location.hostname
+    }
+    else return '';
+};
 
-	ret.promise = new Promise((resolve, reject) => {
-		ret.resolve = resolve;
-		ret.reject = reject;
-	});
+exports.loadavg = function () { return [] };
 
-	return ret;
+exports.uptime = function () { return 0 };
+
+exports.freemem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.totalmem = function () {
+    return Number.MAX_VALUE;
+};
+
+exports.cpus = function () { return [] };
+
+exports.type = function () { return 'Browser' };
+
+exports.release = function () {
+    if (typeof navigator !== 'undefined') {
+        return navigator.appVersion;
+    }
+    return '';
+};
+
+exports.networkInterfaces
+= exports.getNetworkInterfaces
+= function () { return {} };
+
+exports.arch = function () { return 'javascript' };
+
+exports.platform = function () { return 'browser' };
+
+exports.tmpdir = exports.tmpDir = function () {
+    return '/tmp';
+};
+
+exports.EOL = '\n';
+
+exports.homedir = function () {
+	return '/'
 };
 
 
@@ -32198,24 +32131,6 @@ module.exports = function(module) {
 
 /***/ }),
 
-/***/ "./node_modules/webpack/buildin/system.js":
-/*!***********************************!*\
-  !*** (webpack)/buildin/system.js ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-// Provide a "System" global.
-module.exports = {
-	// Make sure import is only used as "System.import"
-	import: function() {
-		throw new Error("System.import cannot be used indirectly");
-	}
-};
-
-
-/***/ }),
-
 /***/ "./src/learning/main.js":
 /*!******************************!*\
   !*** ./src/learning/main.js ***!
@@ -32379,10 +32294,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var url__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! url */ "./node_modules/url/url.js");
 /* harmony import */ var url__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(url__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./view.js */ "./src/springs/view.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
-/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _system_system_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./system/system.js */ "./src/springs/system/system.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -32410,7 +32325,7 @@ regeneratorRuntime.mark(function _callee() {
           page = pathname.split('/').pop().toLocaleLowerCase();
 
           if (!window.localStorage.getItem('key')) {
-            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_2___default.a.generate());
+            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_3___default.a.generate());
           }
 
           window.user = {
@@ -32419,14 +32334,15 @@ regeneratorRuntime.mark(function _callee() {
             systemIndex: 0
           };
           window.view = {};
-          window.dbug = {};
-          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_3__["default"];
+          window.dbug = {
+            system: _system_system_js__WEBPACK_IMPORTED_MODULE_2__["default"]
+          };
+          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_4__["default"];
           window.springCanvas = document.getElementById('springCanvas');
           window.springCanvas.ctx = window.springCanvas.getContext('2d');
-          window.System = _system_system__WEBPACK_IMPORTED_MODULE_4__["default"];
           _view_js__WEBPACK_IMPORTED_MODULE_1__["default"].init(); //top level
 
-        case 12:
+        case 11:
         case "end":
           return _context.stop();
       }
@@ -32453,21 +32369,44 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-var state = {};
+var state = {
+  isAnimating: false
+};
 var logic = {};
 
-var getActiveComponents = function getActiveComponents() {
-  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"]];
+var getDrawableComponents = function getDrawableComponents() {
+  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"], _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"]];
 };
 
-logic.toggleAnimate = function () {};
+var animate = function animate() {
+  _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].step(); //increments frame by 1
+
+  getDrawableComponents().forEach(function (d) {
+    return d.clear().draw();
+  });
+  state.animationFrame = window.requestAnimationFrame(animate);
+};
+
+var stopAnimating = function stopAnimating() {
+  return window.cancelAnimationFrame(state.animationFrame);
+};
+
+logic.toggleAnimate = function () {
+  state.isAnimating = state.isAnimating;
+
+  if (state.isAnimating) {
+    animate();
+  } else {
+    stopAnimating();
+  }
+};
 
 logic.redraw = function () {
   _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].draw();
 };
 
 logic.resize = function () {
-  getActiveComponents().forEach(function (c) {
+  getDrawableComponents().forEach(function (c) {
     return c.resize();
   });
 };
@@ -32539,9 +32478,9 @@ var State = function State() {
     controlFlags: {
       showPlot: true,
       cursorStats: false,
-      showMassIds: false,
+      showWeightIds: false,
       showSpringIds: false,
-      showMassDetails: true,
+      showWeightDetails: true,
       showSpringDetails: true,
       showGrid: false,
       lockY: true
@@ -32577,6 +32516,87 @@ var setCanvasDimensions = function setCanvasDimensions() {
 
 logic.init = function () {
   state = State();
+};
+
+
+
+/***/ }),
+
+/***/ "./src/springs/springCanvas/drawSpring.js":
+/*!************************************************!*\
+  !*** ./src/springs/springCanvas/drawSpring.js ***!
+  \************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return drawSpring; });
+var drawSpring = function drawSpring(_ref) {
+  var state = _ref.state,
+      spring = _ref.spring,
+      transforms = _ref.transforms;
+  var displayFlags = state.displayFlags;
+  var shift = transforms.shift,
+      scale = transforms.scale;
+};
+
+
+
+/***/ }),
+
+/***/ "./src/springs/springCanvas/drawWeight.js":
+/*!************************************************!*\
+  !*** ./src/springs/springCanvas/drawWeight.js ***!
+  \************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return drawWeight; });
+var toRgb = function toRgb(hex) {
+  var opacity = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  var rgb = {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  };
+  return "rgba(".concat(rgb.r, ", ").concat(rgb.g, ", ").concat(rgb.b, ", ").concat(opacity, ")");
+};
+
+var updateOpacity = function updateOpacity(rgb, opacity) {
+  var aux = rgb.split(',').splice(0, 3);
+  aux.push("".concat(opacity, ")"));
+  return aux.join(',');
+};
+
+var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
+
+var getRadiusFromMass = function getRadiusFromMass(m) {
+  if (m < 5) {
+    return 5;
+  } else if (m > 100) {
+    return 100;
+  } else {
+    return m;
+  }
+};
+
+var randomColor = function randomColor() {
+  return toRgb(totalColors[Math.floor(Math.random() * totalColors.length)]);
+};
+
+var drawWeight = function drawWeight(_ref) {
+  var state = _ref.state,
+      weight = _ref.weight,
+      transforms = _ref.transforms;
+  var displayFlags = state.displayFlags,
+      ctx = state.ctx,
+      canvas = state.canvas;
+  var shift = transforms.shift,
+      scale = transforms.scale;
 };
 
 
@@ -32642,12 +32662,18 @@ logic.draw = function (_ref) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* WEBPACK VAR INJECTION */(function(System) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 /* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./handlers */ "./src/springs/springCanvas/handlers.js");
 /* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_handlers__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./listeners */ "./src/springs/springCanvas/listeners.js");
 /* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_listeners__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./grid */ "./src/springs/springCanvas/grid.js");
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/springs/springCanvas/grid.js");
+/* harmony import */ var _drawWeight__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./drawWeight */ "./src/springs/springCanvas/drawWeight.js");
+/* harmony import */ var _drawSpring__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./drawSpring */ "./src/springs/springCanvas/drawSpring.js");
+
+
+
 
 
 
@@ -32669,13 +32695,20 @@ var State = function State() {
       drag: false //false or the handler
 
     },
-    transforms: {},
-    controlFlags: {
+    transforms: {
+      shift: {
+        x: 0,
+        y: 0
+      },
+      scale: 0
+    },
+    //maintains shift and scale
+    displayFlags: {
       showPlot: true,
       cursorStats: false,
-      showMassIds: false,
+      showWeightIds: false,
       showSpringIds: false,
-      showMassDetails: true,
+      showWeightDetails: true,
       showSpringDetails: true,
       showGrid: false,
       lockY: true
@@ -32704,7 +32737,8 @@ var getMousePosition = function getMousePosition(ev) {
 };
 
 var updateTransforms = function updateTransforms() {
-  state.transforms.shift = state.canvas.width - System.getCenter();
+  state.transforms.shift.x = state.canvas.width - _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getCenter();
+  state.transforms.shift.x = state.canvas.height - _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getCenter();
 };
 
 logic.clearCanvas = function (_ref) {
@@ -32726,13 +32760,27 @@ logic.debug = function () {
     });
   }
 };
-/* draws the grid / masses*/
+/* draws the grid / weights*/
 
 
 logic.draw = function () {
-  updateTransforms();
-  System.draw({
-    transforms: state.transforms
+  var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getObjs(),
+      springs = _system$getObjs.springs,
+      weights = _system$getObjs.weights;
+
+  weights.forEach(function (weight) {
+    return weight({
+      state: state,
+      weight: weight,
+      shift: shift
+    });
+  });
+  springs.forEach(function (spring) {
+    return Object(_drawSpring__WEBPACK_IMPORTED_MODULE_5__["default"])({
+      state: state,
+      spring: spring,
+      shift: shift
+    });
   });
 };
 
@@ -32746,7 +32794,6 @@ logic.init = function () {
 };
 
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../../node_modules/webpack/buildin/system.js */ "./node_modules/webpack/buildin/system.js")))
 
 /***/ }),
 
@@ -32760,10 +32807,12 @@ logic.init = function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
-/* harmony import */ var _mass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./mass */ "./src/springs/system/graph/mass.js");
+/* harmony import */ var _weight__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./weight */ "./src/springs/system/graph/weight.js");
 /* harmony import */ var _spring__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./spring */ "./src/springs/system/graph/spring.js");
-/* harmony import */ var map_age_cleaner__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! map-age-cleaner */ "./node_modules/map-age-cleaner/dist/index.js");
-/* harmony import */ var map_age_cleaner__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(map_age_cleaner__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../helpers */ "./src/springs/system/helpers.js");
+/* harmony import */ var os__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! os */ "./node_modules/os-browserify/browser.js");
+/* harmony import */ var os__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(os__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
@@ -32772,57 +32821,113 @@ var logic = {};
 var State = function State() {
   return {
     adjList: new Map(),
-    defaultSpringK: 1
+    weights: [],
+    //for easier drawing
+    springs: []
   };
 };
 
 var state = State();
 
 var Edge = function Edge(_ref) {
-  var mass = _ref.mass,
+  var weight = _ref.weight,
       spring = _ref.spring;
   return {
-    mass: mass,
+    weight: weight,
     spring: spring
   };
 };
 
-logic.addMass = function (_ref2) {
+logic.addWeight = function (_ref2) {
   var x = _ref2.x,
       y = _ref2.y,
       mass = _ref2.mass,
       velocity = _ref2.velocity;
-  return state.adjList.set(Object(_mass__WEBPACK_IMPORTED_MODULE_0__["default"])({
+  var weight = Object(_weight__WEBPACK_IMPORTED_MODULE_0__["default"])({
     x: x,
     y: y,
     mass: mass,
     velocity: velocity
-  }), []);
+  });
+  state.adjList.set(weight, []);
+  state.weights.push(weight);
+  return weight;
 };
 
-logic.addEdge = function (_ref3) {
-  var m1 = _ref3.m1,
-      m2 = _ref3.m2,
-      springK = _ref3.springK;
+logic.addEdge = function (w1, w2) {
+  var springK = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
 
-  if (!springK) {
-    springK = state.defaultSpringK;
+  if (!w1 || !w2 || !springK) {
+    throw new Error('add edge incorrect args ');
+  }
+
+  if (w1.id === w2.id) {
+    throw new Error('Cannot add a circular edge');
+  }
+
+  var n1 = state.adjList.get(w1);
+  var n2 = state.adjList.get(w2);
+
+  if (n1.find(function (_ref3) {
+    var weight = _ref3.weight;
+    return weight.id === w2.id;
+  })) {
+    throw new Error('cannot multiple edges between nodes');
   }
 
   var sharedSpring = Object(_spring__WEBPACK_IMPORTED_MODULE_1__["default"])({
     k: springK,
-    masses: [m1, m2]
+    weights: [w1, w2]
   });
-  var n1 = state.adjList.get(m1).push(Edge({
-    mass: m2,
+  state.springs.push(sharedSpring);
+  n1.push(Edge({
+    weight: w2,
     spring: sharedSpring
   }));
-  var n2 = state.adjList.get(m2).push(Edge({
-    mass: m1,
+  n2.push(Edge({
+    weight: w1,
     spring: sharedSpring
-  })); // if ( n1.adjList.find( node => node.mass.id === m2.id ) ) {
-  // }
+  }));
 };
+
+logic.removeWeight = function (weight) {};
+
+logic.removeEdge = function (spring) {};
+
+logic.findNearest = function (positionVec) {
+  if (state.adjList.size === 0) {
+    throw new Error('cannot find nearest when size is 0;');
+  }
+
+  var nearest = {
+    dist: Infinity,
+    weight: {}
+  };
+  state.adjList.forEach(function (edgeList, weight) {
+    var dist = _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(weight.position, positionVec);
+
+    if (dist < nearest.dist) {
+      nearest.dist = dist;
+      nearest.weight = weight;
+    }
+  });
+  return nearest;
+};
+
+logic.getCenter = function () {
+  var avgX = 0,
+      avgY = 0;
+  state.adjList.forEach(function (edgeList, weight) {
+    avgX += weight.position.x;
+    avgY += weight.position.y;
+  });
+  return {
+    x: avgX / state.adjList.size,
+    y: avgY / state.adjList.size
+  };
+};
+
+logic.forEach = state.adjList.forEach;
 
 logic.reset = function () {
   state = State();
@@ -32830,96 +32935,8 @@ logic.reset = function () {
 
 logic.getState = function () {
   return state;
-};
+}; //only used by system
 
-
-
-/***/ }),
-
-/***/ "./src/springs/system/graph/mass.js":
-/*!******************************************!*\
-  !*** ./src/springs/system/graph/mass.js ***!
-  \******************************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Mass; });
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../emitter.js */ "./src/springs/emitter.js");
-
-
-
-var toRgb = function toRgb(hex) {
-  var opacity = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  var rgb = {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  };
-  return "rgba(".concat(rgb.r, ", ").concat(rgb.g, ", ").concat(rgb.b, ", ").concat(opacity, ")");
-};
-
-var updateOpacity = function updateOpacity(rgb, opacity) {
-  var aux = rgb.split(',').splice(0, 3);
-  aux.push("".concat(opacity, ")"));
-  return aux.join(',');
-};
-
-var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
-
-var randomColor = function randomColor() {
-  return toRgb(totalColors[Math.floor(Math.random() * totalColors.length)]);
-};
-
-var getRadiusFromMass = function getRadiusFromMass(m) {
-  if (m < 5) {
-    return 5;
-  } else if (m > 100) {
-    return 100;
-  } else {
-    return m;
-  }
-};
-
-var Mass = function Mass(_ref) {
-  var x = _ref.x,
-      y = _ref.y,
-      mass = _ref.mass,
-      velocity = _ref.velocity,
-      color = _ref.color;
-
-  if (!x || !y) {
-    throw new Error('Error creating mass, incorrect args');
-  }
-
-  var state = {
-    position: {
-      x: x,
-      y: y
-    },
-    velocity: velocity,
-    radius: getRadiusFromMass(mass),
-    id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
-    mass: mass || 10,
-    type: 'mass',
-    color: color || randomColor(),
-    display: {
-      id: false,
-      mass: true
-    }
-  };
-  var logic = {};
-
-  logic.draw = function (_ref2) {
-    var transforms = _ref2.transforms;
-  };
-
-  return Object.assign(state, logic);
-};
 
 
 
@@ -32946,13 +32963,18 @@ __webpack_require__.r(__webpack_exports__);
 var Spring = function Spring(_ref) {
   var k = _ref.k,
       initialLength = _ref.initialLength,
-      masses = _ref.masses,
+      weights = _ref.weights,
       id = _ref.id;
+
+  if (!weights || weights.length !== 2) {
+    throw new Error('spring is missing weights');
+  }
+
   var state = {
     k: k,
     length: length,
     initialLength: initialLength,
-    masses: masses,
+    weights: weights,
     //[m1, m2]
     color: 'black',
     type: 'spring',
@@ -32965,11 +32987,72 @@ var Spring = function Spring(_ref) {
   var logic = {};
 
   logic.getCurrentLength = function () {
-    return _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.masses[0].position, state.masses[1].position);
+    return _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.weights[0].position, state.weights[1].position);
   };
 
   logic.draw = function (_ref2) {
     var transforms = _ref2.transforms;
+  };
+
+  return Object.assign(state, logic);
+};
+
+
+
+/***/ }),
+
+/***/ "./src/springs/system/graph/weight.js":
+/*!********************************************!*\
+  !*** ./src/springs/system/graph/weight.js ***!
+  \********************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Weight; });
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../emitter.js */ "./src/springs/emitter.js");
+
+
+
+var Weight = function Weight(_ref) {
+  var x = _ref.x,
+      y = _ref.y,
+      mass = _ref.mass,
+      velocity = _ref.velocity,
+      color = _ref.color;
+
+  if (!x || !y) {
+    throw new Error('Error creating mass, incorrect args');
+  }
+
+  var state = {
+    position: {
+      x: x,
+      y: y
+    },
+    velocity: velocity,
+    id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
+    frameData: [],
+    mass: mass || 10,
+    type: 'weight',
+    color: color || randomColor()
+  };
+  var logic = {};
+
+  logic.update = function (_ref2) {
+    var frameIndex = _ref2.frameIndex;
+
+    if (!frameIndex) {
+      frameIndex = 0;
+    }
+
+    var frame = frameData[frameIndex];
+    state.position.x = frame.x;
+    state.position.y = frame.y;
+    state.velocity = frame.velocity;
   };
 
   return Object.assign(state, logic);
@@ -33030,12 +33113,27 @@ var State = function State() {
     currentFrame: 0,
     solvedSystem: [],
     //solver returns as frameIndex : frameData  
-    flags: {}
+    flags: {},
+    center: {
+      frameCalculated: 0,
+      position: {
+        x: 0,
+        y: 0
+      }
+    },
+    defaultValues: {
+      weightMass: 10,
+      springK: 1,
+      velocity: 0
+    }
   };
 };
 
 var logic = {};
 var state = State();
+
+var solve = function solve() {// state.solvedSystem = 
+};
 
 logic.update = function (_ref) {
   var frameIndex = _ref.frameIndex;
@@ -33045,24 +33143,89 @@ logic.update = function (_ref) {
   }
 
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (o) {
-    if (o.type === 'mass') {
+    if (o.type === 'weight') {
       o.update(frameIndex);
     }
   });
 };
 
-logic.draw = function () {
+logic.step = function () {
+  state.currentFrame++;
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (o) {
-    return o.draw();
+    if (o.type === 'weight') {
+      o.update(state.currentFrame);
+    }
   });
 };
 
-logic.solve = function () {// state.solvedSystem = 
+logic.addWeight = function (_ref2) {
+  var mass = _ref2.mass,
+      x = _ref2.x,
+      y = _ref2.y,
+      springK = _ref2.springK,
+      velocity = _ref2.velocity;
+
+  //This x,y is the true x,y. The shift is calculated in the springCanvas
+  if (!mass) {
+    mass = state.defaultValues.weightMass;
+  }
+
+  if (!springK) {
+    springK = state.defaultValues.springK;
+  }
+
+  if (!velocity) {
+    velocity = state.defaultValues.velocity;
+  }
+
+  var _sysGraph$findNearest = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest({
+    x: x,
+    y: y
+  }),
+      dist = _sysGraph$findNearest.dist,
+      weight = _sysGraph$findNearest.weight;
+
+  var newWeight = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+    x: x,
+    y: y,
+    mass: mass,
+    velocity: velocity
+  });
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge({
+    m1: weight,
+    m2: newWeight,
+    springK: springK
+  });
+  return newWeight;
 };
 
 logic.reset = function () {
   state = State();
+}; // logic.getGraph = () => state.sysGraph;
+
+
+logic.getObjs = function () {
+  return {
+    weights: _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getState().weights,
+    springs: _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getState().springs
+  };
 };
+
+logic.getCenter = function () {
+  if (state.center.frameCalculated === state.currentFrame) {
+    return state.center.position;
+  } else {
+    state.center.position = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter();
+    state.center.frameCalculated = state.currentFrame;
+  }
+
+  return 0;
+};
+
+logic.getState = function () {
+  return state;
+}; //for debugging only
+
 
 
 
@@ -33100,20 +33263,43 @@ __webpack_require__.r(__webpack_exports__);
 
 var test = {};
 
-var addMasses = function addMasses() {
-  Array(10).fill(0).forEach(function (_) {
-    return _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addMass({
-      x: Math.random(),
-      y: Math.random(),
-      mass: Math.random() * 10,
-      velocity: Math.random() * 100
-    });
+var addRandomWeight = function addRandomWeight() {
+  return _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
+    x: Math.random(),
+    y: Math.random(),
+    mass: Math.random() * 10,
+    velocity: Math.random() * 100
   });
-  console.log('masses added ', _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"]);
+};
+
+var buildTriGraph = function buildTriGraph() {
+  var leftW = addRandomWeight();
+  var topW = addRandomWeight();
+  var rightW = addRandomWeight();
+  var e1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, rightW);
+  var e2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, topW);
+  var e3 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(rightW, topW);
+
+  try {
+    _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, rightW);
+  } catch (err) {
+    if (!err.message.includes('multiple edges')) {
+      console.error('buildTriGraph different error message');
+    }
+  }
+
+  try {
+    _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(rightW, leftW);
+  } catch (err) {
+    if (!err.message.includes('multiple edges')) {
+      console.error('buildTriGraph different error message');
+    }
+  }
 };
 
 var run = function run() {
-  addMasses();
+  buildTriGraph();
+  console.log(_system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getCenter());
 };
 
 run();

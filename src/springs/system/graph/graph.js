@@ -1,38 +1,86 @@
-import Mass from './mass'
+import Weight from './weight'
 import Spring from './spring'
-import mapAgeCleaner from 'map-age-cleaner';
+import helpers from '../helpers';
+import { networkInterfaces } from 'os';
+
 
 const logic = {}
 
 const State = () => ({
     adjList : new Map(),
-    defaultSpringK : 1
+    weights : [], //for easier drawing
+    springs : []
 }) 
 let state = State();
 
-const Edge = ({ mass, spring }) => ({ mass, spring}) 
+const Edge = ({ weight, spring }) => ({ weight, spring})
 
-logic.addMass = ({ x, y, mass, velocity }) => state.adjList.set(Mass({ x, y, mass, velocity }), [])
+logic.addWeight = ({ x, y, mass, velocity }) => {
+    const weight = Weight({ x, y, mass, velocity })
+    state.adjList.set(weight, [])
+    state.weights.push(weight);
+    return weight
+}
 
 
-logic.addEdge = ({ m1, m2, springK }) => {
-    if (!springK) { springK = state.defaultSpringK}
-    const sharedSpring = Spring({ k: springK, masses: [m1, m2] })
-    
-    const n1 = state.adjList.get(m1).push( Edge({ mass: m2, spring: sharedSpring }) );
-    const n2 = state.adjList.get(m2).push( Edge({ mass: m1, spring: sharedSpring }) )
+logic.addEdge = (w1, w2, springK=1) => {
+    if ( !w1 || !w2 || !springK ) { throw new Error('add edge incorrect args ')}
+    if ( w1.id === w2.id ) { throw new Error('Cannot add a circular edge')}
+    const n1 = state.adjList.get(w1)
+    const n2 = state.adjList.get(w2)
 
-    // if ( n1.adjList.find( node => node.mass.id === m2.id ) ) {
+    if ( n1.find( ({ weight }) => weight.id === w2.id ) ) {
+        throw new Error( 'cannot multiple edges between nodes')
+    }
 
-    // }
+    const sharedSpring = Spring({ k: springK, weights: [w1, w2] })
+    state.springs.push(sharedSpring)
+
+    n1.push(Edge({ weight: w2, spring: sharedSpring }));
+    n2.push(Edge({ weight: w1, spring: sharedSpring }));
+}
+
+
+logic.removeWeight = (weight) => {
 
 }
+
+logic.removeEdge = (spring) => {
+
+}
+
+logic.findNearest = (positionVec) => {
+    if ( state.adjList.size === 0 ) { throw new Error('cannot find nearest when size is 0;')}
+    const nearest = { dist : Infinity, weight : {} }
+    
+    state.adjList.forEach((edgeList, weight) => {
+        const dist = helpers.eucDistance(weight.position, positionVec);
+        if ( dist < nearest.dist ) { nearest.dist = dist; nearest.weight = weight; }
+    })
+    return nearest;
+} 
+
+logic.getCenter = () => {
+    let avgX = 0, avgY = 0; 
+    state.adjList.forEach( (edgeList, weight) => {
+        avgX += weight.position.x;
+        avgY += weight.position.y
+    })
+    return {
+        x : avgX / state.adjList.size,
+        y : avgY / state.adjList.size,
+    }
+}
+
+logic.forEach = state.adjList.forEach
+
+
 
 logic.reset = () => {
     state = State();
 }
 
-logic.getState = () => state
+logic.getState = () => state; //only used by system
 
 
 
