@@ -14,7 +14,6 @@ const Weight = ({ x, y, mass, velocity, color }) => {
         frameData : [], 
         mass: mass || 10,
         type: 'weight',
-        color: color || randomColor(),
     }
     const logic = {}
 

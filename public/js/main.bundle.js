@@ -32865,10 +32865,10 @@ logic.addEdge = function (w1, w2) {
     throw new Error('Cannot add a circular edge');
   }
 
-  var n1 = state.adjList.get(w1);
-  var n2 = state.adjList.get(w2);
+  var w1Edges = state.adjList.get(w1);
+  var w2Edges = state.adjList.get(w2);
 
-  if (n1.find(function (_ref3) {
+  if (w1Edges.find(function (_ref3) {
     var weight = _ref3.weight;
     return weight.id === w2.id;
   })) {
@@ -32880,19 +32880,76 @@ logic.addEdge = function (w1, w2) {
     weights: [w1, w2]
   });
   state.springs.push(sharedSpring);
-  n1.push(Edge({
+  w1Edges.push(Edge({
     weight: w2,
     spring: sharedSpring
   }));
-  n2.push(Edge({
+  w2Edges.push(Edge({
     weight: w1,
     spring: sharedSpring
   }));
 };
 
-logic.removeWeight = function (weight) {};
+logic.removeEdge = function (_ref4) {
+  var w1 = _ref4.w1,
+      w2 = _ref4.w2;
 
-logic.removeEdge = function (spring) {};
+  //you can remove an edge from its spring or by its connection points; but not both
+  if (w1 && !w2 || w2 && !w1) {
+    throw new Error('removeEdge only one weight was passed');
+  } else if (w1.id === w2.id) {
+    throw new Error('removeEdge passed same weight twice');
+  }
+
+  var w1Edges = state.adjList.get(w1);
+  var w2Edges = state.adjList.get(w2);
+  var e1ToSplice = w1Edges.map(function (_ref5) {
+    var weight = _ref5.weight;
+    return weight.id;
+  }).indexOf(w2.id);
+  var e2ToSplice = w2Edges.map(function (_ref6) {
+    var weight = _ref6.weight;
+    return weight.id;
+  }).indexOf(w1.id);
+  var springToRemove = w1Edges.find(function (_ref7) {
+    var spring = _ref7.spring;
+    return spring.weights[0].id == w1.id || spring.weights[0].id == w2.id;
+  });
+  var springSpliceIndex = state.springs.map(function (s) {
+    return s.id;
+  }).indexOf(springToRemove.id);
+
+  if (e1ToSplice == -1 || e2ToSplice == -1) {
+    throw new Error('removeEdge is not finding edge to remove');
+  }
+
+  w1Edges.splice(e1ToSplice, 1);
+  w2Edges.splice(e2ToSplice, 1);
+  state.springs.splice(springSpliceIndex, 1);
+};
+
+logic.removeWeight = function (weightToRemove) {
+  var edges = state.adjList.get(weightToRemove);
+
+  if (edges) {
+    //can't remove edges in normal forEach because removeEdge mutates the edge array whilst iterating
+    edges.map(function (e) {
+      return e.weight;
+    }).forEach(function (weight) {
+      logic.removeEdge({
+        w1: weightToRemove,
+        w2: weight
+      });
+    });
+    state.adjList["delete"](weightToRemove);
+    var indexToSplice = state.weights.map(function (w) {
+      return w.id;
+    }).indexOf(weightToRemove.id);
+    state.weights.splice(indexToSplice, 1);
+  } else {
+    throw new Error("cannot find weight to remove : ".concat(weightToRemove));
+  }
+};
 
 logic.findNearest = function (positionVec) {
   if (state.adjList.size === 0) {
@@ -32927,7 +32984,13 @@ logic.getCenter = function () {
   };
 };
 
-logic.forEach = state.adjList.forEach;
+logic.print = function () {
+  var i = 0;
+  state.adjList.forEach(function (edgeList, weight) {
+    console.log("weight".concat(i, ": "), weight, ' edges : ', edgeList);
+    i++;
+  });
+};
 
 logic.reset = function () {
   state = State();
@@ -33037,8 +33100,7 @@ var Weight = function Weight(_ref) {
     id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
     frameData: [],
     mass: mass || 10,
-    type: 'weight',
-    color: color || randomColor()
+    type: 'weight'
   };
   var logic = {};
 
@@ -33272,7 +33334,7 @@ var addRandomWeight = function addRandomWeight() {
   });
 };
 
-var buildTriGraph = function buildTriGraph() {
+var buildTests = function buildTests() {
   var leftW = addRandomWeight();
   var topW = addRandomWeight();
   var rightW = addRandomWeight();
@@ -33284,7 +33346,7 @@ var buildTriGraph = function buildTriGraph() {
     _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, rightW);
   } catch (err) {
     if (!err.message.includes('multiple edges')) {
-      console.error('buildTriGraph different error message');
+      console.error('buildTests different error message');
     }
   }
 
@@ -33292,14 +33354,76 @@ var buildTriGraph = function buildTriGraph() {
     _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(rightW, leftW);
   } catch (err) {
     if (!err.message.includes('multiple edges')) {
-      console.error('buildTriGraph different error message');
+      console.error('buildTests different error message');
     }
   }
 };
 
+var removalTests = function removalTests() {
+  var leftW = addRandomWeight();
+  var topW = addRandomWeight();
+  var rightW = addRandomWeight();
+  var e1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, rightW);
+  var e2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(leftW, topW);
+  var e3 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(rightW, topW);
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].removeWeight(leftW); //now top should have 1 edge to right and vice versa
+
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getState().adjList.forEach(function (edgeList, weight) {
+    if (weight.id === topW.id) {
+      if (edgeList.length !== 1) {
+        throw new Error('bad edgeList length after remove');
+      }
+
+      if (edgeList[0].weight.id !== rightW.id) {
+        throw new Error('bad edge after remove');
+      }
+    }
+
+    if (weight.id === rightW.id) {
+      if (edgeList.length !== 1) {
+        throw new Error('bad edgeList length after remove');
+      }
+
+      if (edgeList[0].weight.id !== topW.id) {
+        throw new Error('bad edge after remove');
+      }
+    }
+
+    if (weight.id === leftW.id) {
+      throw new Error('weight was not removed');
+    }
+  });
+
+  var _graph$getState = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getState(),
+      springs = _graph$getState.springs,
+      weights = _graph$getState.weights;
+
+  if (springs.length !== 1) {
+    throw new Error('post remove state springs was not removed');
+  }
+
+  if (weights.length !== 2) {
+    throw new Error('post remove state weights was not removed');
+  }
+
+  var newLeftW = addRandomWeight();
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(newLeftW, topW);
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(newLeftW, rightW);
+
+  if (_system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getState().springs.length !== 3) {
+    throw new Error('post remove state springs was not removed');
+  }
+
+  if (_system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getState().weights.length !== 3) {
+    throw new Error('post remove state weights was not removed');
+  }
+};
+
 var run = function run() {
-  buildTriGraph();
-  console.log(_system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].getCenter());
+  console.log('%cRunning graph tests', "color:green");
+  buildTests();
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+  removalTests();
 };
 
 run();

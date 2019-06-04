@@ -26,27 +26,62 @@ logic.addWeight = ({ x, y, mass, velocity }) => {
 logic.addEdge = (w1, w2, springK=1) => {
     if ( !w1 || !w2 || !springK ) { throw new Error('add edge incorrect args ')}
     if ( w1.id === w2.id ) { throw new Error('Cannot add a circular edge')}
-    const n1 = state.adjList.get(w1)
-    const n2 = state.adjList.get(w2)
+    const w1Edges = state.adjList.get(w1)
+    const w2Edges = state.adjList.get(w2)
 
-    if ( n1.find( ({ weight }) => weight.id === w2.id ) ) {
-        throw new Error( 'cannot multiple edges between nodes')
+
+    if (w1Edges.find( ({ weight }) => weight.id === w2.id ) ) {
+        throw new Error( 'cannot multiple edges between nodes') 
     }
 
     const sharedSpring = Spring({ k: springK, weights: [w1, w2] })
     state.springs.push(sharedSpring)
 
-    n1.push(Edge({ weight: w2, spring: sharedSpring }));
-    n2.push(Edge({ weight: w1, spring: sharedSpring }));
+    w1Edges.push(Edge({ weight: w2, spring: sharedSpring }));
+    w2Edges.push(Edge({ weight: w1, spring: sharedSpring }));
 }
 
 
-logic.removeWeight = (weight) => {
 
+logic.removeEdge = ({ w1, w2 }) => {
+    //you can remove an edge from its spring or by its connection points; but not both
+    if ( (w1 && !w2) || (w2 && !w1) ) {
+        throw new Error('removeEdge only one weight was passed')        
+    } else if (w1.id === w2.id) { throw new Error('removeEdge passed same weight twice') }
+
+    const w1Edges = state.adjList.get(w1)
+    const w2Edges = state.adjList.get(w2)
+
+    const e1ToSplice = w1Edges.map( ({ weight }) => weight.id ).indexOf( w2.id )
+    const e2ToSplice = w2Edges.map( ({ weight }) => weight.id ).indexOf( w1.id )
+
+    const springToRemove = w1Edges.find(({ spring }) => spring.weights[0].id == w1.id || spring.weights[0].id == w2.id)
+    const springSpliceIndex = state.springs.map(s => s.id).indexOf(springToRemove.id)
+    
+    if (e1ToSplice == -1 || e2ToSplice == -1) {
+        throw new Error('removeEdge is not finding edge to remove')
+    }
+    w1Edges.splice(e1ToSplice, 1)
+    w2Edges.splice(e2ToSplice, 1)
+    state.springs.splice(springSpliceIndex, 1)
 }
 
-logic.removeEdge = (spring) => {
+logic.removeWeight = (weightToRemove) => {
+    const edges = state.adjList.get(weightToRemove)
+    if (edges) {
+        //can't remove edges in normal forEach because removeEdge mutates the edge array whilst iterating
+        edges.map(e => e.weight).forEach( weight => {
+            logic.removeEdge({ w1: weightToRemove, w2: weight })
+        })
 
+        state.adjList.delete(weightToRemove)
+
+        const indexToSplice = state.weights.map(w => w.id).indexOf(weightToRemove.id);
+        state.weights.splice(indexToSplice, 1);
+
+    } else {
+        throw new Error(`cannot find weight to remove : ${weightToRemove}`)
+    }
 }
 
 logic.findNearest = (positionVec) => {
@@ -72,9 +107,14 @@ logic.getCenter = () => {
     }
 }
 
-logic.forEach = state.adjList.forEach
 
-
+logic.print = () => {
+    let i = 0;
+    state.adjList.forEach( (edgeList, weight) => {
+        console.log(`weight${i}: `, weight, ' edges : ', edgeList)
+        i++;
+    })
+}
 
 logic.reset = () => {
     state = State();
