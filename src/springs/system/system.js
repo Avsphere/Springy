@@ -3,7 +3,13 @@ import sysGraph from './graph/graph'
 
 const State = () => ({
     currentFrame : 0,
-    solvedSystem : [], //solver returns as frameIndex : frameData  
+    solvedSystem : {
+        data : [],
+        meta : {
+            averageVelocity : 0,
+            maxVelocity : 0,
+        }
+    }, //solver returns as frameIndex : frameData  
     flags : {
         
     },

@@ -79,9 +79,24 @@ logic.debug = () => {
 /* draws the grid / weights*/
 logic.draw = () => {
     const { springs, weights } = system.getObjs()
-
-    weights.forEach(weight => weight({ state, weight, shift }) )
-    springs.forEach( spring => drawSpring({ state, spring, shift }) )
+    const systemMetadata = system.getMetadata()
+    updateTransforms();
+    weights.forEach(weight => drawWeight(
+        { 
+            state, 
+            weight,
+            transforms : state.transforms,
+            systemMetadata: systemMetadata
+        }) 
+    )
+    springs.forEach(spring => drawSpring(
+        {
+            state,
+            spring,
+            transforms: state.transforms,
+            systemMetadata: systemMetadata
+        })
+    )
 }
 
 

@@ -32555,17 +32555,6 @@ var drawSpring = function drawSpring(_ref) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return drawWeight; });
-var toRgb = function toRgb(hex) {
-  var opacity = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  var rgb = {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  };
-  return "rgba(".concat(rgb.r, ", ").concat(rgb.g, ", ").concat(rgb.b, ", ").concat(opacity, ")");
-};
-
 var updateOpacity = function updateOpacity(rgb, opacity) {
   var aux = rgb.split(',').splice(0, 3);
   aux.push("".concat(opacity, ")"));
@@ -32584,10 +32573,6 @@ var getRadiusFromMass = function getRadiusFromMass(m) {
   }
 };
 
-var randomColor = function randomColor() {
-  return toRgb(totalColors[Math.floor(Math.random() * totalColors.length)]);
-};
-
 var drawWeight = function drawWeight(_ref) {
   var state = _ref.state,
       weight = _ref.weight,
@@ -32597,6 +32582,16 @@ var drawWeight = function drawWeight(_ref) {
       canvas = state.canvas;
   var shift = transforms.shift,
       scale = transforms.scale;
+  var radius = getRadiusFromMass(weight);
+  var drawAt = {
+    x: weight.x + shift.x,
+    y: weight.y + shift.y
+  };
+  ctx.strokeStyle = weight.color;
+  ctx.beginPath();
+  ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.stroke();
 };
 
 
@@ -32768,18 +32763,22 @@ logic.draw = function () {
       springs = _system$getObjs.springs,
       weights = _system$getObjs.weights;
 
+  var systemMetadata = _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getMetadata();
+  updateTransforms();
   weights.forEach(function (weight) {
-    return weight({
+    return Object(_drawWeight__WEBPACK_IMPORTED_MODULE_4__["default"])({
       state: state,
       weight: weight,
-      shift: shift
+      transforms: state.transforms,
+      systemMetadata: systemMetadata
     });
   });
   springs.forEach(function (spring) {
     return Object(_drawSpring__WEBPACK_IMPORTED_MODULE_5__["default"])({
       state: state,
       spring: spring,
-      shift: shift
+      transforms: state.transforms,
+      systemMetadata: systemMetadata
     });
   });
 };
@@ -33035,10 +33034,10 @@ var Spring = function Spring(_ref) {
 
   var state = {
     k: k,
-    length: length,
-    initialLength: initialLength,
+    length: _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.weights[0].position, state.weights[1].position),
+    initialLength: initialLength || _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.weights[0].position, state.weights[1].position),
     weights: weights,
-    //[m1, m2]
+    //[w1, w2] order should not matter
     color: 'black',
     type: 'spring',
     id: id || shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
@@ -33051,10 +33050,6 @@ var Spring = function Spring(_ref) {
 
   logic.getCurrentLength = function () {
     return _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.weights[0].position, state.weights[1].position);
-  };
-
-  logic.draw = function (_ref2) {
-    var transforms = _ref2.transforms;
   };
 
   return Object.assign(state, logic);
@@ -33079,6 +33074,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../emitter.js */ "./src/springs/emitter.js");
 
 
+var totalColors = ['rgb(182, 41, 41)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'];
+
+var randomColor = function randomColor() {
+  return totalColors[Math.floor(Math.random() * totalColors.length)];
+};
 
 var Weight = function Weight(_ref) {
   var x = _ref.x,
@@ -33098,6 +33098,7 @@ var Weight = function Weight(_ref) {
     },
     velocity: velocity,
     id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
+    color: color || randomColor(),
     frameData: [],
     mass: mass || 10,
     type: 'weight'
@@ -33173,7 +33174,13 @@ __webpack_require__.r(__webpack_exports__);
 var State = function State() {
   return {
     currentFrame: 0,
-    solvedSystem: [],
+    solvedSystem: {
+      data: [],
+      meta: {
+        averageVelocity: 0,
+        maxVelocity: 0
+      }
+    },
     //solver returns as frameIndex : frameData  
     flags: {},
     center: {
@@ -33476,8 +33483,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
+__webpack_require__(/*! E:\Dev\greg\springy\node_modules\@babel\polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! E:\Dev\greg\springy\src\main.js */"./src/main.js");
 
 
 /***/ })
