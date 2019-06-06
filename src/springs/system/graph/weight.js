@@ -1,6 +1,14 @@
 import shortid from 'shortid';
 import emitter from '../../emitter.js'
 
+const totalColors = [
+    'rgb(182, 41, 41)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 
+    'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)',
+    'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'
+]
+
+const randomColor = () => totalColors[Math.floor(Math.random() * totalColors.length)]
+
 
 const Weight = ({ position, mass, velocity, color }) => {
     if (!position || !position.x || !position.y) { throw new Error('Error creating mass, incorrect position args') }
@@ -15,8 +23,8 @@ const Weight = ({ position, mass, velocity, color }) => {
             y : velocity.y
         },
         id: shortid.generate(),
-        frameData : [],
-         
+        color: color || randomColor(),
+        frameData : [], 
         mass: mass || 10,
         type: 'weight',
     }
@@ -32,6 +40,7 @@ const Weight = ({ position, mass, velocity, color }) => {
         state.velocity = frame.velocity
 
     }
+
 
 
 

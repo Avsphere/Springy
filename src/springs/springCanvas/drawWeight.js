@@ -1,12 +1,4 @@
-const toRgb = (hex, opacity = 0) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    const rgb = {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    }
-    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`
-}
+
 
 const updateOpacity = (rgb, opacity) => {
     const aux = rgb.split(',').splice(0, 3)
@@ -26,10 +18,24 @@ const getRadiusFromMass = (m) => {
 }
 
 
-const randomColor = () => toRgb(totalColors[Math.floor(Math.random() * totalColors.length)])
 const drawWeight = ({state, weight, transforms }) => {
     const { displayFlags, ctx, canvas } = state;
     const { shift, scale } = transforms;
+
+    const radius = getRadiusFromMass(weight);
+
+    const drawAt = {
+        x : weight.x + shift.x,
+        y : weight.y + shift.y
+    }
+
+    ctx.strokeStyle = weight.color;
+
+    ctx.beginPath();
+    ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true)
+    ctx.closePath();
+    ctx.stroke();
+    
 
 
 }
