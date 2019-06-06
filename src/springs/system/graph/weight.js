@@ -2,16 +2,21 @@ import shortid from 'shortid';
 import emitter from '../../emitter.js'
 
 
-const Weight = ({ x, y, mass, velocity, color }) => {
-    if (!x || !y) { throw new Error('Error creating mass, incorrect args') }
+const Weight = ({ position, mass, velocity, color }) => {
+    if (!position || !position.x || !position.y) { throw new Error('Error creating mass, incorrect position args') }
+    if (!velocity || !velocity.x || !velocity.y) { throw new Error('Error creating mass, incorrect velocity args') }
     const state = {
         position: {
-            x: x,
-            y: y,
+            x: position.x,
+            y: position.y,
         },
-        velocity: velocity,
+        velocity: {
+            x : velocity.x,
+            y : velocity.y
+        },
         id: shortid.generate(),
-        frameData : [], 
+        frameData : [],
+         
         mass: mass || 10,
         type: 'weight',
     }

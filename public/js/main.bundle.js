@@ -33081,22 +33081,28 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var Weight = function Weight(_ref) {
-  var x = _ref.x,
-      y = _ref.y,
+  var position = _ref.position,
       mass = _ref.mass,
       velocity = _ref.velocity,
       color = _ref.color;
 
-  if (!x || !y) {
-    throw new Error('Error creating mass, incorrect args');
+  if (!position || !position.x || !position.y) {
+    throw new Error('Error creating mass, incorrect position args');
+  }
+
+  if (!velocity || !velocity.x || !velocity.y) {
+    throw new Error('Error creating mass, incorrect velocity args');
   }
 
   var state = {
     position: {
-      x: x,
-      y: y
+      x: position.x,
+      y: position.y
     },
-    velocity: velocity,
+    velocity: {
+      x: velocity.x,
+      y: velocity.y
+    },
     id: shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
     frameData: [],
     mass: mass || 10,
