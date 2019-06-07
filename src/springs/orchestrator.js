@@ -10,29 +10,40 @@ const state = {
 const logic = {}
 
 const getDrawableComponents = () => {
-    return [ springCanvas, plotCanvas ]
+    return [ springCanvas ]
 }
 
 
 
 const animate = () => {
     system.step(); //increments frame by 1
-    getDrawableComponents().forEach( d => d.clear().draw() )
+    getDrawableComponents().forEach( d => {
+        d.clear(); 
+        d.draw();
+    })
     state.animationFrame = window.requestAnimationFrame(animate)
 }
 
-const stopAnimating = () => window.cancelAnimationFrame( state.animationFrame );
+const stopAnimating = () => {
+    state.isAnimating = false
+    window.cancelAnimationFrame(state.animationFrame);
+}
 
 
 
 logic.toggleAnimate = () => {
-    state.isAnimating = state.isAnimating;
+    state.isAnimating = !state.isAnimating;
     if ( state.isAnimating ) {
         animate();
     } else {
         stopAnimating();
     }
+
+    // setTimeout( () => {
+    //     stopAnimating();
+    // }, 1000)
 }
+
 
 logic.redraw = () => {
     springCanvas.draw();

@@ -25,14 +25,14 @@ const drawWeight = ({state, weight, transforms }) => {
     const radius = getRadiusFromMass(weight);
 
     const drawAt = {
-        x : weight.x + shift.x,
-        y : weight.y + shift.y
+        x : weight.position.x,
+        y : weight.position.y
     }
 
     ctx.strokeStyle = weight.color;
-
     ctx.beginPath();
-    ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true)
+    ctx.arc(drawAt.x, drawAt.y, 20, 0, Math.PI * 2, true)
+    // ctx.arc(100, 400, 20, 0, Math.PI * 2, true)
     ctx.closePath();
     ctx.stroke();
     

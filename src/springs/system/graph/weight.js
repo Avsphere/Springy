@@ -14,6 +14,14 @@ const Weight = ({ position, mass, velocity, color, id }) => {
     if (!position) { throw new Error('Error creating mass, incorrect position args') }
     if (!velocity) { throw new Error('Error creating mass, incorrect velocity args') }
     const state = {
+        initialPosition : {
+            x: position.x,
+            y: position.y,
+        },
+        initialVelocity : {
+            x: velocity.x,
+            y: velocity.y
+        },
         position: {
             x: position.x,
             y: position.y,
@@ -31,11 +39,12 @@ const Weight = ({ position, mass, velocity, color, id }) => {
     const logic = {}
 
 
-    logic.update = ({ frameIndex }) => {
-        if  (!frameIndex ) { frameIndex = 0 } //there is the case where !frameIndex is bc it is 0 but that is okay as it is set after
-        const frame = frames[frameIndex]
-        state.position = frame.position;
-        state.velocity = frame.velocity
+    logic.update = (frameIndex=0) => {
+        if ( frameIndex > state.frames.length ) {
+            throw new Error('out of frames!')
+        }
+        state.position = state.frames[frameIndex].position;
+        state.velocity = state.frames[frameIndex].velocity
     }
 
 

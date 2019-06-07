@@ -50,9 +50,9 @@ logic.update = ({ frameIndex }) => {
 
 logic.step = () => {
     state.currentFrame++;
-    sysGraph.forEach( o => {
-        if ( o.type === 'weight' ) {
-            o.update(state.currentFrame);
+    sysGraph.forEach( ( edgeList, w) => {
+        if (w.type === 'weight' ) {
+            w.update(state.currentFrame);
         }
     })
 }
@@ -65,7 +65,7 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     if ( !springK ) { springK = state.defaultValues.springK }
     if ( !velocity ) { velocity = state.defaultValues.velocity }
     const { dist, weight } = sysGraph.findNearest(position)
-    
+
     const newWeight = sysGraph.addWeight({ position, mass, velocity})
 
     sysGraph.addEdge({ m1 : weight, m2 : newWeight, springK : springK })

@@ -5,7 +5,7 @@ import graph from './graph/graph'
 //note that this directly mutates the weights frames within the integration cb
 
 const state = {
-    maxTime: 1,
+    maxTime: 100,
     stepSize: .01,
     startingValue: 0,
 }
@@ -13,33 +13,17 @@ const state = {
 const logic = {}
 
 
-const integrationCb = (t, stepResults) => {
-    // console.log('step calls ', stepCalls++);
-    console.log('step results!', stepResults)
-    // const aux = []
-    // for (let i = 0; i < stepResults.length; i += 2) {
-    //     aux.push([stepResults[i], stepResults[i + 1]])
-    // }
-    // output.push(aux)
-}
 
 const generateICVec = () => {
     const aux = []
-    graph.forEach((edgeList, w) => {
+    graph.forEach( (edgeList, w) => {
         aux.push([w.position.x, w.velocity.x, w.position.y, w.velocity.y])
     })
     return aux.reduce((acc, el) => acc.concat(el), [])
 }
 
-// const setInitialFrame = () => {
-//     graph.forEach((edgeList, w) => {
-//         w.position.x = u[i++]
-//         w.velocity.x = u[i++]
-//         w.position.y = u[i++]
-//         w.velocity.y = u[i++]
-//     })
-// }
 
+//these reason i can't mutate and update weights here is bc the t is automatically distributed and thus is not constant step size
 const updateGraph = (u) => {
     //where u is the updated vector of IC form, [w0.x, w0.vx, w0.y, w0.vy]
     //forEach will take the same path
@@ -57,7 +41,6 @@ const buildSystem = () => {
     let initialConditions = generateICVec();
     let solveCalls = 0;
     const solveFn = (t, u) => {
-        console.log('calls ', solveCalls++);
         updateGraph(u); //where u is the updatedIc values (here I could just push on the positions to not have to later)
         const r = []; // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
         graph.forEach((edgeList, w) => {
@@ -100,14 +83,33 @@ const buildSystem = () => {
 
 
 logic.solveSystem = () => {
-    const output = []
-
+    const indexMap = new Map() // key : 0, value : w1, key : 4, value : w2, ...
+    let output = []
     const solver = new odex.Solver(graph.getSize()*4);
     const { initialConditions, solveFn } = buildSystem()
     solver.denseOutput = true;
 
+    let weightBlockIndex = 0; //each weight has 4 returned values, x, dx, y, dy
+    graph.forEach( (edgeList, w) => {
+        indexMap.set(weightBlockIndex, w)
+        weightBlockIndex += 4;
+    })
+    const integrationCb = (t, stepResults) => {
+        for ( let k = 0; k < stepResults.length; k+=4 ) {
+            const w = indexMap.get(k);
+            w.frames.push({
+                position: { x : stepResults[k], y : stepResults[k+2] },
+                velocity: { x: stepResults[k+1], y: stepResults[k+3] } 
+            })
+        }
+    }
+
     const result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime, solver.grid(state.stepSize, integrationCb))
-    console.log('output ', output)
+    //setting the weights back to their starting points
+    graph.forEach((edgeList, w) => {
+        w.position = w.initialPosition;
+        w.velocity = w.initialVelocity;
+    })
     return output;
 }
 

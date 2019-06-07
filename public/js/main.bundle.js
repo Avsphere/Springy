@@ -33039,13 +33039,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var url__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! url */ "./node_modules/url/url.js");
 /* harmony import */ var url__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(url__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./view.js */ "./src/springs/view.js");
-/* harmony import */ var _system_system_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./system/system.js */ "./src/springs/system/system.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _orchestrator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./orchestrator */ "./src/springs/orchestrator.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
 
 
 
@@ -33070,7 +33072,7 @@ regeneratorRuntime.mark(function _callee() {
           page = pathname.split('/').pop().toLocaleLowerCase();
 
           if (!window.localStorage.getItem('key')) {
-            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_3___default.a.generate());
+            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_4___default.a.generate());
           }
 
           window.user = {
@@ -33080,9 +33082,10 @@ regeneratorRuntime.mark(function _callee() {
           };
           window.view = {};
           window.dbug = {
-            system: _system_system_js__WEBPACK_IMPORTED_MODULE_2__["default"]
+            system: _system_system__WEBPACK_IMPORTED_MODULE_2__["default"],
+            orchestrator: _orchestrator__WEBPACK_IMPORTED_MODULE_3__["default"]
           };
-          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_4__["default"];
+          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_5__["default"];
           window.springCanvas = document.getElementById('springCanvas');
           window.springCanvas.ctx = window.springCanvas.getContext('2d');
           _view_js__WEBPACK_IMPORTED_MODULE_1__["default"].init(); //top level
@@ -33120,30 +33123,35 @@ var state = {
 var logic = {};
 
 var getDrawableComponents = function getDrawableComponents() {
-  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"], _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"]];
+  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"]];
 };
 
 var animate = function animate() {
   _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].step(); //increments frame by 1
 
   getDrawableComponents().forEach(function (d) {
-    return d.clear().draw();
+    d.clear();
+    d.draw();
   });
   state.animationFrame = window.requestAnimationFrame(animate);
 };
 
 var stopAnimating = function stopAnimating() {
-  return window.cancelAnimationFrame(state.animationFrame);
+  state.isAnimating = false;
+  window.cancelAnimationFrame(state.animationFrame);
 };
 
 logic.toggleAnimate = function () {
-  state.isAnimating = state.isAnimating;
+  state.isAnimating = !state.isAnimating;
 
   if (state.isAnimating) {
     animate();
   } else {
     stopAnimating();
-  }
+  } // setTimeout( () => {
+  //     stopAnimating();
+  // }, 1000)
+
 };
 
 logic.redraw = function () {
@@ -33253,10 +33261,12 @@ logic.clearCanvas = function (_ref) {
 
 var setCanvasDimensions = function setCanvasDimensions() {
   var canvasContainerWidth = $('#canvasContainer').innerWidth();
-  canvas.width = canvasContainerWidth * .95;
-  canvas.height = window.innerHeight * .5;
-  plotCanvas.width = canvasContainerWidth * .95;
-  plotCanvas.height = window.innerHeight * .4;
+  state.canvas.width = canvasContainerWidth * .95;
+  state.canvas.height = window.innerHeight * .95;
+};
+
+logic.resize = function () {
+  setCanvasDimensions();
 };
 
 logic.init = function () {
@@ -33329,12 +33339,13 @@ var drawWeight = function drawWeight(_ref) {
       scale = transforms.scale;
   var radius = getRadiusFromMass(weight);
   var drawAt = {
-    x: weight.x + shift.x,
-    y: weight.y + shift.y
+    x: weight.position.x,
+    y: weight.position.y
   };
   ctx.strokeStyle = weight.color;
   ctx.beginPath();
-  ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true);
+  ctx.arc(drawAt.x, drawAt.y, 20, 0, Math.PI * 2, true); // ctx.arc(100, 400, 20, 0, Math.PI * 2, true)
+
   ctx.closePath();
   ctx.stroke();
 };
@@ -33481,12 +33492,12 @@ var updateTransforms = function updateTransforms() {
   state.transforms.shift.x = state.canvas.height - _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getCenter();
 };
 
-logic.clearCanvas = function (_ref) {
-  var x = _ref.x,
-      y = _ref.y,
-      x1 = _ref.x1,
-      y1 = _ref.y1;
-  ctx.clearRect(x || 0, y || 0, x1 || state.canvas.width, y1 || state.canvas.height);
+logic.clear = function () {
+  var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+  var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  var x1 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : state.canvas.width;
+  var y1 = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : state.canvas.width;
+  state.ctx.clearRect(x, y, x1, y1);
 };
 
 logic.resize = function () {
@@ -33506,24 +33517,24 @@ logic.debug = function () {
 logic.draw = function () {
   var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getObjs(),
       springs = _system$getObjs.springs,
-      weights = _system$getObjs.weights;
+      weights = _system$getObjs.weights; // const systemMetadata = system.getMetadata()
 
-  var systemMetadata = _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getMetadata();
+
   updateTransforms();
   weights.forEach(function (weight) {
     return Object(_drawWeight__WEBPACK_IMPORTED_MODULE_4__["default"])({
       state: state,
       weight: weight,
-      transforms: state.transforms,
-      systemMetadata: systemMetadata
+      transforms: state.transforms // systemMetadata: systemMetadata
+
     });
   });
   springs.forEach(function (spring) {
     return Object(_drawSpring__WEBPACK_IMPORTED_MODULE_5__["default"])({
       state: state,
       spring: spring,
-      transforms: state.transforms,
-      systemMetadata: systemMetadata
+      transforms: state.transforms // systemMetadata: systemMetadata
+
     });
   });
 };
@@ -33873,6 +33884,14 @@ var Weight = function Weight(_ref) {
   }
 
   var state = {
+    initialPosition: {
+      x: position.x,
+      y: position.y
+    },
+    initialVelocity: {
+      x: velocity.x,
+      y: velocity.y
+    },
     position: {
       x: position.x,
       y: position.y
@@ -33889,17 +33908,15 @@ var Weight = function Weight(_ref) {
   };
   var logic = {};
 
-  logic.update = function (_ref2) {
-    var frameIndex = _ref2.frameIndex;
+  logic.update = function () {
+    var frameIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-    if (!frameIndex) {
-      frameIndex = 0;
-    } //there is the case where !frameIndex is bc it is 0 but that is okay as it is set after
+    if (frameIndex > state.frames.length) {
+      throw new Error('out of frames!');
+    }
 
-
-    var frame = frames[frameIndex];
-    state.position = frame.position;
-    state.velocity = frame.velocity;
+    state.position = state.frames[frameIndex].position;
+    state.velocity = state.frames[frameIndex].velocity;
   };
 
   return Object.assign(state, logic);
@@ -33954,20 +33971,11 @@ __webpack_require__.r(__webpack_exports__);
  //note that this directly mutates the weights frames within the integration cb
 
 var state = {
-  maxTime: 1,
+  maxTime: 100,
   stepSize: .01,
   startingValue: 0
 };
 var logic = {};
-
-var integrationCb = function integrationCb(t, stepResults) {
-  // console.log('step calls ', stepCalls++);
-  console.log('step results!', stepResults); // const aux = []
-  // for (let i = 0; i < stepResults.length; i += 2) {
-  //     aux.push([stepResults[i], stepResults[i + 1]])
-  // }
-  // output.push(aux)
-};
 
 var generateICVec = function generateICVec() {
   var aux = [];
@@ -33977,14 +33985,7 @@ var generateICVec = function generateICVec() {
   return aux.reduce(function (acc, el) {
     return acc.concat(el);
   }, []);
-}; // const setInitialFrame = () => {
-//     graph.forEach((edgeList, w) => {
-//         w.position.x = u[i++]
-//         w.velocity.x = u[i++]
-//         w.position.y = u[i++]
-//         w.velocity.y = u[i++]
-//     })
-// }
+}; //these reason i can't mutate and update weights here is bc the t is automatically distributed and thus is not constant step size
 
 
 var updateGraph = function updateGraph(u) {
@@ -34005,7 +34006,6 @@ var buildSystem = function buildSystem() {
   var solveCalls = 0;
 
   var solveFn = function solveFn(t, u) {
-    console.log('calls ', solveCalls++);
     updateGraph(u); //where u is the updatedIc values (here I could just push on the positions to not have to later)
 
     var r = []; // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
@@ -34055,6 +34055,8 @@ var buildSystem = function buildSystem() {
 };
 
 logic.solveSystem = function () {
+  var indexMap = new Map(); // key : 0, value : w1, key : 4, value : w2, ...
+
   var output = [];
   var solver = new odex__WEBPACK_IMPORTED_MODULE_0__["Solver"](_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getSize() * 4);
 
@@ -34063,8 +34065,35 @@ logic.solveSystem = function () {
       solveFn = _buildSystem.solveFn;
 
   solver.denseOutput = true;
-  var result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime, solver.grid(state.stepSize, integrationCb));
-  console.log('output ', output);
+  var weightBlockIndex = 0; //each weight has 4 returned values, x, dx, y, dy
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    indexMap.set(weightBlockIndex, w);
+    weightBlockIndex += 4;
+  });
+
+  var integrationCb = function integrationCb(t, stepResults) {
+    for (var k = 0; k < stepResults.length; k += 4) {
+      var w = indexMap.get(k);
+      w.frames.push({
+        position: {
+          x: stepResults[k],
+          y: stepResults[k + 2]
+        },
+        velocity: {
+          x: stepResults[k + 1],
+          y: stepResults[k + 3]
+        }
+      });
+    }
+  };
+
+  var result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime, solver.grid(state.stepSize, integrationCb)); //setting the weights back to their starting points
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    w.position = w.initialPosition;
+    w.velocity = w.initialVelocity;
+  });
   return output;
 };
 
@@ -34140,9 +34169,9 @@ logic.update = function (_ref) {
 
 logic.step = function () {
   state.currentFrame++;
-  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (o) {
-    if (o.type === 'weight') {
-      o.update(state.currentFrame);
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    if (w.type === 'weight') {
+      w.update(state.currentFrame);
     }
   });
 };
@@ -34463,8 +34492,8 @@ test.testUpdate = function () {
 test.basicSolve = function () {
   var w1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
-      x: 0,
-      y: 0
+      x: 200,
+      y: 400
     },
     velocity: {
       x: 0,
@@ -34475,15 +34504,15 @@ test.basicSolve = function () {
   });
   var w2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
-      x: 100,
-      y: 0
+      x: 400,
+      y: 100
     },
     velocity: {
       x: 0,
       y: 0
     },
     mass: 1,
-    id: 'w1'
+    id: 'w2'
   });
   var sharedSpring = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(w1, w2); // console.log('sharedSpring,', sharedSpring)
 
@@ -34492,11 +34521,11 @@ test.basicSolve = function () {
 };
 
 test.runAll = function () {
-  console.log("%cRunning all ".concat(TEST_NAME), 'color:green');
-  buildGraph();
-  test.testIc();
-  test.testUpdate();
-  _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+  console.log("%cRunning all ".concat(TEST_NAME), 'color:green'); // buildGraph()
+  // test.testIc();
+  // test.testUpdate();
+  // graph.reset();
+
   test.basicSolve();
 };
 

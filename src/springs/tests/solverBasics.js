@@ -63,16 +63,16 @@ test.testUpdate = () => {
 
 test.basicSolve = () => {
     const w1 = graph.addWeight({
-        position: { x: 0, y: 0 },
+        position: { x: 200, y: 400 },
         velocity: { x: 0, y: 0 },
         mass: 1,
         id : 'w1'
     });
     const w2 = graph.addWeight({
-        position: { x: 100, y: 0 },
+        position: { x: 400, y: 100 },
         velocity: { x: 0, y: 0 },
         mass: 1,
-        id: 'w1'
+        id: 'w2'
     });
     const sharedSpring = graph.addEdge(w1, w2)
     // console.log('sharedSpring,', sharedSpring)
@@ -84,10 +84,10 @@ test.basicSolve = () => {
 
 test.runAll = () => {
     console.log(`%cRunning all ${TEST_NAME}`, 'color:green')
-    buildGraph()
-    test.testIc();
-    test.testUpdate();
-    graph.reset();
+    // buildGraph()
+    // test.testIc();
+    // test.testUpdate();
+    // graph.reset();
 
     test.basicSolve();
 

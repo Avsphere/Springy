@@ -37,13 +37,13 @@ logic.clearCanvas = ({ x, y, x1, y1}) => {
 
 const setCanvasDimensions = () => {
     const canvasContainerWidth = $('#canvasContainer').innerWidth();
-    canvas.width = canvasContainerWidth * .95;
-    canvas.height = window.innerHeight * .5
+    state.canvas.width = canvasContainerWidth * .95;
+    state.canvas.height = window.innerHeight * .95
 
-    plotCanvas.width = canvasContainerWidth * .95;
-    plotCanvas.height = window.innerHeight * .4
 }
-
+logic.resize = () => {
+    setCanvasDimensions();
+}
 logic.init = () => {
     state = State();
 }

@@ -60,8 +60,8 @@ const updateTransforms = () => {
     state.transforms.shift.x = state.canvas.height - system.getCenter();
 }
 
-logic.clearCanvas = ({ x, y, x1, y1 }) => {
-    ctx.clearRect(x || 0, y || 0, x1 || state.canvas.width, y1 || state.canvas.height)
+logic.clear = (x=0, y=0, x1=state.canvas.width, y1=state.canvas.width) => {
+    state.ctx.clearRect(x, y , x1, y1)
 }
 
 logic.resize = () => {
@@ -79,14 +79,14 @@ logic.debug = () => {
 /* draws the grid / weights*/
 logic.draw = () => {
     const { springs, weights } = system.getObjs()
-    const systemMetadata = system.getMetadata()
+    // const systemMetadata = system.getMetadata()
     updateTransforms();
     weights.forEach(weight => drawWeight(
         { 
             state, 
             weight,
             transforms : state.transforms,
-            systemMetadata: systemMetadata
+            // systemMetadata: systemMetadata
         }) 
     )
     springs.forEach(spring => drawSpring(
@@ -94,7 +94,7 @@ logic.draw = () => {
             state,
             spring,
             transforms: state.transforms,
-            systemMetadata: systemMetadata
+            // systemMetadata: systemMetadata
         })
     )
 }
