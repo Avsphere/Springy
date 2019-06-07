@@ -58,14 +58,15 @@ logic.step = () => {
 }
 
 
-logic.addWeight = ({ mass, x, y, springK, velocity }) => {
-    //This x,y is the true x,y. The shift is calculated in the springCanvas
+logic.addWeight = ({ mass, position, springK, velocity }) => {
+    //position is the true position, the canvas handles the shift 
+    if (!x || !y ) { throw new Error('system addWeight needs canvas x and y') }
     if (!mass) { mass = state.defaultValues.weightMass }
     if ( !springK ) { springK = state.defaultValues.springK }
     if ( !velocity ) { velocity = state.defaultValues.velocity }
+    const { dist, weight } = sysGraph.findNearest(position)
     
-    const { dist, weight } = sysGraph.findNearest({ x, y })
-    const newWeight = sysGraph.addWeight({ x, y, mass, velocity})
+    const newWeight = sysGraph.addWeight({ position, mass, velocity})
 
     sysGraph.addEdge({ m1 : weight, m2 : newWeight, springK : springK })
     return newWeight;

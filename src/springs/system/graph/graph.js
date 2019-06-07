@@ -15,8 +15,8 @@ let state = State();
 
 const Edge = ({ weight, spring }) => ({ weight, spring})
 
-logic.addWeight = ({ x, y, mass, velocity }) => {
-    const weight = Weight({ x, y, mass, velocity })
+logic.addWeight = ({ position, mass, velocity }) => {
+    const weight = Weight({ position, mass, velocity })
     state.adjList.set(weight, [])
     state.weights.push(weight);
     return weight
@@ -39,6 +39,8 @@ logic.addEdge = (w1, w2, springK=1) => {
 
     w1Edges.push(Edge({ weight: w2, spring: sharedSpring }));
     w2Edges.push(Edge({ weight: w1, spring: sharedSpring }));
+
+    return sharedSpring
 }
 
 
@@ -107,7 +109,6 @@ logic.getCenter = () => {
     }
 }
 
-
 logic.print = () => {
     let i = 0;
     state.adjList.forEach( (edgeList, weight) => {
@@ -115,6 +116,12 @@ logic.print = () => {
         i++;
     })
 }
+
+logic.forEach = (fn) => {
+    state.adjList.forEach(fn)
+}
+
+logic.getSize = () => state.adjList.size 
 
 logic.reset = () => {
     state = State();

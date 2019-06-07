@@ -10,9 +10,9 @@ const totalColors = [
 const randomColor = () => totalColors[Math.floor(Math.random() * totalColors.length)]
 
 
-const Weight = ({ position, mass, velocity, color }) => {
-    if (!position || !position.x || !position.y) { throw new Error('Error creating mass, incorrect position args') }
-    if (!velocity || !velocity.x || !velocity.y) { throw new Error('Error creating mass, incorrect velocity args') }
+const Weight = ({ position, mass, velocity, color, id }) => {
+    if (!position) { throw new Error('Error creating mass, incorrect position args') }
+    if (!velocity) { throw new Error('Error creating mass, incorrect velocity args') }
     const state = {
         position: {
             x: position.x,
@@ -22,9 +22,9 @@ const Weight = ({ position, mass, velocity, color }) => {
             x : velocity.x,
             y : velocity.y
         },
-        id: shortid.generate(),
+        id: id || shortid.generate(),
         color: color || randomColor(),
-        frameData : [], 
+        frames : [], 
         mass: mass || 10,
         type: 'weight',
     }
@@ -32,13 +32,10 @@ const Weight = ({ position, mass, velocity, color }) => {
 
 
     logic.update = ({ frameIndex }) => {
-        if  (!frameIndex ) { frameIndex = 0 }
-        const frame = frameData[frameIndex]
-
-        state.position.x = frame.x;
-        state.position.y = frame.y;
+        if  (!frameIndex ) { frameIndex = 0 } //there is the case where !frameIndex is bc it is 0 but that is okay as it is set after
+        const frame = frames[frameIndex]
+        state.position = frame.position;
         state.velocity = frame.velocity
-
     }
 
 

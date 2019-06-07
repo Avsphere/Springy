@@ -1,12 +1,16 @@
 import graph from '../system/graph/graph'
 
 const test = {}
+const TEST_NAME = 'graphTests'
+
+const addRandomWeight = () => graph.addWeight({ 
+    position : { x: Math.random(), y: Math.random() },
+    velocity: { x : Math.random() * 100, y : Math.random() * 100 },  
+    mass: Math.random() * 10, 
+})
 
 
-const addRandomWeight = () => graph.addWeight({ x: Math.random(), y: Math.random(), mass: Math.random() * 10, velocity: Math.random() * 100 })
-
-
-const buildTests = () => {
+test.buildTests = () => {
     const leftW = addRandomWeight()
     const topW = addRandomWeight()
     const rightW = addRandomWeight()
@@ -29,7 +33,7 @@ const buildTests = () => {
 
 }
 
-const removalTests = () => {
+test.removalTests = () => {
     const leftW = addRandomWeight()
     const topW = addRandomWeight()
     const rightW = addRandomWeight()
@@ -84,14 +88,14 @@ const removalTests = () => {
 
 
 
-const run = () => {
-    console.log('%cRunning graph tests', "color:green")
-    buildTests();
+test.runAll = () => {
+    console.log(`%cRunning ${TEST_NAME}`, "color:green")
+    test.buildTests();
     graph.reset();
-    removalTests();
+    test.removalTests();
+    graph.reset();
 }
 
-run();
 
 
 
