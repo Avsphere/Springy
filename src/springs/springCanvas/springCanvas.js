@@ -52,7 +52,7 @@ const setCanvasDimensions = () => {
 
 const getMousePosition = (ev) => ({
     x: ev.clientX - state.canvas.getBoundingClientRect().left,
-    y: ev.clientY - state.canvas.getBoundingClientRect().top,
+    y: ev.clientY - state.canvas.getBoundingClientRect().top
 })
 
 const updateTransforms = () => {
@@ -60,7 +60,7 @@ const updateTransforms = () => {
     state.transforms.shift.x = state.canvas.height - system.getCenter();
 }
 
-logic.clear = (x=0, y=0, x1=state.canvas.width, y1=state.canvas.width) => {
+logic.clear = (x=0, y=0, x1=state.canvas.width, y1=state.canvas.height) => {
     state.ctx.clearRect(x, y , x1, y1)
 }
 

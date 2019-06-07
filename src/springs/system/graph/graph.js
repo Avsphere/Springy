@@ -109,13 +109,8 @@ logic.getCenter = () => {
     }
 }
 
-logic.print = () => {
-    let i = 0;
-    state.adjList.forEach( (edgeList, weight) => {
-        console.log(`weight${i}: `, weight, ' edges : ', edgeList)
-        i++;
-    })
-}
+logic.getWeights = () => state.weights
+logic.getSprings = () => state.springs
 
 logic.forEach = (fn) => {
     state.adjList.forEach(fn)

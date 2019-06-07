@@ -33291,9 +33291,28 @@ var drawSpring = function drawSpring(_ref) {
   var state = _ref.state,
       spring = _ref.spring,
       transforms = _ref.transforms;
-  var displayFlags = state.displayFlags;
+  var displayFlags = state.displayFlags,
+      ctx = state.ctx,
+      canvas = state.canvas;
   var shift = transforms.shift,
       scale = transforms.scale;
+  var currentLength = spring.getLength();
+  var opacity = .2 + Math.abs(1 - currentLength / spring.restingLength); //for switch handle, perhaps change?
+
+  var strokeStyle = currentLength < spring.restingLength ? "rgba(0, 0, 255, ".concat(opacity, ")") : "rgba(255, 0, 0, ".concat(opacity, ")");
+
+  if (currentLength === state.length) {
+    strokeStyle = 'black';
+  }
+
+  var lineWidth_temp = ctx.lineWidth;
+  ctx.beginPath();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = state.k;
+  ctx.moveTo(spring.weights[0].position.x, spring.weights[0].position.y);
+  ctx.lineTo(spring.weights[1].position.x, spring.weights[1].position.y);
+  ctx.stroke();
+  ctx.lineWidth = lineWidth_temp;
 };
 
 
@@ -33318,16 +33337,6 @@ var updateOpacity = function updateOpacity(rgb, opacity) {
 
 var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
 
-var getRadiusFromMass = function getRadiusFromMass(m) {
-  if (m < 5) {
-    return 5;
-  } else if (m > 100) {
-    return 100;
-  } else {
-    return m;
-  }
-};
-
 var drawWeight = function drawWeight(_ref) {
   var state = _ref.state,
       weight = _ref.weight,
@@ -33337,15 +33346,14 @@ var drawWeight = function drawWeight(_ref) {
       canvas = state.canvas;
   var shift = transforms.shift,
       scale = transforms.scale;
-  var radius = getRadiusFromMass(weight);
+  var radius = weight.mass < 5 ? 5 : weight.mass > 100 ? 100 : weight.mass;
   var drawAt = {
     x: weight.position.x,
     y: weight.position.y
   };
   ctx.strokeStyle = weight.color;
   ctx.beginPath();
-  ctx.arc(drawAt.x, drawAt.y, 20, 0, Math.PI * 2, true); // ctx.arc(100, 400, 20, 0, Math.PI * 2, true)
-
+  ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true);
   ctx.closePath();
   ctx.stroke();
 };
@@ -33496,7 +33504,7 @@ logic.clear = function () {
   var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
   var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
   var x1 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : state.canvas.width;
-  var y1 = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : state.canvas.width;
+  var y1 = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : state.canvas.height;
   state.ctx.clearRect(x, y, x1, y1);
 };
 
@@ -33738,12 +33746,12 @@ logic.getCenter = function () {
   };
 };
 
-logic.print = function () {
-  var i = 0;
-  state.adjList.forEach(function (edgeList, weight) {
-    console.log("weight".concat(i, ": "), weight, ' edges : ', edgeList);
-    i++;
-  });
+logic.getWeights = function () {
+  return state.weights;
+};
+
+logic.getSprings = function () {
+  return state.springs;
 };
 
 logic.forEach = function (fn) {
@@ -33805,15 +33813,14 @@ var Spring = function Spring(_ref) {
     color: 'black',
     type: 'spring',
     id: id || shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
-    //hopefully will save some function calls
     lastCalculatedLength: {
       w0: {
-        x: 0,
-        y: 0
+        x: -1,
+        y: -1
       },
       w1: {
-        x: 0,
-        y: 0
+        x: -1,
+        y: -1
       }
     },
     display: {
@@ -33824,11 +33831,7 @@ var Spring = function Spring(_ref) {
   var logic = {};
 
   logic.getLength = function () {
-    if (state.weights[0].position.x === state.lastCalculatedLength.w0.x && state.weights[0].position.y === state.lastCalculatedLength.w0.y && state.weights[1].position.x === state.lastCalculatedLength.w1.x && state.weights[1].position.y === state.lastCalculatedLength.w1.y) {} else {
-      state.lastCalculatedLength.w0 = weights[0].position, state.lastCalculatedLength.w1 = weights[1].position;
-      state.length = _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(state.weights[0].position, state.weights[1].position);
-    }
-
+    state.length = Math.sqrt(Math.pow(state.weights[0].position.x - state.weights[1].position.x, 2) + Math.pow(state.weights[0].position.y - state.weights[1].position.y, 2));
     return state.length;
   };
 
@@ -33971,8 +33974,8 @@ __webpack_require__.r(__webpack_exports__);
  //note that this directly mutates the weights frames within the integration cb
 
 var state = {
-  maxTime: 100,
-  stepSize: .01,
+  maxTime: 200,
+  stepSize: .05,
   startingValue: 0
 };
 var logic = {};
@@ -34016,24 +34019,15 @@ var buildSystem = function buildSystem() {
 
       edgeList.forEach(function (e) {
         var w2 = e.weight;
-        var spring = e.spring; //if w is to the left of w2, then it is being pulled right which is positive
+        var spring = e.spring;
+        var springLength = spring.getLength();
+        var springStretch = springLength - spring.restingLength; //if w is to the left of w2, then it is being pulled right which is positive
 
-        var iHat = (w2.position.x - w.position.x) / spring.getLength(); //if w is above w2, then it is being pulled down which is positive
+        var iHat = (w2.position.x - w.position.x) / springLength; //if w is above w2, then it is being pulled down which is positive
 
-        var jHat = (w2.position.y - w.position.y) / spring.getLength();
-        ax.push(spring.k * spring.getStretch() * iHat / w.mass);
-        ay.push(spring.k * spring.getStretch() * jHat / w.mass); // if ( w2.position.x > w.position.x ) {
-        //     const iHat = Math.abs( (w2.position.x - w.position.x) / spring.getLength() )
-        //     ax.push( spring.k*spring.getStretch()*iHat / w.mass )
-        // } else {
-        //     ax.push( -1 * spring.k * spring.getStretch() * w.position.x / ( spring.getLength() * w.mass ) )
-        // }
-        //meaning that w2 is above our weight and therefore pulling it in the positive direction
-        // if ( w2.position.y > w.position.y ) {
-        //     ay.push(spring.k * spring.getStretch() * w.position.y / ( spring.getLength() * w.mass ) )
-        // } else {
-        //     ay.push( -1 * spring.k * spring.getStretch() * w.position.y / ( spring.getLength() * w.mass ) )
-        // }
+        var jHat = (w2.position.y - w.position.y) / springLength;
+        ax.push(spring.k * springStretch * iHat / w.mass);
+        ay.push(spring.k * springStretch * jHat / w.mass);
       });
       var dx = w.velocity.x,
           dy = w.velocity.y;
@@ -34117,6 +34111,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 /* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./helpers */ "./src/springs/system/helpers.js");
 /* harmony import */ var _graph_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./graph/graph */ "./src/springs/system/graph/graph.js");
+/* harmony import */ var _solver__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./solver */ "./src/springs/system/solver.js");
+
 
 
 
@@ -34131,7 +34127,9 @@ var State = function State() {
       }
     },
     //solver returns as frameIndex : frameData  
-    flags: {},
+    flags: {
+      needsSolve: true
+    },
     center: {
       frameCalculated: 0,
       position: {
@@ -34150,7 +34148,16 @@ var State = function State() {
 var logic = {};
 var state = State();
 
-var solve = function solve() {// state.solvedSystem = 
+var solve = function solve(clearFrames) {
+  state.flags.needsSolve = false;
+
+  if (clearFrames) {
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+      return w.frames = [];
+    });
+  }
+
+  _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem();
 };
 
 logic.update = function (_ref) {
@@ -34160,19 +34167,15 @@ logic.update = function (_ref) {
     frameIndex = state.currentFrame;
   }
 
-  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (o) {
-    if (o.type === 'weight') {
-      o.update(frameIndex);
-    }
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+    return w.update(state.currentFrame);
   });
 };
 
 logic.step = function () {
   state.currentFrame++;
-  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
-    if (w.type === 'weight') {
-      w.update(state.currentFrame);
-    }
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+    return w.update(state.currentFrame);
   });
 };
 
@@ -34181,8 +34184,9 @@ logic.addWeight = function (_ref2) {
       position = _ref2.position,
       springK = _ref2.springK,
       velocity = _ref2.velocity;
-
+  state.flags.needsSolve = true; //as this changes sys state
   //position is the true position, the canvas handles the shift 
+
   if (!x || !y) {
     throw new Error('system addWeight needs canvas x and y');
   }
@@ -34218,8 +34222,7 @@ logic.addWeight = function (_ref2) {
 
 logic.reset = function () {
   state = State();
-}; // logic.getGraph = () => state.sysGraph;
-
+};
 
 logic.getObjs = function () {
   return {
@@ -34410,6 +34413,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return test; });
 /* harmony import */ var _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/graph/graph */ "./src/springs/system/graph/graph.js");
 /* harmony import */ var _system_solver__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../system/solver */ "./src/springs/system/solver.js");
+/* harmony import */ var _orchestrator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../orchestrator */ "./src/springs/orchestrator.js");
+
 
 
 var TEST_NAME = 'solverBasicTests';
@@ -34489,34 +34494,96 @@ test.testUpdate = function () {
   });
 };
 
-test.basicSolve = function () {
-  var w1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
+test.funSolve = function () {
+  var offset = 500;
+  var bigWeight = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
-      x: 200,
-      y: 400
+      x: offset,
+      y: offset
     },
     velocity: {
       x: 0,
       y: 0
     },
-    mass: 1,
-    id: 'w1'
+    mass: 50
+  }); // const mediumMasses = ( () => {
+  //     const count = 10
+  //     const size = 100;
+  //     for ( let i = 0; i < count; i++ ) {
+  //         const m = graph.addWeight({
+  //             position: { x: offset + size*Math.cos(i), y: offset + size*Math.sin(i) },
+  //             velocity: { x: Math.random(), y: Math.random() },
+  //             mass: 15,
+  //         })
+  //         graph.addEdge(bigWeight, m)
+  //     }
+  // })()
+
+  var lastMass;
+
+  var smallMasses = function () {
+    var count = 50;
+    var size = 300;
+
+    for (var i = 0; i < count; i++) {
+      var sign = Math.random() > .5 ? 1 : -1;
+      var m = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
+        position: {
+          x: offset + size * Math.cos(i),
+          y: offset + size * Math.sin(i)
+        },
+        velocity: {
+          x: sign * Math.random() * 50,
+          y: sign * Math.random() * 50
+        },
+        mass: 1
+      });
+      _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(bigWeight, m);
+
+      if (lastMass) {
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(lastMass, m);
+      }
+
+      lastMass = m;
+    }
+  }();
+
+  _system_solver__WEBPACK_IMPORTED_MODULE_1__["default"].solveSystem();
+};
+
+test.basicSolve = function () {
+  var w1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
+    position: {
+      x: 0,
+      y: 400
+    },
+    velocity: {
+      x: 50,
+      y: 0
+    },
+    mass: 10
   });
   var w2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
       x: 400,
-      y: 100
+      y: 400
     },
     velocity: {
-      x: 0,
+      x: -50,
       y: 0
     },
-    mass: 1,
-    id: 'w2'
-  });
-  var sharedSpring = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(w1, w2); // console.log('sharedSpring,', sharedSpring)
+    mass: 10
+  }); // const w3 = graph.addWeight({
+  //     position: { x: 600, y: 200 },
+  //     velocity: { x: 0, y: 0 },
+  //     mass: 10,
+  //     id: 'w3'
+  // });
 
-  sharedSpring.setRestingLength(50);
+  var sharedSpring1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(w1, w2); // const sharedSpring2 = graph.addEdge(w3, w2)
+  // console.log('sharedSpring,', sharedSpring)
+  // sharedSpring1.setRestingLength(50);
+
   _system_solver__WEBPACK_IMPORTED_MODULE_1__["default"].solveSystem();
 };
 
@@ -34525,8 +34592,9 @@ test.runAll = function () {
   // test.testIc();
   // test.testUpdate();
   // graph.reset();
+  // test.basicSolve();
 
-  test.basicSolve();
+  test.funSolve();
 };
 
 test.runAll();

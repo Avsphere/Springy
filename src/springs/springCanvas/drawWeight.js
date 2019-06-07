@@ -11,18 +11,13 @@ const totalColors = [
     "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4",
 ];
 
-const getRadiusFromMass = (m) => {
-    if (m < 5) { return 5 }
-    else if (m > 100) { return 100 }
-    else { return m }
-}
 
 
 const drawWeight = ({state, weight, transforms }) => {
     const { displayFlags, ctx, canvas } = state;
     const { shift, scale } = transforms;
 
-    const radius = getRadiusFromMass(weight);
+    const radius = weight.mass < 5 ? 5 : weight.mass > 100 ? 100 : weight.mass
 
     const drawAt = {
         x : weight.position.x,
@@ -31,8 +26,7 @@ const drawWeight = ({state, weight, transforms }) => {
 
     ctx.strokeStyle = weight.color;
     ctx.beginPath();
-    ctx.arc(drawAt.x, drawAt.y, 20, 0, Math.PI * 2, true)
-    // ctx.arc(100, 400, 20, 0, Math.PI * 2, true)
+    ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true)
     ctx.closePath();
     ctx.stroke();
     

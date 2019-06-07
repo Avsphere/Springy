@@ -5,8 +5,8 @@ import graph from './graph/graph'
 //note that this directly mutates the weights frames within the integration cb
 
 const state = {
-    maxTime: 100,
-    stepSize: .01,
+    maxTime: 200,
+    stepSize: .05,
     startingValue: 0,
 }
 
@@ -48,26 +48,17 @@ const buildSystem = () => {
             edgeList.forEach( e => {
                 const w2 = e.weight;
                 const spring = e.spring;
-                //if w is to the left of w2, then it is being pulled right which is positive
-                const iHat = (w2.position.x - w.position.x) / spring.getLength() 
-                //if w is above w2, then it is being pulled down which is positive
-                const jHat = (w2.position.y - w.position.y) / spring.getLength()
+                const springLength = spring.getLength();
+                const springStretch = springLength - spring.restingLength;
 
-                ax.push(spring.k * spring.getStretch() * iHat / w.mass)
-                ay.push(spring.k * spring.getStretch() * jHat / w.mass)
-                
-                // if ( w2.position.x > w.position.x ) {
-                //     const iHat = Math.abs( (w2.position.x - w.position.x) / spring.getLength() )
-                //     ax.push( spring.k*spring.getStretch()*iHat / w.mass )
-                // } else {
-                //     ax.push( -1 * spring.k * spring.getStretch() * w.position.x / ( spring.getLength() * w.mass ) )
-                // }
-                //meaning that w2 is above our weight and therefore pulling it in the positive direction
-                // if ( w2.position.y > w.position.y ) {
-                //     ay.push(spring.k * spring.getStretch() * w.position.y / ( spring.getLength() * w.mass ) )
-                // } else {
-                //     ay.push( -1 * spring.k * spring.getStretch() * w.position.y / ( spring.getLength() * w.mass ) )
-                // }
+                //if w is to the left of w2, then it is being pulled right which is positive
+                const iHat = (w2.position.x - w.position.x) / springLength
+                //if w is above w2, then it is being pulled down which is positive
+                const jHat = (w2.position.y - w.position.y) / springLength
+
+                ax.push(spring.k * springStretch * iHat / w.mass)
+                ay.push(spring.k * springStretch * jHat / w.mass)
+
             })
             const dx = w.velocity.x, dy = w.velocity.y;
             const ddx = ax.reduce((acc, el) => acc + el, 0)

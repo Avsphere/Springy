@@ -14,10 +14,9 @@ const Spring = ({ k, lengthAtRest, weights, id }) => {
         color: 'black',
         type: 'spring',
         id: id || shortid.generate(),
-        //hopefully will save some function calls
         lastCalculatedLength : {
-            w0 : { x : 0, y : 0 },
-            w1 : { x : 0, y : 0 }  
+            w0 : { x : -1, y : -1 },
+            w1 : { x : -1, y : -1 }  
         },
         display : {
             id : false,
@@ -29,17 +28,10 @@ const Spring = ({ k, lengthAtRest, weights, id }) => {
     const logic = {}
 
     logic.getLength = () => {
-        if (
-            state.weights[0].position.x === state.lastCalculatedLength.w0.x && 
-            state.weights[0].position.y === state.lastCalculatedLength.w0.y && 
-            state.weights[1].position.x === state.lastCalculatedLength.w1.x && 
-            state.weights[1].position.y === state.lastCalculatedLength.w1.y 
-        ){ 
-        } else {
-            state.lastCalculatedLength.w0 = weights[0].position,
-            state.lastCalculatedLength.w1 = weights[1].position
-            state.length = helpers.eucDistance(state.weights[0].position, state.weights[1].position);
-        }
+        state.length = Math.sqrt(
+            Math.pow(state.weights[0].position.x - state.weights[1].position.x, 2) + 
+            Math.pow(state.weights[0].position.y - state.weights[1].position.y, 2)
+            )
         return state.length;
     }
 

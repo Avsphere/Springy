@@ -1,5 +1,6 @@
 import helpers from './helpers'
 import sysGraph from './graph/graph' 
+import solver from './solver' 
 
 const State = () => ({
     currentFrame : 0,
@@ -11,7 +12,7 @@ const State = () => ({
         }
     }, //solver returns as frameIndex : frameData  
     flags : {
-        
+        needsSolve : true
     },
     center : {
         frameCalculated : 0,
@@ -28,37 +29,30 @@ const logic = {}
 let state = State();
 
 
-
-
-const solve = () => {
-    // state.solvedSystem = 
+const solve = (clearFrames) => {
+    state.flags.needsSolve = false;
+    if (clearFrames) { 
+        sysGraph.getWeights().forEach( w => w.frames = [] )
+    }
+    solver.solveSystem()
 }
-
-
 
 
 
 logic.update = ({ frameIndex }) => {
     if ( !frameIndex ) { frameIndex = state.currentFrame }
-    sysGraph.forEach(o => {
-        if ( o.type === 'weight' ) {
-            o.update(frameIndex)
-        }
-    })
+    sysGraph.getWeights().forEach(w => w.update(state.currentFrame))
 }
 
 
 logic.step = () => {
     state.currentFrame++;
-    sysGraph.forEach( ( edgeList, w) => {
-        if (w.type === 'weight' ) {
-            w.update(state.currentFrame);
-        }
-    })
+    sysGraph.getWeights().forEach( w => w.update(state.currentFrame) )
 }
 
 
 logic.addWeight = ({ mass, position, springK, velocity }) => {
+    state.flags.needsSolve = true; //as this changes sys state
     //position is the true position, the canvas handles the shift 
     if (!x || !y ) { throw new Error('system addWeight needs canvas x and y') }
     if (!mass) { mass = state.defaultValues.weightMass }
@@ -66,7 +60,7 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     if ( !velocity ) { velocity = state.defaultValues.velocity }
     const { dist, weight } = sysGraph.findNearest(position)
 
-    const newWeight = sysGraph.addWeight({ position, mass, velocity})
+    const newWeight = sysGraph.addWeight({ position, mass, velocity })
 
     sysGraph.addEdge({ m1 : weight, m2 : newWeight, springK : springK })
     return newWeight;
@@ -77,7 +71,6 @@ logic.reset = () => {
     state = State();
 }
 
-// logic.getGraph = () => state.sysGraph;
 
 logic.getObjs = () => ({
     weights : sysGraph.getState().weights,
