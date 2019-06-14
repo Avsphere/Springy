@@ -11,8 +11,8 @@ body {
 }
 
 #springCanvas {
-  border : 1px solid black;
-  margin-left: 2%;
+  border : 1px solid green;
+  /* margin-left: 2%; */
   /* cursor : url('./circleCursor.png'), auto; */
 }
 
@@ -24,7 +24,7 @@ body {
 }
 
 #canvasContainer {
-  border : 1px solid red;
+  /* border : 1px solid red; */
   /* cursor : url('./circleCursor.png'), auto; */
 }
 

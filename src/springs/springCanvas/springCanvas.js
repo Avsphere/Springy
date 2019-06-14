@@ -1,9 +1,9 @@
-import handlers from './handlers'
-import listeners from './listeners'
+import initListenAndHandle from './listenAndHandle'
 import system from '../system/system'
 import grid from './grid'
-import drawWeight from './drawWeight'
-import drawSpring from './drawSpring'
+import { draw as drawWeight } from './drawWeight'
+import { draw as drawSpring } from './drawSpring'
+import { draw as drawSystemCenter } from './drawSystemCenter'
 
 const State = () => Object.assign({
     canvasSettings: {
@@ -16,22 +16,24 @@ const State = () => Object.assign({
     activeHandlers: { //specifically temp handlers
         drag: false //false or the handler
     },
+    //everything is relative to systemCenter. if canvasCenter is 100 and sysCenter is 200 then shift is -100
     transforms : {
         shift : {
             x : 0,
             y : 0
         },
-        scale : 0
-    }, //maintains shift and scale
+        scale : 0,
+        systemCenter : { x : 0, y : 0 } 
+    }, 
     displayFlags : {
-        showPlot: true,
         cursorStats: false,
         showWeightIds: false,
         showSpringIds: false,
         showWeightDetails: true,
         showSpringDetails: true,
         showGrid: false,
-        lockY: true
+        lockY: true,
+        showSystemCenter : true
     },
     debug : true,
     debugOptions : {
@@ -40,7 +42,7 @@ const State = () => Object.assign({
 })
 
 const logic = {}
-let state; //allows for an easier reset.
+let state; //allows for an easier reset, set in init.
 
 const setCanvasDimensions = () => {
     const canvasContainerWidth = $('#canvasContainer').innerWidth();
@@ -55,9 +57,13 @@ const getMousePosition = (ev) => ({
     y: ev.clientY - state.canvas.getBoundingClientRect().top
 })
 
+//This is only called here and in the listenAndHandle
 const updateTransforms = () => {
-    state.transforms.shift.x = state.canvas.width - system.getCenter();
-    state.transforms.shift.x = state.canvas.height - system.getCenter();
+    const sysCenter = system.getCenter() //note that getCenters if second invoke uses cached prev result
+    state.transforms.systemCenter = sysCenter
+    state.transforms.shift.x = state.canvas.width/2 - sysCenter.x; 
+    state.transforms.shift.y = state.canvas.height/2 - sysCenter.y; 
+    // console.log('shift x : ', state.transforms.shift.x )
 }
 
 logic.clear = (x=0, y=0, x1=state.canvas.width, y1=state.canvas.height) => {
@@ -79,31 +85,45 @@ logic.debug = () => {
 /* draws the grid / weights*/
 logic.draw = () => {
     const { springs, weights } = system.getObjs()
-    // const systemMetadata = system.getMetadata()
-    updateTransforms();
+    if ( state.displayFlags.showGrid === true ) {
+        grid.draw({ springCanvasState: state, systemCenter: system.getCenter() })
+    }
+    if ( state.displayFlags.showSystemCenter === true ) {
+        drawSystemCenter({ springCanvasState: state, systemCenter: system.getCenter() })
+    }
     weights.forEach(weight => drawWeight(
         { 
             state, 
             weight,
-            transforms : state.transforms,
-            // systemMetadata: systemMetadata
+            systemCenter: system.getCenter()
         }) 
     )
     springs.forEach(spring => drawSpring(
         {
             state,
             spring,
-            transforms: state.transforms,
-            // systemMetadata: systemMetadata
+            systemCenter: system.getCenter()
         })
     )
+}
+
+logic.getShift = () => {
+    updateTransforms();
+    return state.transforms.shift
 }
 
 
 logic.init = () => {
     state = State();
     setCanvasDimensions();
+    initListenAndHandle(state);
     if ( state.debug ) { logic.debug(); }
 }
+
+logic.setDebug = (bool) => {
+    state.debug = bool
+}
+logic.getState = () => state
+logic.reset = () => logic.init(); //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
 
 export { logic as default }

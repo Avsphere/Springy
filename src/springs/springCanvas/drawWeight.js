@@ -13,15 +13,21 @@ const totalColors = [
 
 
 
-const drawWeight = ({state, weight, transforms }) => {
+const draw = ({state, weight, systemCenter }) => {
     const { displayFlags, ctx, canvas } = state;
-    const { shift, scale } = transforms;
+
+    const canvasCenter = {
+        x : canvas.width / 2,
+        y : canvas.height /2
+    }
+
+    const shift = { x : canvasCenter.x - systemCenter.x, y : canvasCenter.y - systemCenter.y }
 
     const radius = weight.mass < 5 ? 5 : weight.mass > 100 ? 100 : weight.mass
 
     const drawAt = {
-        x : weight.position.x,
-        y : weight.position.y
+        x : weight.position.x + shift.x,
+        y : weight.position.y + shift.y
     }
 
     ctx.strokeStyle = weight.color;
@@ -31,9 +37,8 @@ const drawWeight = ({state, weight, transforms }) => {
     ctx.stroke();
     
 
-
 }
 
 
 
-export { drawWeight as default }
+export { draw }

@@ -1,8 +1,9 @@
 import orchestrator from './orchestrator'
+import emitter from './emitter.js'
 
 const logic = {}
 
-const handlers = {}
+//any interaction with orchestrator is done by event emitting. This is because nearly all components require knowledge of the animating.
 
 
 window.addEventListener('keyup', (ev) => {
@@ -10,16 +11,17 @@ window.addEventListener('keyup', (ev) => {
     
     if (isSpaceKey) {
         ev.preventDefault();
-        const isAnimating = orchestrator.toggleAnimation() //this only toggles if specs are met.
+        emitter.emit('orchestrator/toggleAnimate', { calledBy: 'view.js/keyup' })
     }
 
     if (ev.key === 'r' || ev.key === 'R') {
         orchestrator.reset();
+        emitter.emit('orchestrator/reset', { calledBy : 'view.js/keyup'})
     }
 })
 
 window.addEventListener('resize', () => {
-    orchestrator.resize();
+    emitter.emit('orchestrator/resize', { calledBy: 'view.js/resize' })
 })
 
 logic.init = () => {

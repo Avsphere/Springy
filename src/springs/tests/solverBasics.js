@@ -67,7 +67,7 @@ test.funSolve = () => {
     const offset = 500;
     const bigWeight = graph.addWeight({
         position: { x: offset, y: offset },
-        velocity: { x: 0, y: 0 },
+        velocity: { x: 20, y: 0 },
         mass: 50,
     })
     // const mediumMasses = ( () => {
@@ -84,7 +84,7 @@ test.funSolve = () => {
     // })()
     let lastMass;
     const smallMasses = (() => {
-        const count = 50
+        const count = 20
         const size = 300;
         for (let i = 0; i < count; i++) {
             const sign = Math.random() > .5 ? 1 : -1
@@ -107,13 +107,13 @@ test.funSolve = () => {
 
 test.basicSolve = () => {
     const w1 = graph.addWeight({
-        position: { x: 0, y: 400 },
-        velocity: { x: 50, y: 0 },
+        position: { x: document.getElementById('springCanvas').width / 2, y: document.getElementById('springCanvas').height / 2 },
+        velocity: { x: 0, y: 0 },
         mass: 10,
     });
     const w2 = graph.addWeight({
-        position: { x: 400, y: 400 },
-        velocity: { x: -50, y: 0 },
+        position: { x: document.getElementById('springCanvas').width*5 / 8, y: document.getElementById('springCanvas').height / 2 },
+        velocity: { x: 50, y: 0 },
         mass: 10,
     });
     // const w3 = graph.addWeight({
@@ -125,7 +125,7 @@ test.basicSolve = () => {
     const sharedSpring1 = graph.addEdge(w1, w2)
     // const sharedSpring2 = graph.addEdge(w3, w2)
     // console.log('sharedSpring,', sharedSpring)
-    // sharedSpring1.setRestingLength(50);
+    sharedSpring1.setRestingLength(50);
     solver.solveSystem();
 }
 
@@ -142,7 +142,7 @@ test.runAll = () => {
     test.funSolve();
 }
 
-test.runAll();
+// test.runAll();
 
 
 

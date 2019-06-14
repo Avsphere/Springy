@@ -98,23 +98,15 @@
 
 __webpack_require__(/*! ./noConflict */ "./node_modules/@babel/polyfill/lib/noConflict.js");
 
-function _global() {
-  const data = _interopRequireDefault(__webpack_require__(/*! core-js/library/fn/global */ "./node_modules/core-js/library/fn/global.js"));
-
-  _global = function () {
-    return data;
-  };
-
-  return data;
-}
+var _global = _interopRequireDefault(__webpack_require__(/*! core-js/library/fn/global */ "./node_modules/core-js/library/fn/global.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-if (_global().default._babelPolyfill && typeof console !== "undefined" && console.warn) {
+if (_global.default._babelPolyfill && typeof console !== "undefined" && console.warn) {
   console.warn("@babel/polyfill is loaded more than once on this page. This is probably not desirable/intended " + "and may have consequences if different versions of the polyfills are applied sequentially. " + "If you do need to load the polyfill more than once, use @babel/polyfill/noConflict " + "instead to bypass the warning.");
 }
 
-_global().default._babelPolyfill = true;
+_global.default._babelPolyfill = true;
 
 /***/ }),
 
@@ -185,7 +177,6 @@ var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ "./node_modules/
 var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ "./node_modules/axios/lib/helpers/parseHeaders.js");
 var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ "./node_modules/axios/lib/helpers/isURLSameOrigin.js");
 var createError = __webpack_require__(/*! ../core/createError */ "./node_modules/axios/lib/core/createError.js");
-var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(/*! ./../helpers/btoa */ "./node_modules/axios/lib/helpers/btoa.js");
 
 module.exports = function xhrAdapter(config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -197,22 +188,6 @@ module.exports = function xhrAdapter(config) {
     }
 
     var request = new XMLHttpRequest();
-    var loadEvent = 'onreadystatechange';
-    var xDomain = false;
-
-    // For IE 8/9 CORS support
-    // Only supports POST and GET calls and doesn't returns the response headers.
-    // DON'T do this for testing b/c XMLHttpRequest is mocked, not XDomainRequest.
-    if ( true &&
-        typeof window !== 'undefined' &&
-        window.XDomainRequest && !('withCredentials' in request) &&
-        !isURLSameOrigin(config.url)) {
-      request = new window.XDomainRequest();
-      loadEvent = 'onload';
-      xDomain = true;
-      request.onprogress = function handleProgress() {};
-      request.ontimeout = function handleTimeout() {};
-    }
 
     // HTTP basic authentication
     if (config.auth) {
@@ -227,8 +202,8 @@ module.exports = function xhrAdapter(config) {
     request.timeout = config.timeout;
 
     // Listen for ready state
-    request[loadEvent] = function handleLoad() {
-      if (!request || (request.readyState !== 4 && !xDomain)) {
+    request.onreadystatechange = function handleLoad() {
+      if (!request || request.readyState !== 4) {
         return;
       }
 
@@ -245,9 +220,8 @@ module.exports = function xhrAdapter(config) {
       var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
       var response = {
         data: responseData,
-        // IE sends 1223 instead of 204 (https://github.com/axios/axios/issues/201)
-        status: request.status === 1223 ? 204 : request.status,
-        statusText: request.status === 1223 ? 'No Content' : request.statusText,
+        status: request.status,
+        statusText: request.statusText,
         headers: responseHeaders,
         config: config,
         request: request
@@ -1060,54 +1034,6 @@ module.exports = function bind(fn, thisArg) {
 
 /***/ }),
 
-/***/ "./node_modules/axios/lib/helpers/btoa.js":
-/*!************************************************!*\
-  !*** ./node_modules/axios/lib/helpers/btoa.js ***!
-  \************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-// btoa polyfill for IE<10 courtesy https://github.com/davidchambers/Base64.js
-
-var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-function E() {
-  this.message = 'String contains an invalid character';
-}
-E.prototype = new Error;
-E.prototype.code = 5;
-E.prototype.name = 'InvalidCharacterError';
-
-function btoa(input) {
-  var str = String(input);
-  var output = '';
-  for (
-    // initialize result and counter
-    var block, charCode, idx = 0, map = chars;
-    // if the next str index does not exist:
-    //   change the mapping table to "="
-    //   check if d has no fractional digits
-    str.charAt(idx | 0) || (map = '=', idx % 1);
-    // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
-    output += map.charAt(63 & block >> 8 - idx % 1 * 8)
-  ) {
-    charCode = str.charCodeAt(idx += 3 / 4);
-    if (charCode > 0xFF) {
-      throw new E();
-    }
-    block = block << 8 | charCode;
-  }
-  return output;
-}
-
-module.exports = btoa;
-
-
-/***/ }),
-
 /***/ "./node_modules/axios/lib/helpers/buildURL.js":
 /*!****************************************************!*\
   !*** ./node_modules/axios/lib/helpers/buildURL.js ***!
@@ -1522,7 +1448,7 @@ module.exports = function spread(callback) {
 
 
 var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
-var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/is-buffer/index.js");
+var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/axios/node_modules/is-buffer/index.js");
 
 /*global toString:true*/
 
@@ -1822,6 +1748,28 @@ module.exports = {
   extend: extend,
   trim: trim
 };
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/node_modules/is-buffer/index.js":
+/*!************************************************************!*\
+  !*** ./node_modules/axios/node_modules/is-buffer/index.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+
+module.exports = function isBuffer (obj) {
+  return obj != null && obj.constructor != null &&
+    typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+}
 
 
 /***/ }),
@@ -6618,7 +6566,7 @@ module.exports = function (it) {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.5' };
+var core = module.exports = { version: '2.6.9' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -7724,7 +7672,7 @@ module.exports = function (NAME, wrapper, methods, common, IS_MAP, IS_WEAK) {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.5' };
+var core = module.exports = { version: '2.6.9' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -8954,6 +8902,7 @@ module.exports.f = function (C) {
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
+var DESCRIPTORS = __webpack_require__(/*! ./_descriptors */ "./node_modules/core-js/modules/_descriptors.js");
 var getKeys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var gOPS = __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js");
 var pIE = __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js");
@@ -8983,7 +8932,10 @@ module.exports = !$assign || __webpack_require__(/*! ./_fails */ "./node_modules
     var length = keys.length;
     var j = 0;
     var key;
-    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
+    while (length > j) {
+      key = keys[j++];
+      if (!DESCRIPTORS || isEnum.call(S, key)) T[key] = S[key];
+    }
   } return T;
 } : $assign;
 
@@ -9290,6 +9242,7 @@ module.exports = function (KEY, exec) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
+var DESCRIPTORS = __webpack_require__(/*! ./_descriptors */ "./node_modules/core-js/modules/_descriptors.js");
 var getKeys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var toIObject = __webpack_require__(/*! ./_to-iobject */ "./node_modules/core-js/modules/_to-iobject.js");
 var isEnum = __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js").f;
@@ -9301,9 +9254,13 @@ module.exports = function (isEntries) {
     var i = 0;
     var result = [];
     var key;
-    while (length > i) if (isEnum.call(O, key = keys[i++])) {
-      result.push(isEntries ? [key, O[key]] : O[key]);
-    } return result;
+    while (length > i) {
+      key = keys[i++];
+      if (!DESCRIPTORS || isEnum.call(O, key)) {
+        result.push(isEntries ? [key, O[key]] : O[key]);
+      }
+    }
+    return result;
   };
 };
 
@@ -14679,12 +14636,14 @@ var enumKeys = __webpack_require__(/*! ./_enum-keys */ "./node_modules/core-js/m
 var isArray = __webpack_require__(/*! ./_is-array */ "./node_modules/core-js/modules/_is-array.js");
 var anObject = __webpack_require__(/*! ./_an-object */ "./node_modules/core-js/modules/_an-object.js");
 var isObject = __webpack_require__(/*! ./_is-object */ "./node_modules/core-js/modules/_is-object.js");
+var toObject = __webpack_require__(/*! ./_to-object */ "./node_modules/core-js/modules/_to-object.js");
 var toIObject = __webpack_require__(/*! ./_to-iobject */ "./node_modules/core-js/modules/_to-iobject.js");
 var toPrimitive = __webpack_require__(/*! ./_to-primitive */ "./node_modules/core-js/modules/_to-primitive.js");
 var createDesc = __webpack_require__(/*! ./_property-desc */ "./node_modules/core-js/modules/_property-desc.js");
 var _create = __webpack_require__(/*! ./_object-create */ "./node_modules/core-js/modules/_object-create.js");
 var gOPNExt = __webpack_require__(/*! ./_object-gopn-ext */ "./node_modules/core-js/modules/_object-gopn-ext.js");
 var $GOPD = __webpack_require__(/*! ./_object-gopd */ "./node_modules/core-js/modules/_object-gopd.js");
+var $GOPS = __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js");
 var $DP = __webpack_require__(/*! ./_object-dp */ "./node_modules/core-js/modules/_object-dp.js");
 var $keys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var gOPD = $GOPD.f;
@@ -14701,7 +14660,7 @@ var SymbolRegistry = shared('symbol-registry');
 var AllSymbols = shared('symbols');
 var OPSymbols = shared('op-symbols');
 var ObjectProto = Object[PROTOTYPE];
-var USE_NATIVE = typeof $Symbol == 'function';
+var USE_NATIVE = typeof $Symbol == 'function' && !!$GOPS.f;
 var QObject = global.QObject;
 // Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
 var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
@@ -14811,7 +14770,7 @@ if (!USE_NATIVE) {
   $DP.f = $defineProperty;
   __webpack_require__(/*! ./_object-gopn */ "./node_modules/core-js/modules/_object-gopn.js").f = gOPNExt.f = $getOwnPropertyNames;
   __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js").f = $propertyIsEnumerable;
-  __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js").f = $getOwnPropertySymbols;
+  $GOPS.f = $getOwnPropertySymbols;
 
   if (DESCRIPTORS && !__webpack_require__(/*! ./_library */ "./node_modules/core-js/modules/_library.js")) {
     redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
@@ -14860,6 +14819,16 @@ $export($export.S + $export.F * !USE_NATIVE, 'Object', {
   getOwnPropertyNames: $getOwnPropertyNames,
   // 19.1.2.8 Object.getOwnPropertySymbols(O)
   getOwnPropertySymbols: $getOwnPropertySymbols
+});
+
+// Chrome 38 and 39 `Object.getOwnPropertySymbols` fails on primitives
+// https://bugs.chromium.org/p/v8/issues/detail?id=3443
+var FAILS_ON_PRIMITIVES = $fails(function () { $GOPS.f(1); });
+
+$export($export.S + $export.F * FAILS_ON_PRIMITIVES, 'Object', {
+  getOwnPropertySymbols: function getOwnPropertySymbols(it) {
+    return $GOPS.f(toObject(it));
+  }
 });
 
 // 24.3.2 JSON.stringify(value [, replacer [, space]])
@@ -16070,38 +16039,6 @@ function unwrapListeners(arr) {
 
 /***/ }),
 
-/***/ "./node_modules/is-buffer/index.js":
-/*!*****************************************!*\
-  !*** ./node_modules/is-buffer/index.js ***!
-  \*****************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/*!
- * Determine if an object is a Buffer
- *
- * @author   Feross Aboukhadijeh <https://feross.org>
- * @license  MIT
- */
-
-// The _isBuffer check is for Safari 5-7 support, because it's missing
-// Object.prototype.constructor. Remove this eventually
-module.exports = function (obj) {
-  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
-}
-
-function isBuffer (obj) {
-  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
-}
-
-// For Node v0.10 support. Remove this eventually.
-function isSlowBuffer (obj) {
-  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
-}
-
-
-/***/ }),
-
 /***/ "./node_modules/jquery/dist/jquery.js":
 /*!********************************************!*\
   !*** ./node_modules/jquery/dist/jquery.js ***!
@@ -16110,7 +16047,7 @@ function isSlowBuffer (obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
- * jQuery JavaScript Library v3.3.1
+ * jQuery JavaScript Library v3.4.1
  * https://jquery.com/
  *
  * Includes Sizzle.js
@@ -16120,7 +16057,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
  * Released under the MIT license
  * https://jquery.org/license
  *
- * Date: 2018-01-20T17:24Z
+ * Date: 2019-05-01T21:04Z
  */
 ( function( global, factory ) {
 
@@ -16202,20 +16139,33 @@ var isWindow = function isWindow( obj ) {
 	var preservedScriptAttributes = {
 		type: true,
 		src: true,
+		nonce: true,
 		noModule: true
 	};
 
-	function DOMEval( code, doc, node ) {
+	function DOMEval( code, node, doc ) {
 		doc = doc || document;
 
-		var i,
+		var i, val,
 			script = doc.createElement( "script" );
 
 		script.text = code;
 		if ( node ) {
 			for ( i in preservedScriptAttributes ) {
-				if ( node[ i ] ) {
-					script[ i ] = node[ i ];
+
+				// Support: Firefox 64+, Edge 18+
+				// Some browsers don't support the "nonce" property on scripts.
+				// On the other hand, just using `getAttribute` is not enough as
+				// the `nonce` attribute is reset to an empty string whenever it
+				// becomes browsing-context connected.
+				// See https://github.com/whatwg/html/issues/2369
+				// See https://html.spec.whatwg.org/#nonce-attributes
+				// The `node.getAttribute` check was added for the sake of
+				// `jQuery.globalEval` so that it can fake a nonce-containing node
+				// via an object.
+				val = node[ i ] || node.getAttribute && node.getAttribute( i );
+				if ( val ) {
+					script.setAttribute( i, val );
 				}
 			}
 		}
@@ -16240,7 +16190,7 @@ function toType( obj ) {
 
 
 var
-	version = "3.3.1",
+	version = "3.4.1",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -16369,25 +16319,28 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 			// Extend the base object
 			for ( name in options ) {
-				src = target[ name ];
 				copy = options[ name ];
 
+				// Prevent Object.prototype pollution
 				// Prevent never-ending loop
-				if ( target === copy ) {
+				if ( name === "__proto__" || target === copy ) {
 					continue;
 				}
 
 				// Recurse if we're merging plain objects or arrays
 				if ( deep && copy && ( jQuery.isPlainObject( copy ) ||
 					( copyIsArray = Array.isArray( copy ) ) ) ) {
+					src = target[ name ];
 
-					if ( copyIsArray ) {
-						copyIsArray = false;
-						clone = src && Array.isArray( src ) ? src : [];
-
+					// Ensure proper type for the source value
+					if ( copyIsArray && !Array.isArray( src ) ) {
+						clone = [];
+					} else if ( !copyIsArray && !jQuery.isPlainObject( src ) ) {
+						clone = {};
 					} else {
-						clone = src && jQuery.isPlainObject( src ) ? src : {};
+						clone = src;
 					}
+					copyIsArray = false;
 
 					// Never move original objects, clone them
 					target[ name ] = jQuery.extend( deep, clone, copy );
@@ -16440,9 +16393,6 @@ jQuery.extend( {
 	},
 
 	isEmptyObject: function( obj ) {
-
-		/* eslint-disable no-unused-vars */
-		// See https://github.com/eslint/eslint/issues/6125
 		var name;
 
 		for ( name in obj ) {
@@ -16452,8 +16402,8 @@ jQuery.extend( {
 	},
 
 	// Evaluates a script in a global context
-	globalEval: function( code ) {
-		DOMEval( code );
+	globalEval: function( code, options ) {
+		DOMEval( code, { nonce: options && options.nonce } );
 	},
 
 	each: function( obj, callback ) {
@@ -16609,14 +16559,14 @@ function isArrayLike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v2.3.3
+ * Sizzle CSS Selector Engine v2.3.4
  * https://sizzlejs.com/
  *
- * Copyright jQuery Foundation and other contributors
+ * Copyright JS Foundation and other contributors
  * Released under the MIT license
- * http://jquery.org/license
+ * https://js.foundation/
  *
- * Date: 2016-08-08
+ * Date: 2019-04-08
  */
 (function( window ) {
 
@@ -16650,6 +16600,7 @@ var i,
 	classCache = createCache(),
 	tokenCache = createCache(),
 	compilerCache = createCache(),
+	nonnativeSelectorCache = createCache(),
 	sortOrder = function( a, b ) {
 		if ( a === b ) {
 			hasDuplicate = true;
@@ -16711,8 +16662,7 @@ var i,
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
 	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace + "*" ),
-
-	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*?)" + whitespace + "*\\]", "g" ),
+	rdescend = new RegExp( whitespace + "|>" ),
 
 	rpseudo = new RegExp( pseudos ),
 	ridentifier = new RegExp( "^" + identifier + "$" ),
@@ -16733,6 +16683,7 @@ var i,
 			whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
 	},
 
+	rhtml = /HTML$/i,
 	rinputs = /^(?:input|select|textarea|button)$/i,
 	rheader = /^h\d$/i,
 
@@ -16787,9 +16738,9 @@ var i,
 		setDocument();
 	},
 
-	disabledAncestor = addCombinator(
+	inDisabledFieldset = addCombinator(
 		function( elem ) {
-			return elem.disabled === true && ("form" in elem || "label" in elem);
+			return elem.disabled === true && elem.nodeName.toLowerCase() === "fieldset";
 		},
 		{ dir: "parentNode", next: "legend" }
 	);
@@ -16902,18 +16853,22 @@ function Sizzle( selector, context, results, seed ) {
 
 			// Take advantage of querySelectorAll
 			if ( support.qsa &&
-				!compilerCache[ selector + " " ] &&
-				(!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
+				!nonnativeSelectorCache[ selector + " " ] &&
+				(!rbuggyQSA || !rbuggyQSA.test( selector )) &&
 
-				if ( nodeType !== 1 ) {
-					newContext = context;
-					newSelector = selector;
-
-				// qSA looks outside Element context, which is not what we want
-				// Thanks to Andrew Dupont for this workaround technique
-				// Support: IE <=8
+				// Support: IE 8 only
 				// Exclude object elements
-				} else if ( context.nodeName.toLowerCase() !== "object" ) {
+				(nodeType !== 1 || context.nodeName.toLowerCase() !== "object") ) {
+
+				newSelector = selector;
+				newContext = context;
+
+				// qSA considers elements outside a scoping root when evaluating child or
+				// descendant combinators, which is not what we want.
+				// In such cases, we work around the behavior by prefixing every selector in the
+				// list with an ID selector referencing the scope context.
+				// Thanks to Andrew Dupont for this technique.
+				if ( nodeType === 1 && rdescend.test( selector ) ) {
 
 					// Capture the context ID, setting it first if necessary
 					if ( (nid = context.getAttribute( "id" )) ) {
@@ -16935,17 +16890,16 @@ function Sizzle( selector, context, results, seed ) {
 						context;
 				}
 
-				if ( newSelector ) {
-					try {
-						push.apply( results,
-							newContext.querySelectorAll( newSelector )
-						);
-						return results;
-					} catch ( qsaError ) {
-					} finally {
-						if ( nid === expando ) {
-							context.removeAttribute( "id" );
-						}
+				try {
+					push.apply( results,
+						newContext.querySelectorAll( newSelector )
+					);
+					return results;
+				} catch ( qsaError ) {
+					nonnativeSelectorCache( selector, true );
+				} finally {
+					if ( nid === expando ) {
+						context.removeAttribute( "id" );
 					}
 				}
 			}
@@ -17109,7 +17063,7 @@ function createDisabledPseudo( disabled ) {
 					// Where there is no isDisabled, check manually
 					/* jshint -W018 */
 					elem.isDisabled !== !disabled &&
-						disabledAncestor( elem ) === disabled;
+						inDisabledFieldset( elem ) === disabled;
 			}
 
 			return elem.disabled === disabled;
@@ -17166,10 +17120,13 @@ support = Sizzle.support = {};
  * @returns {Boolean} True iff elem is a non-HTML XML node
  */
 isXML = Sizzle.isXML = function( elem ) {
-	// documentElement is verified for cases where it doesn't yet exist
-	// (such as loading iframes in IE - #4833)
-	var documentElement = elem && (elem.ownerDocument || elem).documentElement;
-	return documentElement ? documentElement.nodeName !== "HTML" : false;
+	var namespace = elem.namespaceURI,
+		docElem = (elem.ownerDocument || elem).documentElement;
+
+	// Support: IE <=8
+	// Assume HTML when documentElement doesn't yet exist, such as inside loading iframes
+	// https://bugs.jquery.com/ticket/4833
+	return !rhtml.test( namespace || docElem && docElem.nodeName || "HTML" );
 };
 
 /**
@@ -17591,11 +17548,8 @@ Sizzle.matchesSelector = function( elem, expr ) {
 		setDocument( elem );
 	}
 
-	// Make sure that attribute selectors are quoted
-	expr = expr.replace( rattributeQuotes, "='$1']" );
-
 	if ( support.matchesSelector && documentIsHTML &&
-		!compilerCache[ expr + " " ] &&
+		!nonnativeSelectorCache[ expr + " " ] &&
 		( !rbuggyMatches || !rbuggyMatches.test( expr ) ) &&
 		( !rbuggyQSA     || !rbuggyQSA.test( expr ) ) ) {
 
@@ -17609,7 +17563,9 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch (e) {}
+		} catch (e) {
+			nonnativeSelectorCache( expr, true );
+		}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -18068,7 +18024,7 @@ Expr = Sizzle.selectors = {
 		"contains": markFunction(function( text ) {
 			text = text.replace( runescape, funescape );
 			return function( elem ) {
-				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
+				return ( elem.textContent || getText( elem ) ).indexOf( text ) > -1;
 			};
 		}),
 
@@ -18207,7 +18163,11 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"lt": createPositionalPseudo(function( matchIndexes, length, argument ) {
-			var i = argument < 0 ? argument + length : argument;
+			var i = argument < 0 ?
+				argument + length :
+				argument > length ?
+					length :
+					argument;
 			for ( ; --i >= 0; ) {
 				matchIndexes.push( i );
 			}
@@ -19257,18 +19217,18 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-        if ( nodeName( elem, "iframe" ) ) {
-            return elem.contentDocument;
-        }
+		if ( typeof elem.contentDocument !== "undefined" ) {
+			return elem.contentDocument;
+		}
 
-        // Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
-        // Treat the template element as a regular one in browsers that
-        // don't support it.
-        if ( nodeName( elem, "template" ) ) {
-            elem = elem.content || elem;
-        }
+		// Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
+		// Treat the template element as a regular one in browsers that
+		// don't support it.
+		if ( nodeName( elem, "template" ) ) {
+			elem = elem.content || elem;
+		}
 
-        return jQuery.merge( [], elem.childNodes );
+		return jQuery.merge( [], elem.childNodes );
 	}
 }, function( name, fn ) {
 	jQuery.fn[ name ] = function( until, selector ) {
@@ -20577,6 +20537,26 @@ var rcssNum = new RegExp( "^(?:([+-])=|)(" + pnum + ")([a-z%]*)$", "i" );
 
 var cssExpand = [ "Top", "Right", "Bottom", "Left" ];
 
+var documentElement = document.documentElement;
+
+
+
+	var isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem );
+		},
+		composed = { composed: true };
+
+	// Support: IE 9 - 11+, Edge 12 - 18+, iOS 10.0 - 10.2 only
+	// Check attachment across shadow DOM boundaries when possible (gh-3504)
+	// Support: iOS 10.0-10.2 only
+	// Early iOS 10 versions support `attachShadow` but not `getRootNode`,
+	// leading to errors. We need to check for `getRootNode`.
+	if ( documentElement.getRootNode ) {
+		isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem ) ||
+				elem.getRootNode( composed ) === elem.ownerDocument;
+		};
+	}
 var isHiddenWithinTree = function( elem, el ) {
 
 		// isHiddenWithinTree might be called from jQuery#filter function;
@@ -20591,7 +20571,7 @@ var isHiddenWithinTree = function( elem, el ) {
 			// Support: Firefox <=43 - 45
 			// Disconnected elements can have computed display: none, so first confirm that elem is
 			// in the document.
-			jQuery.contains( elem.ownerDocument, elem ) &&
+			isAttached( elem ) &&
 
 			jQuery.css( elem, "display" ) === "none";
 	};
@@ -20633,7 +20613,8 @@ function adjustCSS( elem, prop, valueParts, tween ) {
 		unit = valueParts && valueParts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
 
 		// Starting value computation is required for potential unit mismatches
-		initialInUnit = ( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
+		initialInUnit = elem.nodeType &&
+			( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
 			rcssNum.exec( jQuery.css( elem, prop ) );
 
 	if ( initialInUnit && initialInUnit[ 3 ] !== unit ) {
@@ -20780,7 +20761,7 @@ jQuery.fn.extend( {
 } );
 var rcheckableType = ( /^(?:checkbox|radio)$/i );
 
-var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]+)/i );
+var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]*)/i );
 
 var rscriptType = ( /^$|^module$|\/(?:java|ecma)script/i );
 
@@ -20852,7 +20833,7 @@ function setGlobalEval( elems, refElements ) {
 var rhtml = /<|&#?\w+;/;
 
 function buildFragment( elems, context, scripts, selection, ignored ) {
-	var elem, tmp, tag, wrap, contains, j,
+	var elem, tmp, tag, wrap, attached, j,
 		fragment = context.createDocumentFragment(),
 		nodes = [],
 		i = 0,
@@ -20916,13 +20897,13 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 			continue;
 		}
 
-		contains = jQuery.contains( elem.ownerDocument, elem );
+		attached = isAttached( elem );
 
 		// Append to fragment
 		tmp = getAll( fragment.appendChild( elem ), "script" );
 
 		// Preserve script evaluation history
-		if ( contains ) {
+		if ( attached ) {
 			setGlobalEval( tmp );
 		}
 
@@ -20965,8 +20946,6 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 } )();
-var documentElement = document.documentElement;
-
 
 
 var
@@ -20982,8 +20961,19 @@ function returnFalse() {
 	return false;
 }
 
+// Support: IE <=9 - 11+
+// focus() and blur() are asynchronous, except when they are no-op.
+// So expect focus to be synchronous when the element is already active,
+// and blur to be synchronous when the element is not already active.
+// (focus and blur are always synchronous in other supported browsers,
+// this just defines when we can count on it).
+function expectSync( elem, type ) {
+	return ( elem === safeActiveElement() ) === ( type === "focus" );
+}
+
 // Support: IE <=9 only
-// See #13393 for more info
+// Accessing document.activeElement can throw unexpectedly
+// https://bugs.jquery.com/ticket/13393
 function safeActiveElement() {
 	try {
 		return document.activeElement;
@@ -21283,9 +21273,10 @@ jQuery.event = {
 			while ( ( handleObj = matched.handlers[ j++ ] ) &&
 				!event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
-				// a subset or equal to those in the bound event (both can have no namespace).
-				if ( !event.rnamespace || event.rnamespace.test( handleObj.namespace ) ) {
+				// If the event is namespaced, then each handler is only invoked if it is
+				// specially universal or its namespaces are a superset of the event's.
+				if ( !event.rnamespace || handleObj.namespace === false ||
+					event.rnamespace.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
 					event.data = handleObj.data;
@@ -21409,39 +21400,51 @@ jQuery.event = {
 			// Prevent triggered image.load events from bubbling to window.load
 			noBubble: true
 		},
-		focus: {
-
-			// Fire native event if possible so blur/focus sequence is correct
-			trigger: function() {
-				if ( this !== safeActiveElement() && this.focus ) {
-					this.focus();
-					return false;
-				}
-			},
-			delegateType: "focusin"
-		},
-		blur: {
-			trigger: function() {
-				if ( this === safeActiveElement() && this.blur ) {
-					this.blur();
-					return false;
-				}
-			},
-			delegateType: "focusout"
-		},
 		click: {
 
-			// For checkbox, fire native event so checked state will be right
-			trigger: function() {
-				if ( this.type === "checkbox" && this.click && nodeName( this, "input" ) ) {
-					this.click();
-					return false;
+			// Utilize native event to ensure correct state for checkable inputs
+			setup: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Claim the first handler
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					// dataPriv.set( el, "click", ... )
+					leverageNative( el, "click", returnTrue );
 				}
+
+				// Return false to allow normal processing in the caller
+				return false;
+			},
+			trigger: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Force setup before triggering a click
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					leverageNative( el, "click" );
+				}
+
+				// Return non-false to allow normal event-path propagation
+				return true;
 			},
 
-			// For cross-browser consistency, don't fire native .click() on links
+			// For cross-browser consistency, suppress native .click() on links
+			// Also prevent it if we're currently inside a leveraged native-event stack
 			_default: function( event ) {
-				return nodeName( event.target, "a" );
+				var target = event.target;
+				return rcheckableType.test( target.type ) &&
+					target.click && nodeName( target, "input" ) &&
+					dataPriv.get( target, "click" ) ||
+					nodeName( target, "a" );
 			}
 		},
 
@@ -21457,6 +21460,93 @@ jQuery.event = {
 		}
 	}
 };
+
+// Ensure the presence of an event listener that handles manually-triggered
+// synthetic events by interrupting progress until reinvoked in response to
+// *native* events that it fires directly, ensuring that state changes have
+// already occurred before other listeners are invoked.
+function leverageNative( el, type, expectSync ) {
+
+	// Missing expectSync indicates a trigger call, which must force setup through jQuery.event.add
+	if ( !expectSync ) {
+		if ( dataPriv.get( el, type ) === undefined ) {
+			jQuery.event.add( el, type, returnTrue );
+		}
+		return;
+	}
+
+	// Register the controller as a special universal handler for all event namespaces
+	dataPriv.set( el, type, false );
+	jQuery.event.add( el, type, {
+		namespace: false,
+		handler: function( event ) {
+			var notAsync, result,
+				saved = dataPriv.get( this, type );
+
+			if ( ( event.isTrigger & 1 ) && this[ type ] ) {
+
+				// Interrupt processing of the outer synthetic .trigger()ed event
+				// Saved data should be false in such cases, but might be a leftover capture object
+				// from an async native handler (gh-4350)
+				if ( !saved.length ) {
+
+					// Store arguments for use when handling the inner native event
+					// There will always be at least one argument (an event object), so this array
+					// will not be confused with a leftover capture object.
+					saved = slice.call( arguments );
+					dataPriv.set( this, type, saved );
+
+					// Trigger the native event and capture its result
+					// Support: IE <=9 - 11+
+					// focus() and blur() are asynchronous
+					notAsync = expectSync( this, type );
+					this[ type ]();
+					result = dataPriv.get( this, type );
+					if ( saved !== result || notAsync ) {
+						dataPriv.set( this, type, false );
+					} else {
+						result = {};
+					}
+					if ( saved !== result ) {
+
+						// Cancel the outer synthetic event
+						event.stopImmediatePropagation();
+						event.preventDefault();
+						return result.value;
+					}
+
+				// If this is an inner synthetic event for an event with a bubbling surrogate
+				// (focus or blur), assume that the surrogate already propagated from triggering the
+				// native event and prevent that from happening again here.
+				// This technically gets the ordering wrong w.r.t. to `.trigger()` (in which the
+				// bubbling surrogate propagates *after* the non-bubbling base), but that seems
+				// less bad than duplication.
+				} else if ( ( jQuery.event.special[ type ] || {} ).delegateType ) {
+					event.stopPropagation();
+				}
+
+			// If this is a native event triggered above, everything is now in order
+			// Fire an inner synthetic event with the original arguments
+			} else if ( saved.length ) {
+
+				// ...and capture the result
+				dataPriv.set( this, type, {
+					value: jQuery.event.trigger(
+
+						// Support: IE <=9 - 11+
+						// Extend with the prototype to reset the above stopImmediatePropagation()
+						jQuery.extend( saved[ 0 ], jQuery.Event.prototype ),
+						saved.slice( 1 ),
+						this
+					)
+				} );
+
+				// Abort handling of the native event
+				event.stopImmediatePropagation();
+			}
+		}
+	} );
+}
 
 jQuery.removeEvent = function( elem, type, handle ) {
 
@@ -21570,6 +21660,7 @@ jQuery.each( {
 	shiftKey: true,
 	view: true,
 	"char": true,
+	code: true,
 	charCode: true,
 	key: true,
 	keyCode: true,
@@ -21615,6 +21706,33 @@ jQuery.each( {
 		return event.which;
 	}
 }, jQuery.event.addProp );
+
+jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateType ) {
+	jQuery.event.special[ type ] = {
+
+		// Utilize native event if possible so blur/focus sequence is correct
+		setup: function() {
+
+			// Claim the first handler
+			// dataPriv.set( this, "focus", ... )
+			// dataPriv.set( this, "blur", ... )
+			leverageNative( this, type, expectSync );
+
+			// Return false to allow normal processing in the caller
+			return false;
+		},
+		trigger: function() {
+
+			// Force setup before trigger
+			leverageNative( this, type );
+
+			// Return non-false to allow normal event-path propagation
+			return true;
+		},
+
+		delegateType: delegateType
+	};
+} );
 
 // Create mouseenter/leave events using mouseover/out and event-time checks
 // so that event delegation works in jQuery.
@@ -21866,11 +21984,13 @@ function domManip( collection, args, callback, ignored ) {
 						if ( node.src && ( node.type || "" ).toLowerCase()  !== "module" ) {
 
 							// Optional AJAX dependency, but won't run scripts if not present
-							if ( jQuery._evalUrl ) {
-								jQuery._evalUrl( node.src );
+							if ( jQuery._evalUrl && !node.noModule ) {
+								jQuery._evalUrl( node.src, {
+									nonce: node.nonce || node.getAttribute( "nonce" )
+								} );
 							}
 						} else {
-							DOMEval( node.textContent.replace( rcleanScript, "" ), doc, node );
+							DOMEval( node.textContent.replace( rcleanScript, "" ), node, doc );
 						}
 					}
 				}
@@ -21892,7 +22012,7 @@ function remove( elem, selector, keepData ) {
 		}
 
 		if ( node.parentNode ) {
-			if ( keepData && jQuery.contains( node.ownerDocument, node ) ) {
+			if ( keepData && isAttached( node ) ) {
 				setGlobalEval( getAll( node, "script" ) );
 			}
 			node.parentNode.removeChild( node );
@@ -21910,7 +22030,7 @@ jQuery.extend( {
 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
 		var i, l, srcElements, destElements,
 			clone = elem.cloneNode( true ),
-			inPage = jQuery.contains( elem.ownerDocument, elem );
+			inPage = isAttached( elem );
 
 		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
@@ -22206,8 +22326,10 @@ var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
 
 		// Support: IE 9 only
 		// Detect overflow:scroll screwiness (gh-3699)
+		// Support: Chrome <=64
+		// Don't get tricked when zoom affects offsetWidth (gh-4029)
 		div.style.position = "absolute";
-		scrollboxSizeVal = div.offsetWidth === 36 || "absolute";
+		scrollboxSizeVal = roundPixelMeasures( div.offsetWidth / 3 ) === 12;
 
 		documentElement.removeChild( container );
 
@@ -22278,7 +22400,7 @@ function curCSS( elem, name, computed ) {
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 
-		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
+		if ( ret === "" && !isAttached( elem ) ) {
 			ret = jQuery.style( elem, name );
 		}
 
@@ -22334,29 +22456,12 @@ function addGetHookIf( conditionFn, hookFn ) {
 }
 
 
-var
+var cssPrefixes = [ "Webkit", "Moz", "ms" ],
+	emptyStyle = document.createElement( "div" ).style,
+	vendorProps = {};
 
-	// Swappable if display is none or starts with table
-	// except "table", "table-cell", or "table-caption"
-	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
-	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-	rcustomProp = /^--/,
-	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
-	cssNormalTransform = {
-		letterSpacing: "0",
-		fontWeight: "400"
-	},
-
-	cssPrefixes = [ "Webkit", "Moz", "ms" ],
-	emptyStyle = document.createElement( "div" ).style;
-
-// Return a css property mapped to a potentially vendor prefixed property
+// Return a vendor-prefixed property or undefined
 function vendorPropName( name ) {
-
-	// Shortcut for names that are not vendor prefixed
-	if ( name in emptyStyle ) {
-		return name;
-	}
 
 	// Check for vendor prefixed names
 	var capName = name[ 0 ].toUpperCase() + name.slice( 1 ),
@@ -22370,15 +22475,32 @@ function vendorPropName( name ) {
 	}
 }
 
-// Return a property mapped along what jQuery.cssProps suggests or to
-// a vendor prefixed property.
+// Return a potentially-mapped jQuery.cssProps or vendor prefixed property
 function finalPropName( name ) {
-	var ret = jQuery.cssProps[ name ];
-	if ( !ret ) {
-		ret = jQuery.cssProps[ name ] = vendorPropName( name ) || name;
+	var final = jQuery.cssProps[ name ] || vendorProps[ name ];
+
+	if ( final ) {
+		return final;
 	}
-	return ret;
+	if ( name in emptyStyle ) {
+		return name;
+	}
+	return vendorProps[ name ] = vendorPropName( name ) || name;
 }
+
+
+var
+
+	// Swappable if display is none or starts with table
+	// except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
+	rcustomProp = /^--/,
+	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
+	cssNormalTransform = {
+		letterSpacing: "0",
+		fontWeight: "400"
+	};
 
 function setPositiveNumber( elem, value, subtract ) {
 
@@ -22451,7 +22573,10 @@ function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computed
 			delta -
 			extra -
 			0.5
-		) );
+
+		// If offsetWidth/offsetHeight is unknown, then we can't determine content-box scroll gutter
+		// Use an explicit zero to avoid NaN (gh-3964)
+		) ) || 0;
 	}
 
 	return delta;
@@ -22461,9 +22586,16 @@ function getWidthOrHeight( elem, dimension, extra ) {
 
 	// Start with computed style
 	var styles = getStyles( elem ),
+
+		// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-4322).
+		// Fake content-box until we know it's needed to know the true value.
+		boxSizingNeeded = !support.boxSizingReliable() || extra,
+		isBorderBox = boxSizingNeeded &&
+			jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+		valueIsBorderBox = isBorderBox,
+
 		val = curCSS( elem, dimension, styles ),
-		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-		valueIsBorderBox = isBorderBox;
+		offsetProp = "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 );
 
 	// Support: Firefox <=54
 	// Return a confounding non-pixel value or feign ignorance, as appropriate.
@@ -22474,22 +22606,29 @@ function getWidthOrHeight( elem, dimension, extra ) {
 		val = "auto";
 	}
 
-	// Check for style in case a browser which returns unreliable values
-	// for getComputedStyle silently falls back to the reliable elem.style
-	valueIsBorderBox = valueIsBorderBox &&
-		( support.boxSizingReliable() || val === elem.style[ dimension ] );
 
 	// Fall back to offsetWidth/offsetHeight when value is "auto"
 	// This happens for inline elements with no explicit setting (gh-3571)
 	// Support: Android <=4.1 - 4.3 only
 	// Also use offsetWidth/offsetHeight for misreported inline dimensions (gh-3602)
-	if ( val === "auto" ||
-		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) {
+	// Support: IE 9-11 only
+	// Also use offsetWidth/offsetHeight for when box sizing is unreliable
+	// We use getClientRects() to check for hidden/disconnected.
+	// In those cases, the computed value can be trusted to be border-box
+	if ( ( !support.boxSizingReliable() && isBorderBox ||
+		val === "auto" ||
+		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) &&
+		elem.getClientRects().length ) {
 
-		val = elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ];
+		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 
-		// offsetWidth/offsetHeight provide border-box values
-		valueIsBorderBox = true;
+		// Where available, offsetWidth/offsetHeight approximate border box dimensions.
+		// Where not available (e.g., SVG), assume unreliable box-sizing and interpret the
+		// retrieved value as a content box dimension.
+		valueIsBorderBox = offsetProp in elem;
+		if ( valueIsBorderBox ) {
+			val = elem[ offsetProp ];
+		}
 	}
 
 	// Normalize "" and auto
@@ -22535,6 +22674,13 @@ jQuery.extend( {
 		"flexGrow": true,
 		"flexShrink": true,
 		"fontWeight": true,
+		"gridArea": true,
+		"gridColumn": true,
+		"gridColumnEnd": true,
+		"gridColumnStart": true,
+		"gridRow": true,
+		"gridRowEnd": true,
+		"gridRowStart": true,
 		"lineHeight": true,
 		"opacity": true,
 		"order": true,
@@ -22590,7 +22736,9 @@ jQuery.extend( {
 			}
 
 			// If a number was passed in, add the unit (except for certain CSS properties)
-			if ( type === "number" ) {
+			// The isCustomProp check can be removed in jQuery 4.0 when we only auto-append
+			// "px" to a few hardcoded values.
+			if ( type === "number" && !isCustomProp ) {
 				value += ret && ret[ 3 ] || ( jQuery.cssNumber[ origName ] ? "" : "px" );
 			}
 
@@ -22690,18 +22838,29 @@ jQuery.each( [ "height", "width" ], function( i, dimension ) {
 		set: function( elem, value, extra ) {
 			var matches,
 				styles = getStyles( elem ),
-				isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-				subtract = extra && boxModelAdjustment(
-					elem,
-					dimension,
-					extra,
-					isBorderBox,
-					styles
-				);
+
+				// Only read styles.position if the test has a chance to fail
+				// to avoid forcing a reflow.
+				scrollboxSizeBuggy = !support.scrollboxSize() &&
+					styles.position === "absolute",
+
+				// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-3991)
+				boxSizingNeeded = scrollboxSizeBuggy || extra,
+				isBorderBox = boxSizingNeeded &&
+					jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+				subtract = extra ?
+					boxModelAdjustment(
+						elem,
+						dimension,
+						extra,
+						isBorderBox,
+						styles
+					) :
+					0;
 
 			// Account for unreliable border-box dimensions by comparing offset* to computed and
 			// faking a content-box to get border and padding (gh-3699)
-			if ( isBorderBox && support.scrollboxSize() === styles.position ) {
+			if ( isBorderBox && scrollboxSizeBuggy ) {
 				subtract -= Math.ceil(
 					elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
 					parseFloat( styles[ dimension ] ) -
@@ -22869,9 +23028,9 @@ Tween.propHooks = {
 			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.nodeType === 1 &&
-				( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null ||
-					jQuery.cssHooks[ tween.prop ] ) ) {
+			} else if ( tween.elem.nodeType === 1 && (
+					jQuery.cssHooks[ tween.prop ] ||
+					tween.elem.style[ finalPropName( tween.prop ) ] != null ) ) {
 				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
 			} else {
 				tween.elem[ tween.prop ] = tween.now;
@@ -24578,6 +24737,10 @@ jQuery.param = function( a, traditional ) {
 				encodeURIComponent( value == null ? "" : value );
 		};
 
+	if ( a == null ) {
+		return "";
+	}
+
 	// If an array was passed in, assume that it is an array of form elements.
 	if ( Array.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
 
@@ -25080,12 +25243,14 @@ jQuery.extend( {
 						if ( !responseHeaders ) {
 							responseHeaders = {};
 							while ( ( match = rheaders.exec( responseHeadersString ) ) ) {
-								responseHeaders[ match[ 1 ].toLowerCase() ] = match[ 2 ];
+								responseHeaders[ match[ 1 ].toLowerCase() + " " ] =
+									( responseHeaders[ match[ 1 ].toLowerCase() + " " ] || [] )
+										.concat( match[ 2 ] );
 							}
 						}
-						match = responseHeaders[ key.toLowerCase() ];
+						match = responseHeaders[ key.toLowerCase() + " " ];
 					}
-					return match == null ? null : match;
+					return match == null ? null : match.join( ", " );
 				},
 
 				// Raw string
@@ -25474,7 +25639,7 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 } );
 
 
-jQuery._evalUrl = function( url ) {
+jQuery._evalUrl = function( url, options ) {
 	return jQuery.ajax( {
 		url: url,
 
@@ -25484,7 +25649,16 @@ jQuery._evalUrl = function( url ) {
 		cache: true,
 		async: false,
 		global: false,
-		"throws": true
+
+		// Only evaluate the response if it is successful (gh-4126)
+		// dataFilter is not invoked for failure responses, so using it instead
+		// of the default converter is kludgy but it works.
+		converters: {
+			"text script": function() {}
+		},
+		dataFilter: function( response ) {
+			jQuery.globalEval( response, options );
+		}
 	} );
 };
 
@@ -25767,24 +25941,21 @@ jQuery.ajaxPrefilter( "script", function( s ) {
 // Bind script tag hack transport
 jQuery.ajaxTransport( "script", function( s ) {
 
-	// This transport only deals with cross domain requests
-	if ( s.crossDomain ) {
+	// This transport only deals with cross domain or forced-by-attrs requests
+	if ( s.crossDomain || s.scriptAttrs ) {
 		var script, callback;
 		return {
 			send: function( _, complete ) {
-				script = jQuery( "<script>" ).prop( {
-					charset: s.scriptCharset,
-					src: s.url
-				} ).on(
-					"load error",
-					callback = function( evt ) {
+				script = jQuery( "<script>" )
+					.attr( s.scriptAttrs || {} )
+					.prop( { charset: s.scriptCharset, src: s.url } )
+					.on( "load error", callback = function( evt ) {
 						script.remove();
 						callback = null;
 						if ( evt ) {
 							complete( evt.type === "error" ? 404 : 200, evt.type );
 						}
-					}
-				);
+					} );
 
 				// Use native DOM manipulation to avoid our domManip AJAX trickery
 				document.head.appendChild( script[ 0 ] );
@@ -26516,6 +26687,7 @@ return jQuery;
 module.exports = function (random, alphabet, size) {
   var mask = (2 << Math.log(alphabet.length - 1) / Math.LN2) - 1
   var step = Math.ceil(1.6 * mask * size / alphabet.length)
+  size = +size
 
   var id = ''
   while (true) {
@@ -26536,6 +26708,751 @@ module.exports = function (random, alphabet, size) {
  * @return {number[]} Random bytes.
  */
 
+
+/***/ }),
+
+/***/ "./node_modules/odex/src/odex.js":
+/*!***************************************!*\
+  !*** ./node_modules/odex/src/odex.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ * An implementation of ODEX, by E. Hairer and G. Wanner, ported from the Fortran ODEX.F.
+ * The original work carries the BSD 2-clause license, and so does this.
+ *
+ * Copyright (c) 2016 Colin Smith.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+ * disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+ * following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+var Outcome;
+(function (Outcome) {
+    Outcome[Outcome["Converged"] = 0] = "Converged";
+    Outcome[Outcome["MaxStepsExceeded"] = 1] = "MaxStepsExceeded";
+    Outcome[Outcome["EarlyReturn"] = 2] = "EarlyReturn";
+})(Outcome = exports.Outcome || (exports.Outcome = {}));
+var Solver = (function () {
+    function Solver(n) {
+        this.n = n;
+        this.uRound = 2.3e-16;
+        this.maxSteps = 10000;
+        this.initialStepSize = 1e-4;
+        this.maxStepSize = 0;
+        this.maxExtrapolationColumns = 9;
+        this.stepSizeSequence = 0;
+        this.stabilityCheckCount = 1;
+        this.stabilityCheckTableLines = 2;
+        this.denseOutput = false;
+        this.denseOutputErrorEstimator = true;
+        this.denseComponents = undefined;
+        this.interpolationFormulaDegree = 4;
+        this.stepSizeReductionFactor = 0.5;
+        this.stepSizeFac1 = 0.02;
+        this.stepSizeFac2 = 4.0;
+        this.stepSizeFac3 = 0.8;
+        this.stepSizeFac4 = 0.9;
+        this.stepSafetyFactor1 = 0.65;
+        this.stepSafetyFactor2 = 0.94;
+        this.relativeTolerance = 1e-5;
+        this.absoluteTolerance = 1e-5;
+        this.debug = false;
+    }
+    Solver.prototype.grid = function (dt, out) {
+        if (!this.denseOutput)
+            throw new Error('Must set .denseOutput to true when using grid');
+        var components = this.denseComponents;
+        if (!components) {
+            components = [];
+            for (var i = 0; i < this.n; ++i)
+                components.push(i);
+        }
+        var t;
+        return function (n, xOld, x, y, interpolate) {
+            if (n === 1) {
+                var v = out(x, y);
+                t = x + dt;
+                return v;
+            }
+            while (t <= x) {
+                var yf = [];
+                for (var _i = 0, components_1 = components; _i < components_1.length; _i++) {
+                    var i = components_1[_i];
+                    yf.push(interpolate(i, t));
+                }
+                var v = out(t, yf);
+                if (v === false)
+                    return false;
+                t += dt;
+            }
+        };
+    };
+    // Make a 1-based 2D array, with r rows and c columns. The initial values are undefined.
+    Solver.dim2 = function (r, c) {
+        var a = new Array(r + 1);
+        for (var i = 1; i <= r; ++i)
+            a[i] = Solver.dim(c);
+        return a;
+    };
+    // Generate step size sequence and return as a 1-based array of length n.
+    Solver.stepSizeSequence = function (nSeq, n) {
+        var a = new Array(n + 1);
+        a[0] = 0;
+        switch (nSeq) {
+            case 1:
+                for (var i = 1; i <= n; ++i)
+                    a[i] = 2 * i;
+                break;
+            case 2:
+                a[1] = 2;
+                for (var i = 2; i <= n; ++i)
+                    a[i] = 4 * i - 4;
+                break;
+            case 3:
+                a[1] = 2;
+                a[2] = 4;
+                a[3] = 6;
+                for (var i = 4; i <= n; ++i)
+                    a[i] = 2 * a[i - 2];
+                break;
+            case 4:
+                for (var i = 1; i <= n; ++i)
+                    a[i] = 4 * i - 2;
+                break;
+            case 5:
+                for (var i = 1; i <= n; ++i)
+                    a[i] = 4 * i;
+                break;
+            default:
+                throw new Error('invalid stepSizeSequence selected');
+        }
+        return a;
+    };
+    // Integrate the differential system represented by f, from x to xEnd, with initial data y.
+    // solOut, if provided, is called at each integration step.
+    Solver.prototype.solve = function (f, x, y0, xEnd, solOut) {
+        var _this = this;
+        // Make a copy of y0, 1-based. We leave the user's parameters alone so that they may be reused if desired.
+        var y = [0].concat(y0);
+        var dz = Solver.dim(this.n);
+        var yh1 = Solver.dim(this.n);
+        var yh2 = Solver.dim(this.n);
+        if (this.maxSteps <= 0)
+            throw new Error('maxSteps must be positive');
+        var km = this.maxExtrapolationColumns;
+        if (km <= 2)
+            throw new Error('maxExtrapolationColumns must be > 2');
+        var nSeq = this.stepSizeSequence || (this.denseOutput ? 4 : 1);
+        if (nSeq <= 3 && this.denseOutput)
+            throw new Error('stepSizeSequence incompatible with denseOutput');
+        if (this.denseOutput && !solOut)
+            throw new Error('denseOutput requires a solution observer function');
+        if (this.interpolationFormulaDegree <= 0 || this.interpolationFormulaDegree >= 7)
+            throw new Error('bad interpolationFormulaDegree');
+        var icom = [0]; // icom will be 1-based, so start with a pad entry.
+        var nrdens = 0;
+        if (this.denseOutput) {
+            if (this.denseComponents) {
+                for (var _i = 0, _a = this.denseComponents; _i < _a.length; _i++) {
+                    var c = _a[_i];
+                    // convert dense components requested into one-based indexing.
+                    if (c < 0 || c > this.n)
+                        throw new Error('bad dense component: ' + c);
+                    icom.push(c + 1);
+                    ++nrdens;
+                }
+            }
+            else {
+                // if user asked for dense output but did not specify any denseComponents,
+                // request all of them.
+                for (var i = 1; i <= this.n; ++i) {
+                    icom.push(i);
+                }
+                nrdens = this.n;
+            }
+        }
+        if (this.uRound <= 1e-35 || this.uRound > 1)
+            throw new Error('suspicious value of uRound');
+        var hMax = Math.abs(this.maxStepSize || xEnd - x);
+        var lfSafe = 2 * km * km + km;
+        function expandToArray(x, n) {
+            // If x is an array, return a 1-based copy of it. If x is a number, return a new 1-based array
+            // consisting of n copies of the number.
+            var tolArray = [0];
+            if (Array.isArray(x)) {
+                return tolArray.concat(x);
+            }
+            else {
+                for (var i = 0; i < n; ++i)
+                    tolArray.push(x);
+                return tolArray;
+            }
+        }
+        var aTol = expandToArray(this.absoluteTolerance, this.n);
+        var rTol = expandToArray(this.relativeTolerance, this.n);
+        var _b = [0, 0, 0, 0], nEval = _b[0], nStep = _b[1], nAccept = _b[2], nReject = _b[3];
+        // call to core integrator
+        var nrd = Math.max(1, nrdens);
+        var ncom = Math.max(1, (2 * km + 5) * nrdens);
+        var dens = Solver.dim(ncom);
+        var fSafe = Solver.dim2(lfSafe, nrd);
+        // Wrap f in a function F which hides the one-based indexing from the customers.
+        var F = function (x, y, yp) {
+            var ret = f(x, y.slice(1));
+            for (var i = 0; i < ret.length; ++i)
+                yp[i + 1] = ret[i];
+        };
+        var odxcor = function () {
+            // The following three variables are COMMON/CONTEX/
+            var xOldd;
+            var hhh;
+            var kmit;
+            var acceptStep = function (n) {
+                // Returns true if we should continue the integration. The only time false
+                // is returned is when the user's solution observation function has returned false,
+                // indicating that she does not wish to continue the computation.
+                xOld = x;
+                x += h;
+                if (_this.denseOutput) {
+                    // kmit = mu of the paper
+                    kmit = 2 * kc - _this.interpolationFormulaDegree + 1;
+                    for (var i = 1; i <= nrd; ++i)
+                        dens[i] = y[icom[i]];
+                    xOldd = xOld;
+                    hhh = h; // note: xOldd and hhh are part of /CONODX/
+                    for (var i = 1; i <= nrd; ++i)
+                        dens[nrd + i] = h * dz[icom[i]];
+                    var kln = 2 * nrd;
+                    for (var i = 1; i <= nrd; ++i)
+                        dens[kln + i] = t[1][icom[i]];
+                    // compute solution at mid-point
+                    for (var j = 2; j <= kc; ++j) {
+                        var dblenj = nj[j];
+                        for (var l = j; l >= 2; --l) {
+                            var factor = Math.pow((dblenj / nj[l - 1]), 2) - 1;
+                            for (var i = 1; i <= nrd; ++i) {
+                                ySafe[l - 1][i] = ySafe[l][i] + (ySafe[l][i] - ySafe[l - 1][i]) / factor;
+                            }
+                        }
+                    }
+                    var krn = 4 * nrd;
+                    for (var i = 1; i <= nrd; ++i)
+                        dens[krn + i] = ySafe[1][i];
+                    // compute first derivative at right end
+                    for (var i = 1; i <= n; ++i)
+                        yh1[i] = t[1][i];
+                    F(x, yh1, yh2);
+                    krn = 3 * nrd;
+                    for (var i = 1; i <= nrd; ++i)
+                        dens[krn + i] = yh2[icom[i]] * h;
+                    // THE LOOP
+                    for (var kmi = 1; kmi <= kmit; ++kmi) {
+                        // compute kmi-th derivative at mid-point
+                        var kbeg = (kmi + 1) / 2 | 0;
+                        for (var kk = kbeg; kk <= kc; ++kk) {
+                            var facnj = Math.pow((nj[kk] / 2), (kmi - 1));
+                            iPt = iPoint[kk + 1] - 2 * kk + kmi;
+                            for (var i = 1; i <= nrd; ++i) {
+                                ySafe[kk][i] = fSafe[iPt][i] * facnj;
+                            }
+                        }
+                        for (var j = kbeg + 1; j <= kc; ++j) {
+                            var dblenj = nj[j];
+                            for (var l = j; l >= kbeg + 1; --l) {
+                                var factor = Math.pow((dblenj / nj[l - 1]), 2) - 1;
+                                for (var i = 1; i <= nrd; ++i) {
+                                    ySafe[l - 1][i] = ySafe[l][i] + (ySafe[l][i] - ySafe[l - 1][i]) / factor;
+                                }
+                            }
+                        }
+                        krn = (kmi + 4) * nrd;
+                        for (var i = 1; i <= nrd; ++i)
+                            dens[krn + i] = ySafe[kbeg][i] * h;
+                        if (kmi === kmit)
+                            continue;
+                        // compute differences
+                        for (var kk = (kmi + 2) / 2 | 0; kk <= kc; ++kk) {
+                            var lbeg = iPoint[kk + 1];
+                            var lend = iPoint[kk] + kmi + 1;
+                            if (kmi === 1 && nSeq === 4)
+                                lend += 2;
+                            var l = void 0;
+                            for (l = lbeg; l >= lend; l -= 2) {
+                                for (var i = 1; i <= nrd; ++i) {
+                                    fSafe[l][i] -= fSafe[l - 2][i];
+                                }
+                            }
+                            if (kmi === 1 && nSeq === 4) {
+                                l = lend - 2;
+                                for (var i = 1; i <= nrd; ++i)
+                                    fSafe[l][i] -= dz[icom[i]];
+                            }
+                        }
+                        // compute differences
+                        for (var kk = (kmi + 2) / 2 | 0; kk <= kc; ++kk) {
+                            var lbeg = iPoint[kk + 1] - 1;
+                            var lend = iPoint[kk] + kmi + 2;
+                            for (var l = lbeg; l >= lend; l -= 2) {
+                                for (var i = 1; i <= nrd; ++i) {
+                                    fSafe[l][i] -= fSafe[l - 2][i];
+                                }
+                            }
+                        }
+                    }
+                    interp(nrd, dens, kmit);
+                    // estimation of interpolation error
+                    if (_this.denseOutputErrorEstimator && kmit >= 1) {
+                        var errint = 0;
+                        for (var i = 1; i <= nrd; ++i)
+                            errint += Math.pow((dens[(kmit + 4) * nrd + i] / scal[icom[i]]), 2);
+                        errint = Math.sqrt(errint / nrd) * errfac[kmit];
+                        hoptde = h / Math.max(Math.pow(errint, (1 / (kmit + 4))), 0.01);
+                        if (errint > 10) {
+                            h = hoptde;
+                            x = xOld;
+                            ++nReject;
+                            reject = true;
+                            return true;
+                        }
+                    }
+                    for (var i = 1; i <= n; ++i)
+                        dz[i] = yh2[i];
+                }
+                for (var i = 1; i <= n; ++i)
+                    y[i] = t[1][i];
+                ++nAccept;
+                if (solOut) {
+                    // If denseOutput, we also want to supply the dense closure.
+                    if (solOut(nAccept + 1, xOld, x, y.slice(1), _this.denseOutput && contex(xOldd, hhh, kmit, dens, icom)) === false)
+                        return false;
+                }
+                // compute optimal order
+                var kopt;
+                if (kc === 2) {
+                    kopt = Math.min(3, km - 1);
+                    if (reject)
+                        kopt = 2;
+                }
+                else {
+                    if (kc <= k) {
+                        kopt = kc;
+                        if (w[kc - 1] < w[kc] * _this.stepSizeFac3)
+                            kopt = kc - 1;
+                        if (w[kc] < w[kc - 1] * _this.stepSizeFac4)
+                            kopt = Math.min(kc + 1, km - 1);
+                    }
+                    else {
+                        kopt = kc - 1;
+                        if (kc > 3 && w[kc - 2] < w[kc - 1] * _this.stepSizeFac3)
+                            kopt = kc - 2;
+                        if (w[kc] < w[kopt] * _this.stepSizeFac4)
+                            kopt = Math.min(kc, km - 1);
+                    }
+                }
+                // after a rejected step
+                if (reject) {
+                    k = Math.min(kopt, kc);
+                    h = posneg * Math.min(Math.abs(h), Math.abs(hh[k]));
+                    reject = false;
+                    return true; // goto 10
+                }
+                if (kopt <= kc) {
+                    h = hh[kopt];
+                }
+                else {
+                    if (kc < k && w[kc] < w[kc - 1] * _this.stepSizeFac4) {
+                        h = hh[kc] * a[kopt + 1] / a[kc];
+                    }
+                    else {
+                        h = hh[kc] * a[kopt] / a[kc];
+                    }
+                }
+                // compute stepsize for next step
+                k = kopt;
+                h = posneg * Math.abs(h);
+                return true;
+            };
+            var midex = function (j) {
+                var dy = Solver.dim(_this.n);
+                // Computes the jth line of the extrapolation table and
+                // provides an estimation of the optional stepsize
+                var hj = h / nj[j];
+                // Euler starting step
+                for (var i = 1; i <= _this.n; ++i) {
+                    yh1[i] = y[i];
+                    yh2[i] = y[i] + hj * dz[i];
+                }
+                // Explicit midpoint rule
+                var m = nj[j] - 1;
+                var njMid = (nj[j] / 2) | 0;
+                for (var mm = 1; mm <= m; ++mm) {
+                    if (_this.denseOutput && mm === njMid) {
+                        for (var i = 1; i <= nrd; ++i) {
+                            ySafe[j][i] = yh2[icom[i]];
+                        }
+                    }
+                    F(x + hj * mm, yh2, dy);
+                    if (_this.denseOutput && Math.abs(mm - njMid) <= 2 * j - 1) {
+                        ++iPt;
+                        for (var i = 1; i <= nrd; ++i) {
+                            fSafe[iPt][i] = dy[icom[i]];
+                        }
+                    }
+                    for (var i = 1; i <= _this.n; ++i) {
+                        var ys = yh1[i];
+                        yh1[i] = yh2[i];
+                        yh2[i] = ys + 2 * hj * dy[i];
+                    }
+                    if (mm <= _this.stabilityCheckCount && j <= _this.stabilityCheckTableLines) {
+                        // stability check
+                        var del1 = 0;
+                        for (var i = 1; i <= _this.n; ++i) {
+                            del1 += Math.pow((dz[i] / scal[i]), 2);
+                        }
+                        var del2 = 0;
+                        for (var i = 1; i <= _this.n; ++i) {
+                            del2 += Math.pow(((dy[i] - dz[i]) / scal[i]), 2);
+                        }
+                        var quot = del2 / Math.max(_this.uRound, del1);
+                        if (quot > 4) {
+                            ++nEval;
+                            atov = true;
+                            h *= _this.stepSizeReductionFactor;
+                            reject = true;
+                            return;
+                        }
+                    }
+                }
+                // final smoothing step
+                F(x + h, yh2, dy);
+                if (_this.denseOutput && njMid <= 2 * j - 1) {
+                    ++iPt;
+                    for (var i = 1; i <= nrd; ++i) {
+                        fSafe[iPt][i] = dy[icom[i]];
+                    }
+                }
+                for (var i = 1; i <= _this.n; ++i) {
+                    t[j][i] = (yh1[i] + yh2[i] + hj * dy[i]) / 2;
+                }
+                nEval += nj[j];
+                // polynomial extrapolation
+                if (j === 1)
+                    return; // was j.eq.1
+                var dblenj = nj[j];
+                var fac;
+                for (var l = j; l > 1; --l) {
+                    fac = Math.pow((dblenj / nj[l - 1]), 2) - 1;
+                    for (var i = 1; i <= _this.n; ++i) {
+                        t[l - 1][i] = t[l][i] + (t[l][i] - t[l - 1][i]) / fac;
+                    }
+                }
+                err = 0;
+                // scaling
+                for (var i = 1; i <= _this.n; ++i) {
+                    var t1i = Math.max(Math.abs(y[i]), Math.abs(t[1][i]));
+                    scal[i] = aTol[i] + rTol[i] * t1i;
+                    err += Math.pow(((t[1][i] - t[2][i]) / scal[i]), 2);
+                }
+                err = Math.sqrt(err / _this.n);
+                if (err * _this.uRound >= 1 || (j > 2 && err >= errOld)) {
+                    atov = true;
+                    h *= _this.stepSizeReductionFactor;
+                    reject = true;
+                    return;
+                }
+                errOld = Math.max(4 * err, 1);
+                // compute optimal stepsizes
+                var exp0 = 1 / (2 * j - 1);
+                var facMin = Math.pow(_this.stepSizeFac1, exp0);
+                fac = Math.min(_this.stepSizeFac2 / facMin, Math.max(facMin, Math.pow((err / _this.stepSafetyFactor1), exp0) / _this.stepSafetyFactor2));
+                fac = 1 / fac;
+                hh[j] = Math.min(Math.abs(h) * fac, hMax);
+                w[j] = a[j] / hh[j];
+            };
+            var interp = function (n, y, imit) {
+                // computes the coefficients of the interpolation formula
+                var a = new Array(31); // zero-based: 0:30
+                // begin with Hermite interpolation
+                for (var i = 1; i <= n; ++i) {
+                    var y0_1 = y[i];
+                    var y1 = y[2 * n + i];
+                    var yp0 = y[n + i];
+                    var yp1 = y[3 * n + i];
+                    var yDiff = y1 - y0_1;
+                    var aspl = -yp1 + yDiff;
+                    var bspl = yp0 - yDiff;
+                    y[n + i] = yDiff;
+                    y[2 * n + i] = aspl;
+                    y[3 * n + i] = bspl;
+                    if (imit < 0)
+                        continue;
+                    // compute the derivatives of Hermite at midpoint
+                    var ph0 = (y0_1 + y1) * 0.5 + 0.125 * (aspl + bspl);
+                    var ph1 = yDiff + (aspl - bspl) * 0.25;
+                    var ph2 = -(yp0 - yp1);
+                    var ph3 = 6 * (bspl - aspl);
+                    // compute the further coefficients
+                    if (imit >= 1) {
+                        a[1] = 16 * (y[5 * n + i] - ph1);
+                        if (imit >= 3) {
+                            a[3] = 16 * (y[7 * n + i] - ph3 + 3 * a[1]);
+                            if (imit >= 5) {
+                                for (var im = 5; im <= imit; im += 2) {
+                                    var fac1 = im * (im - 1) / 2;
+                                    var fac2 = fac1 * (im - 2) * (im - 3) * 2;
+                                    a[im] = 16 * (y[(im + 4) * n + i] + fac1 * a[im - 2] - fac2 * a[im - 4]);
+                                }
+                            }
+                        }
+                    }
+                    a[0] = (y[4 * n + i] - ph0) * 16;
+                    if (imit >= 2) {
+                        a[2] = (y[n * 6 + i] - ph2 + a[0]) * 16;
+                        if (imit >= 4) {
+                            for (var im = 4; im <= imit; im += 2) {
+                                var fac1 = im * (im - 1) / 2;
+                                var fac2 = im * (im - 1) * (im - 2) * (im - 3);
+                                a[im] = (y[n * (im + 4) + i] + a[im - 2] * fac1 - a[im - 4] * fac2) * 16;
+                            }
+                        }
+                    }
+                    for (var im = 0; im <= imit; ++im)
+                        y[n * (im + 4) + i] = a[im];
+                }
+            };
+            var contex = function (xOld, h, imit, y, icom) {
+                return function (c, x) {
+                    var i = 0;
+                    for (var j = 1; j <= nrd; ++j) {
+                        // careful: customers describe components 0-based. We record indices 1-based.
+                        if (icom[j] === c + 1)
+                            i = j;
+                    }
+                    if (i === 0)
+                        throw new Error('no dense output available for component ' + c);
+                    var theta = (x - xOld) / h;
+                    var theta1 = 1 - theta;
+                    var phthet = y[i] + theta * (y[nrd + i] + theta1 * (y[2 * nrd + i] * theta + y[3 * nrd + i] * theta1));
+                    if (imit < 0)
+                        return phthet;
+                    var thetah = theta - 0.5;
+                    var ret = y[nrd * (imit + 4) + i];
+                    for (var im = imit; im >= 1; --im) {
+                        ret = y[nrd * (im + 3) + i] + ret * thetah / im;
+                    }
+                    return phthet + Math.pow((theta * theta1), 2) * ret;
+                };
+            };
+            // preparation
+            var ySafe = Solver.dim2(km, nrd);
+            var hh = Solver.dim(km);
+            var t = Solver.dim2(km, _this.n);
+            // Define the step size sequence
+            var nj = Solver.stepSizeSequence(nSeq, km);
+            // Define the a[i] for order selection
+            var a = Solver.dim(km);
+            a[1] = 1 + nj[1];
+            for (var i = 2; i <= km; ++i) {
+                a[i] = a[i - 1] + nj[i];
+            }
+            // Initial Scaling
+            var scal = Solver.dim(_this.n);
+            for (var i = 1; i <= _this.n; ++i) {
+                scal[i] = aTol[i] + rTol[i] + Math.abs(y[i]);
+            }
+            // Initial preparations
+            var posneg = xEnd - x >= 0 ? 1 : -1;
+            var k = Math.max(2, Math.min(km - 1, Math.floor(-Solver.log10(rTol[1] + 1e-40) * 0.6 + 1.5)));
+            var h = Math.max(Math.abs(_this.initialStepSize), 1e-4);
+            h = posneg * Math.min(h, hMax, Math.abs(xEnd - x) / 2);
+            var iPoint = Solver.dim(km + 1);
+            var errfac = Solver.dim(2 * km);
+            var xOld = x;
+            var iPt = 0;
+            if (solOut) {
+                if (_this.denseOutput) {
+                    iPoint[1] = 0;
+                    for (var i = 1; i <= km; ++i) {
+                        var njAdd = 4 * i - 2;
+                        if (nj[i] > njAdd)
+                            ++njAdd;
+                        iPoint[i + 1] = iPoint[i] + njAdd;
+                    }
+                    for (var mu = 1; mu <= 2 * km; ++mu) {
+                        var errx = Math.sqrt(mu / (mu + 4)) * 0.5;
+                        var prod = Math.pow((1 / (mu + 4)), 2);
+                        for (var j = 1; j <= mu; ++j)
+                            prod *= errx / j;
+                        errfac[mu] = prod;
+                    }
+                    iPt = 0;
+                }
+                // check return value and abandon integration if called for
+                if (false === solOut(nAccept + 1, xOld, x, y.slice(1))) {
+                    return Outcome.EarlyReturn;
+                }
+            }
+            var err = 0;
+            var errOld = 1e10;
+            var hoptde = posneg * hMax;
+            var w = Solver.dim(km);
+            w[1] = 0;
+            var reject = false;
+            var last = false;
+            var atov;
+            var kc = 0;
+            var STATE;
+            (function (STATE) {
+                STATE[STATE["Start"] = 0] = "Start";
+                STATE[STATE["BasicIntegrationStep"] = 1] = "BasicIntegrationStep";
+                STATE[STATE["ConvergenceStep"] = 2] = "ConvergenceStep";
+                STATE[STATE["HopeForConvergence"] = 3] = "HopeForConvergence";
+                STATE[STATE["Accept"] = 4] = "Accept";
+                STATE[STATE["Reject"] = 5] = "Reject";
+            })(STATE || (STATE = {}));
+            var state = STATE.Start;
+            loop: while (true) {
+                _this.debug && console.log('STATE', STATE[state], nStep, xOld, x, h, k, kc, hoptde);
+                switch (state) {
+                    case STATE.Start:
+                        atov = false;
+                        // Is xEnd reached in the next step?
+                        if (0.1 * Math.abs(xEnd - x) <= Math.abs(x) * _this.uRound)
+                            break loop;
+                        h = posneg * Math.min(Math.abs(h), Math.abs(xEnd - x), hMax, Math.abs(hoptde));
+                        if ((x + 1.01 * h - xEnd) * posneg > 0) {
+                            h = xEnd - x;
+                            last = true;
+                        }
+                        if (nStep === 0 || !_this.denseOutput) {
+                            F(x, y, dz);
+                            ++nEval;
+                        }
+                        // The first and last step
+                        if (nStep === 0 || last) {
+                            iPt = 0;
+                            ++nStep;
+                            for (var j = 1; j <= k; ++j) {
+                                kc = j;
+                                midex(j);
+                                if (atov)
+                                    continue loop;
+                                if (j > 1 && err <= 1) {
+                                    state = STATE.Accept;
+                                    continue loop;
+                                }
+                            }
+                            state = STATE.HopeForConvergence;
+                            continue;
+                        }
+                        state = STATE.BasicIntegrationStep;
+                        continue;
+                    case STATE.BasicIntegrationStep:
+                        // basic integration step
+                        iPt = 0;
+                        ++nStep;
+                        if (nStep >= _this.maxSteps) {
+                            return Outcome.MaxStepsExceeded;
+                        }
+                        kc = k - 1;
+                        for (var j = 1; j <= kc; ++j) {
+                            midex(j);
+                            if (atov) {
+                                state = STATE.Start;
+                                continue loop;
+                            }
+                        }
+                        // convergence monitor
+                        if (k === 2 || reject) {
+                            state = STATE.ConvergenceStep;
+                        }
+                        else {
+                            if (err <= 1) {
+                                state = STATE.Accept;
+                            }
+                            else if (err > Math.pow(((nj[k + 1] * nj[k]) / 4), 2)) {
+                                state = STATE.Reject;
+                            }
+                            else
+                                state = STATE.ConvergenceStep;
+                        }
+                        continue;
+                    case STATE.ConvergenceStep:
+                        midex(k);
+                        if (atov) {
+                            state = STATE.Start;
+                            continue;
+                        }
+                        kc = k;
+                        if (err <= 1) {
+                            state = STATE.Accept;
+                            continue;
+                        }
+                        state = STATE.HopeForConvergence;
+                        continue;
+                    case STATE.HopeForConvergence:
+                        // hope for convergence in line k + 1
+                        if (err > Math.pow((nj[k + 1] / 2), 2)) {
+                            state = STATE.Reject;
+                            continue;
+                        }
+                        kc = k + 1;
+                        midex(kc);
+                        if (atov)
+                            state = STATE.Start;
+                        else if (err > 1)
+                            state = STATE.Reject;
+                        else
+                            state = STATE.Accept;
+                        continue;
+                    case STATE.Accept:
+                        if (!acceptStep(_this.n))
+                            return Outcome.EarlyReturn;
+                        state = STATE.Start;
+                        continue;
+                    case STATE.Reject:
+                        k = Math.min(k, kc, km - 1);
+                        if (k > 2 && w[k - 1] < w[k] * _this.stepSizeFac3)
+                            k -= 1;
+                        ++nReject;
+                        h = posneg * hh[k];
+                        reject = true;
+                        state = STATE.BasicIntegrationStep;
+                }
+            }
+            return Outcome.Converged;
+        };
+        var outcome = odxcor();
+        return {
+            y: y.slice(1),
+            outcome: outcome,
+            nStep: nStep,
+            xEnd: xEnd,
+            nAccept: nAccept,
+            nReject: nReject,
+            nEval: nEval
+        };
+    };
+    return Solver;
+}());
+// return a 1-based array of length n. Initial values undefined.
+Solver.dim = function (n) { return Array(n + 1); };
+Solver.log10 = function (x) { return Math.log(x) / Math.LN10; };
+exports.Solver = Solver;
+//# sourceMappingURL=odex.js.map
 
 /***/ }),
 
@@ -32263,6 +33180,100 @@ init();
 
 /***/ }),
 
+/***/ "./src/springs/defaults.js":
+/*!*********************************!*\
+  !*** ./src/springs/defaults.js ***!
+  \*********************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return defaults; });
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./system/graph/graph */ "./src/springs/system/graph/graph.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./emitter */ "./src/springs/emitter.js");
+
+
+ //a top level module that aids in the user loading default systems
+
+var state = {
+  debug: true
+};
+var defaults = {};
+
+defaults.circleSystem = function () {
+  _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/reset', {
+    calledBy: 'defaults/loadCircleSystem'
+  });
+  var offset = 500;
+  var bigWeight = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+    position: {
+      x: offset,
+      y: offset
+    },
+    velocity: {
+      x: 20,
+      y: 0
+    },
+    mass: 50
+  }); // const mediumMasses = ( () => {
+  //     const count = 10
+  //     const size = 100;
+  //     for ( let i = 0; i < count; i++ ) {
+  //         const m = graph.addWeight({
+  //             position: { x: offset + size*Math.cos(i), y: offset + size*Math.sin(i) },
+  //             velocity: { x: Math.random(), y: Math.random() },
+  //             mass: 15,
+  //         })
+  //         graph.addEdge(bigWeight, m)
+  //     }
+  // })()
+
+  var lastMass;
+
+  var smallMasses = function () {
+    var count = 20;
+    var size = 300;
+
+    for (var i = 0; i < count; i++) {
+      var sign = Math.random() > .5 ? 1 : -1;
+      var m = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+        position: {
+          x: offset + size * Math.cos(i),
+          y: offset + size * Math.sin(i)
+        },
+        velocity: {
+          x: sign * Math.random() * 50,
+          y: sign * Math.random() * 50
+        },
+        mass: 1
+      });
+      _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(bigWeight, m);
+
+      if (lastMass) {
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, m);
+      }
+
+      lastMass = m;
+    }
+  }();
+
+  if (state.debug) {
+    console.log('%c Default circle system loaded! ', 'color:orange');
+  }
+};
+
+defaults.load = function (systemNameToLoad) {
+  if (defaults.hasOwnProperty(systemNameToLoad)) {
+    defaults[systemNameToLoad]();
+  }
+};
+
+
+
+/***/ }),
+
 /***/ "./src/springs/emitter.js":
 /*!********************************!*\
   !*** ./src/springs/emitter.js ***!
@@ -32296,12 +33307,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _view_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./view.js */ "./src/springs/view.js");
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _orchestrator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./orchestrator */ "./src/springs/orchestrator.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
-/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
+/* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! shortid */ "./node_modules/shortid/index.js");
+/* harmony import */ var shortid__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(shortid__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _tests_allTests__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./tests/allTests */ "./src/springs/tests/allTests.js");
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
 
 
 
@@ -32327,7 +33340,7 @@ regeneratorRuntime.mark(function _callee() {
           page = pathname.split('/').pop().toLocaleLowerCase();
 
           if (!window.localStorage.getItem('key')) {
-            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_4___default.a.generate());
+            window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_5___default.a.generate());
           }
 
           window.user = {
@@ -32338,9 +33351,10 @@ regeneratorRuntime.mark(function _callee() {
           window.view = {};
           window.dbug = {
             system: _system_system__WEBPACK_IMPORTED_MODULE_2__["default"],
-            orchestrator: _orchestrator__WEBPACK_IMPORTED_MODULE_3__["default"]
+            orchestrator: _orchestrator__WEBPACK_IMPORTED_MODULE_3__["default"],
+            springCanvas: _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_4__["default"]
           };
-          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_5__["default"];
+          window.tests = _tests_allTests__WEBPACK_IMPORTED_MODULE_6__["default"];
           window.springCanvas = document.getElementById('springCanvas');
           window.springCanvas.ctx = window.springCanvas.getContext('2d');
           _view_js__WEBPACK_IMPORTED_MODULE_1__["default"].init(); //top level
@@ -32369,11 +33383,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
 /* harmony import */ var _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./plotCanvas/plotCanvas */ "./src/springs/plotCanvas/plotCanvas.js");
+/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
+/* harmony import */ var _defaults__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./defaults */ "./src/springs/defaults.js");
+
+
 
 
 
 var state = {
-  isAnimating: false
+  isAnimating: false,
+  debugging: true
 };
 var logic = {};
 
@@ -32396,32 +33415,104 @@ var stopAnimating = function stopAnimating() {
   window.cancelAnimationFrame(state.animationFrame);
 };
 
-logic.toggleAnimate = function () {
+var toggleAnimate = function toggleAnimate() {
   state.isAnimating = !state.isAnimating;
 
   if (state.isAnimating) {
     animate();
   } else {
     stopAnimating();
-  } // setTimeout( () => {
-  //     stopAnimating();
-  // }, 1000)
-
+  }
 };
 
-logic.redraw = function () {
-  _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].draw();
+var redraw = function redraw() {
+  if (state.isAnimating) {
+    console.warn('orchestrator redraw requested');
+    stopAnimating();
+  }
+
+  getDrawableComponents().forEach(function (d) {
+    d.clear();
+    d.draw();
+  });
 };
 
-logic.resize = function () {
+var resize = function resize() {
+  if (state.isAnimating) {
+    console.warn('orchestrator resize requested while animating');
+    stopAnimating();
+  }
+
   getDrawableComponents().forEach(function (c) {
     return c.resize();
   });
 };
 
+var reset = function reset() {
+  if (state.isAnimating) {
+    stopAnimating();
+  } //clears the drawables, resets the system
+
+
+  getDrawableComponents().forEach(function (d) {
+    d.reset();
+  });
+  _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+};
+
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/toggleAnimate', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator toggleAnimate event called by ', 'color:green', d.calledBy);
+  }
+
+  toggleAnimate();
+});
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/stopAnimation', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator stopAnimation event called by ', 'color:green', d.calledBy);
+  }
+
+  if (state.isAnimating) {
+    stopAnimating();
+  }
+});
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/startAnimation', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator startAnimation event called by ', 'color:green', d.calledBy);
+  }
+
+  if (!state.isAnimating) {
+    animate();
+  }
+});
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/reset', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy);
+  }
+
+  reset();
+}); //few cases justify this emit
+
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/redraw', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy);
+  }
+
+  redraw();
+});
+_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/resize', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator resize event called by ', 'color:green', d.calledBy);
+  }
+
+  resize();
+});
+
 logic.init = function () {
   _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].init();
   _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init();
+  _defaults__WEBPACK_IMPORTED_MODULE_4__["default"].load('circleSystem');
+  animate();
 };
 
 
@@ -32536,21 +33627,28 @@ logic.init = function () {
 /*!************************************************!*\
   !*** ./src/springs/springCanvas/drawSpring.js ***!
   \************************************************/
-/*! exports provided: default */
+/*! exports provided: draw */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return drawSpring; });
-var drawSpring = function drawSpring(_ref) {
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "draw", function() { return draw; });
+//where state is the parent springCanvas state
+var draw = function draw(_ref) {
   var state = _ref.state,
       spring = _ref.spring,
-      transforms = _ref.transforms;
+      systemCenter = _ref.systemCenter;
   var displayFlags = state.displayFlags,
       ctx = state.ctx,
       canvas = state.canvas;
-  var shift = transforms.shift,
-      scale = transforms.scale;
+  var canvasCenter = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+  };
+  var shift = {
+    x: canvasCenter.x - systemCenter.x,
+    y: canvasCenter.y - systemCenter.y
+  };
   var currentLength = spring.getLength();
   var opacity = .2 + Math.abs(1 - currentLength / spring.restingLength); //for switch handle, perhaps change?
 
@@ -32564,10 +33662,55 @@ var drawSpring = function drawSpring(_ref) {
   ctx.beginPath();
   ctx.strokeStyle = strokeStyle;
   ctx.lineWidth = state.k;
-  ctx.moveTo(spring.weights[0].position.x, spring.weights[0].position.y);
-  ctx.lineTo(spring.weights[1].position.x, spring.weights[1].position.y);
+  ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
+  ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
   ctx.stroke();
   ctx.lineWidth = lineWidth_temp;
+};
+
+
+
+/***/ }),
+
+/***/ "./src/springs/springCanvas/drawSystemCenter.js":
+/*!******************************************************!*\
+  !*** ./src/springs/springCanvas/drawSystemCenter.js ***!
+  \******************************************************/
+/*! exports provided: draw */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "draw", function() { return draw; });
+var state = {
+  axis: {
+    width: 1
+  },
+  lineSpacing: 50,
+  //px
+  lineCount: 20
+};
+
+var draw = function draw(_ref) {
+  var springCanvasState = _ref.springCanvasState,
+      systemCenter = _ref.systemCenter;
+  var displayFlags = springCanvasState.displayFlags,
+      ctx = springCanvasState.ctx,
+      canvas = springCanvasState.canvas; //needs to be drawn at true center + shift
+
+  var canvasCenter = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+  };
+  ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+  ctx.beginPath();
+  ctx.arc(canvasCenter.x, canvasCenter.y, 2, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.font = "13px Arial";
+  ctx.fillStyle = "#000000"; //it displays the true center
+
+  ctx.fillText("Center : (".concat(systemCenter.x.toFixed(2), ", ").concat(systemCenter.y.toFixed(2), ")"), canvasCenter.x, canvasCenter.y - 10);
 };
 
 
@@ -32578,12 +33721,12 @@ var drawSpring = function drawSpring(_ref) {
 /*!************************************************!*\
   !*** ./src/springs/springCanvas/drawWeight.js ***!
   \************************************************/
-/*! exports provided: default */
+/*! exports provided: draw */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return drawWeight; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "draw", function() { return draw; });
 var updateOpacity = function updateOpacity(rgb, opacity) {
   var aux = rgb.split(',').splice(0, 3);
   aux.push("".concat(opacity, ")"));
@@ -32592,19 +33735,25 @@ var updateOpacity = function updateOpacity(rgb, opacity) {
 
 var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
 
-var drawWeight = function drawWeight(_ref) {
+var draw = function draw(_ref) {
   var state = _ref.state,
       weight = _ref.weight,
-      transforms = _ref.transforms;
+      systemCenter = _ref.systemCenter;
   var displayFlags = state.displayFlags,
       ctx = state.ctx,
       canvas = state.canvas;
-  var shift = transforms.shift,
-      scale = transforms.scale;
+  var canvasCenter = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+  };
+  var shift = {
+    x: canvasCenter.x - systemCenter.x,
+    y: canvasCenter.y - systemCenter.y
+  };
   var radius = weight.mass < 5 ? 5 : weight.mass > 100 ? 100 : weight.mass;
   var drawAt = {
-    x: weight.position.x,
-    y: weight.position.y
+    x: weight.position.x + shift.x,
+    y: weight.position.y + shift.y
   };
   ctx.strokeStyle = weight.color;
   ctx.beginPath();
@@ -32629,15 +33778,48 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 var logic = {};
 var state = {
-  defaultContext: window.springCanvas.ctx
+  axis: {
+    width: 1
+  },
+  lineSpacing: 50,
+  //px
+  lineCount: 20
 };
 
 logic.draw = function (_ref) {
-  var transforms = _ref.transforms,
-      context = _ref.context;
+  var springCanvasState = _ref.springCanvasState,
+      systemCenter = _ref.systemCenter;
+  var displayFlags = springCanvasState.displayFlags,
+      ctx = springCanvasState.ctx,
+      canvas = springCanvasState.canvas;
+  var canvasCenter = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+  };
+  var lineSpacing = {
+    x: canvas.width / state.lineCount,
+    y: canvas.height / state.lineCount
+  };
+  ctx.lineWidth = state.axis.width;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+  ctx.beginPath();
+  ctx.arc(lineSpacing.x * state.lineCount / 2, canvas.height / 2, 2, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.font = "13px Arial";
+  ctx.fillStyle = "#000000";
+  ctx.fillText("(".concat(systemCenter.x.toFixed(2), ", ").concat(systemCenter.y.toFixed(2), ")"), canvasCenter.x, canvasCenter.y - 10);
+  ctx.strokeStyle = 'rgba(0, 0, 0, .3)';
 
-  if (!context) {
-    context = state.defaultContext;
+  for (var i = 1; i < state.lineCount; i++) {
+    ctx.beginPath();
+    ctx.moveTo(lineSpacing.x * i, 0);
+    ctx.lineTo(lineSpacing.x * i, canvas.height);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, lineSpacing.y * i);
+    ctx.lineTo(canvas.width, lineSpacing.y * i);
+    ctx.stroke();
   }
 };
 
@@ -32645,23 +33827,112 @@ logic.draw = function (_ref) {
 
 /***/ }),
 
-/***/ "./src/springs/springCanvas/handlers.js":
-/*!**********************************************!*\
-  !*** ./src/springs/springCanvas/handlers.js ***!
-  \**********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
+/***/ "./src/springs/springCanvas/listenAndHandle.js":
+/*!*****************************************************!*\
+  !*** ./src/springs/springCanvas/listenAndHandle.js ***!
+  \*****************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return initListenAndHandle; });
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
 
 
+var state = {}; //set in init, this is exactly the springCanvas state
+//this keeps track of user actions / associated values
 
-/***/ }),
+var handlerState = {
+  mouseWheel: 0,
+  //set to their defaults then changed by handlers
+  weight: {
+    mass: 10,
+    velocity: 0
+  },
+  spring: {
+    k: 1
+  }
+};
 
-/***/ "./src/springs/springCanvas/listeners.js":
-/*!***********************************************!*\
-  !*** ./src/springs/springCanvas/listeners.js ***!
-  \***********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
+var getMousePosition = function getMousePosition(ev) {
+  return {
+    x: ev.clientX - state.canvas.getBoundingClientRect().left,
+    y: ev.clientY - state.canvas.getBoundingClientRect().top
+  };
+};
+
+var getRelativeMousePosition = function getRelativeMousePosition(ev) {
+  var _getMousePosition = getMousePosition(ev),
+      x = _getMousePosition.x,
+      y = _getMousePosition.y; //everything is relative to systemCenter. so if x was 0 then the relative position would be sysCenter - (canvasCenter - x)
+
+
+  var canvasCenter = {
+    x: state.canvas.width / 2,
+    y: state.canvas.height / 2
+  };
+  var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getCenter();
+  return {
+    x: sysCenter.x - (canvasCenter.x - x),
+    y: sysCenter.y - (canvasCenter.y - y)
+  };
+};
+
+var handleLeftClick = function handleLeftClick(ev) {
+  var _getRelativeMousePosi = getRelativeMousePosition(ev),
+      x = _getRelativeMousePosi.x,
+      y = _getRelativeMousePosi.y;
+
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
+    calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
+  }); // console.log('true mouse: ', trueMouse)
+  // console.log('relative mouse ', x, y)
+
+  var weightConfig = {
+    mass: handlerState.weight.mass,
+    position: {
+      x: x,
+      y: y
+    },
+    springK: handlerState.spring.k,
+    velocity: handlerState.weight.velocity
+  };
+  var newWeight = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight(weightConfig);
+
+  if (state.debug) {
+    var trueMouse = getMousePosition(ev);
+    console.log('listenAndHandle leftclick spawning weight ', newWeight);
+    console.log('true mouse: ', trueMouse);
+    console.log('relative mouse ', x, y);
+  }
+};
+
+var handleRightClick = function handleRightClick(ev) {};
+
+var handleMouseUp = function handleMouseUp(ev) {};
+
+var handleMouseMove = function handleMouseMove(ev) {}; //these are all of the spring canvas listeners and their associated handlers
+
+
+var initListenAndHandle = function initListenAndHandle(springCanvasState) {
+  state = springCanvasState; //as this is a direct child only here for beauty
+  // canvas.addEventListener('keyup', handleKeyup)
+
+  state.canvas.addEventListener('mousedown', function (ev) {
+    ev.preventDefault();
+    var rightClick = ev.which === 3 ? true : false;
+
+    if (rightClick) {
+      handleRightClick(ev);
+    } else {
+      handleLeftClick(ev);
+    }
+  });
+  state.canvas.addEventListener('mouseup', handleMouseUp);
+  state.canvas.addEventListener('mousemove', handleMouseMove);
+};
 
 
 
@@ -32677,14 +33948,12 @@ logic.draw = function (_ref) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
-/* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./handlers */ "./src/springs/springCanvas/handlers.js");
-/* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_handlers__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./listeners */ "./src/springs/springCanvas/listeners.js");
-/* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_listeners__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
-/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/springs/springCanvas/grid.js");
-/* harmony import */ var _drawWeight__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./drawWeight */ "./src/springs/springCanvas/drawWeight.js");
-/* harmony import */ var _drawSpring__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./drawSpring */ "./src/springs/springCanvas/drawSpring.js");
+/* harmony import */ var _listenAndHandle__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./listenAndHandle */ "./src/springs/springCanvas/listenAndHandle.js");
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./grid */ "./src/springs/springCanvas/grid.js");
+/* harmony import */ var _drawWeight__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./drawWeight */ "./src/springs/springCanvas/drawWeight.js");
+/* harmony import */ var _drawSpring__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./drawSpring */ "./src/springs/springCanvas/drawSpring.js");
+/* harmony import */ var _drawSystemCenter__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./drawSystemCenter */ "./src/springs/springCanvas/drawSystemCenter.js");
 
 
 
@@ -32709,23 +33978,27 @@ var State = function State() {
       drag: false //false or the handler
 
     },
+    //everything is relative to systemCenter. if canvasCenter is 100 and sysCenter is 200 then shift is -100
     transforms: {
       shift: {
         x: 0,
         y: 0
       },
-      scale: 0
+      scale: 0,
+      systemCenter: {
+        x: 0,
+        y: 0
+      }
     },
-    //maintains shift and scale
     displayFlags: {
-      showPlot: true,
       cursorStats: false,
       showWeightIds: false,
       showSpringIds: false,
       showWeightDetails: true,
       showSpringDetails: true,
       showGrid: false,
-      lockY: true
+      lockY: true,
+      showSystemCenter: true
     },
     debug: true,
     debugOptions: {
@@ -32735,7 +34008,7 @@ var State = function State() {
 };
 
 var logic = {};
-var state; //allows for an easier reset.
+var state; //allows for an easier reset, set in init.
 
 var setCanvasDimensions = function setCanvasDimensions() {
   var canvasContainerWidth = $('#canvasContainer').innerWidth();
@@ -32748,11 +34021,15 @@ var getMousePosition = function getMousePosition(ev) {
     x: ev.clientX - state.canvas.getBoundingClientRect().left,
     y: ev.clientY - state.canvas.getBoundingClientRect().top
   };
-};
+}; //This is only called here and in the listenAndHandle
+
 
 var updateTransforms = function updateTransforms() {
-  state.transforms.shift.x = state.canvas.width - _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getCenter();
-  state.transforms.shift.x = state.canvas.height - _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getCenter();
+  var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter(); //note that getCenters if second invoke uses cached prev result
+
+  state.transforms.systemCenter = sysCenter;
+  state.transforms.shift.x = state.canvas.width / 2 - sysCenter.x;
+  state.transforms.shift.y = state.canvas.height / 2 - sysCenter.y; // console.log('shift x : ', state.transforms.shift.x )
 };
 
 logic.clear = function () {
@@ -32778,38 +34055,67 @@ logic.debug = function () {
 
 
 logic.draw = function () {
-  var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_2__["default"].getObjs(),
+  var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getObjs(),
       springs = _system$getObjs.springs,
-      weights = _system$getObjs.weights; // const systemMetadata = system.getMetadata()
+      weights = _system$getObjs.weights;
 
+  if (state.displayFlags.showGrid === true) {
+    _grid__WEBPACK_IMPORTED_MODULE_2__["default"].draw({
+      springCanvasState: state,
+      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
+    });
+  }
 
-  updateTransforms();
+  if (state.displayFlags.showSystemCenter === true) {
+    Object(_drawSystemCenter__WEBPACK_IMPORTED_MODULE_5__["draw"])({
+      springCanvasState: state,
+      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
+    });
+  }
+
   weights.forEach(function (weight) {
-    return Object(_drawWeight__WEBPACK_IMPORTED_MODULE_4__["default"])({
+    return Object(_drawWeight__WEBPACK_IMPORTED_MODULE_3__["draw"])({
       state: state,
       weight: weight,
-      transforms: state.transforms // systemMetadata: systemMetadata
-
+      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
     });
   });
   springs.forEach(function (spring) {
-    return Object(_drawSpring__WEBPACK_IMPORTED_MODULE_5__["default"])({
+    return Object(_drawSpring__WEBPACK_IMPORTED_MODULE_4__["draw"])({
       state: state,
       spring: spring,
-      transforms: state.transforms // systemMetadata: systemMetadata
-
+      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
     });
   });
+};
+
+logic.getShift = function () {
+  updateTransforms();
+  return state.transforms.shift;
 };
 
 logic.init = function () {
   state = State();
   setCanvasDimensions();
+  Object(_listenAndHandle__WEBPACK_IMPORTED_MODULE_0__["default"])(state);
 
   if (state.debug) {
     logic.debug();
   }
 };
+
+logic.setDebug = function (bool) {
+  state.debug = bool;
+};
+
+logic.getState = function () {
+  return state;
+};
+
+logic.reset = function () {
+  return logic.init();
+}; //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
+
 
 
 
@@ -33160,7 +34466,23 @@ var Weight = function Weight(_ref) {
     },
     id: id || shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
     color: color || randomColor(),
-    frames: [],
+    //This makes drawing in isolation easier and faster, it was a pain when pieces existed in system but not the weight
+    systemData: {
+      frames: [],
+      //this holds it position and velocity at each step
+      metadata: {
+        maxVelocity: {
+          x: 0,
+          y: 0
+        },
+        //this is set in the solver.
+        minVelocity: {
+          x: 0,
+          y: 0
+        } //this is set in the solver.
+
+      }
+    },
     mass: mass || 10,
     type: 'weight'
   };
@@ -33169,12 +34491,12 @@ var Weight = function Weight(_ref) {
   logic.update = function () {
     var frameIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-    if (frameIndex > state.frames.length) {
+    if (frameIndex > state.systemData.frames.length) {
       throw new Error('out of frames!');
     }
 
-    state.position = state.frames[frameIndex].position;
-    state.velocity = state.frames[frameIndex].velocity;
+    state.position = state.systemData.frames[frameIndex].position;
+    state.velocity = state.systemData.frames[frameIndex].velocity;
   };
 
   return Object.assign(state, logic);
@@ -33217,9 +34539,356 @@ logic.eucDistance = function (v1, v2) {
   !*** ./src/springs/system/solver.js ***!
   \**************************************/
 /*! exports provided: default */
-/***/ (function(module, exports) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
-throw new Error("Module build failed (from ./node_modules/babel-loader/lib/index.js):\nSyntaxError: E:\\Dev\\greg\\springy\\src\\springs\\system\\solver.js: Identifier 'dx' has already been declared (138:23)\n\n\u001b[0m \u001b[90m 136 | \u001b[39m                \u001b[36mconst\u001b[39m ddx \u001b[33m=\u001b[39m w0\u001b[33m.\u001b[39mupdateCache\u001b[33m.\u001b[39max\u001b[33m;\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 137 | \u001b[39m                \u001b[36mconst\u001b[39m ddy \u001b[33m=\u001b[39m w0UpdateCache\u001b[33m.\u001b[39may\u001b[33m;\u001b[39m\u001b[0m\n\u001b[0m\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 138 | \u001b[39m                \u001b[36mconst\u001b[39m [dx\u001b[33m,\u001b[39m ddx\u001b[33m,\u001b[39m dy\u001b[33m,\u001b[39m ddy ] \u001b[33m=\u001b[39m indexMap\u001b[33m.\u001b[39mget(w0)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m     | \u001b[39m                       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 139 | \u001b[39m                r[dx] \u001b[33m=\u001b[39m dx\u001b[33m;\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 140 | \u001b[39m                r[ddx] \u001b[33m=\u001b[39m ddx\u001b[0m\n\u001b[0m \u001b[90m 141 | \u001b[39m                r[dy] \u001b[33m=\u001b[39m ddy\u001b[0m\n    at Parser.raise (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:3851:17)\n    at ScopeHandler.declareName (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:8811:12)\n    at Parser.checkLVal (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5535:22)\n    at Parser.checkLVal (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5561:18)\n    at Parser.parseVarId (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7969:10)\n    at Parser.parseVar (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7940:12)\n    at Parser.parseVarStatement (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7762:10)\n    at Parser.parseStatementContent (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7358:21)\n    at Parser.parseStatement (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7291:17)\n    at Parser.parseBlockOrModuleBlockBody (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7868:25)\n    at Parser.parseBlockBody (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7855:10)\n    at Parser.parseBlock (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7839:10)\n    at Parser.parseStatementContent (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7367:21)\n    at Parser.parseStatement (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7291:17)\n    at Parser.parseIfStatement (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7645:28)\n    at Parser.parseStatementContent (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7336:21)\n    at Parser.parseStatement (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7291:17)\n    at Parser.parseBlockOrModuleBlockBody (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7868:25)\n    at Parser.parseBlockBody (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7855:10)\n    at Parser.parseBlock (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:7839:10)\n    at Parser.parseFunctionBody (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:6909:24)\n    at Parser.parseArrowExpression (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:6851:10)\n    at Parser.parseExprAtom (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:6213:18)\n    at Parser.parseExprSubscripts (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5914:23)\n    at Parser.parseMaybeUnary (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5894:21)\n    at Parser.parseExprOps (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5781:23)\n    at Parser.parseMaybeConditional (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5754:23)\n    at Parser.parseMaybeAssign (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:5701:21)\n    at Parser.parseExprListItem (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:6977:18)\n    at Parser.parseCallExpressionArguments (E:\\Dev\\greg\\springy\\node_modules\\@babel\\parser\\lib\\index.js:6121:22)");
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
+/* harmony import */ var odex__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! odex */ "./node_modules/odex/src/odex.js");
+/* harmony import */ var odex__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(odex__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _graph_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./graph/graph */ "./src/springs/system/graph/graph.js");
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+
+ //note that this DIRECTLY mutates the weights frames within the integration cb
+//THIS IS THE ONLY NON UI COMPONENT THAT MUTATES WEIGHTS
+
+var state = {
+  maxTime: 200,
+  stepSize: .05,
+  startingValue: 0
+};
+var logic = {};
+
+var generateICVec = function generateICVec() {
+  var aux = [];
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    aux.push([w.position.x, w.velocity.x, w.position.y, w.velocity.y]);
+  });
+  return aux.reduce(function (acc, el) {
+    return acc.concat(el);
+  }, []);
+};
+
+var updateGraph = function updateGraph(u) {
+  var i = 0;
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+    w.position.x = u[i++];
+    w.velocity.x = u[i++];
+    w.position.y = u[i++];
+    w.velocity.y = u[i++];
+  });
+};
+
+var buildSystem = function buildSystem() {
+  var initialConditions = generateICVec();
+
+  var solveFn = function solveFn(t, u) {
+    updateGraph(u);
+    var r = []; // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
+
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+      var ax = [],
+          ay = []; //where each term is a force on the weight
+
+      edgeList.forEach(function (e) {
+        var w2 = e.weight;
+        var spring = e.spring;
+        var springLength = spring.getLength();
+        var springStretch = springLength - spring.restingLength; //if w is to the left of w2, then it is being pulled right which is positive
+
+        var iHat = (w2.position.x - w.position.x) / springLength; //if w is above w2, then it is being pulled down which is positive
+
+        var jHat = (w2.position.y - w.position.y) / springLength;
+        ax.push(spring.k * springStretch * iHat / w.mass);
+        ay.push(spring.k * springStretch * jHat / w.mass);
+      });
+      var dx = w.velocity.x,
+          dy = w.velocity.y;
+      var ddx = ax.reduce(function (acc, el) {
+        return acc + el;
+      }, 0);
+      var ddy = ay.reduce(function (acc, el) {
+        return acc + el;
+      }, 0);
+      r.push(dx, ddx, dy, ddy);
+    });
+    return r;
+  };
+
+  return {
+    initialConditions: initialConditions,
+    solveFn: solveFn
+  };
+}; //need to switch to more important tasks. Could be faster as each edge would only need to be traveled once.
+//Problem is that the main bottleneck is the integration cb for well spaced results
+
+
+var buildSystem_AttemptedOptimzation = function buildSystem_AttemptedOptimzation() {
+  var buildIndiceMap = function buildIndiceMap() {
+    var indexMap = new Map();
+    var i = 0;
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+      indexMap.set(w, [i++, i++, i++, i++]);
+    });
+    return indexMap;
+  };
+
+  var initialConditions = generateICVec();
+  var indexMap = buildIndiceMap();
+  var solveCalls = 0;
+
+  var solveFn = function solveFn(t, u) {
+    // console.log('in solveFN')
+    indexMap.forEach(function (_ref, w) {
+      var _ref2 = _slicedToArray(_ref, 4),
+          dx = _ref2[0],
+          ddx = _ref2[1],
+          dy = _ref2[2],
+          ddy = _ref2[3];
+
+      //where if w0 then dx = 0, ddx = 1, dy = 2, ddy = 3
+      w.position.x = u[dx];
+      w.velocity.x = u[ddx];
+      w.position.y = u[dy];
+      w.velocity.y = u[ddy];
+    });
+    var r = Array(initialConditions.length); // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
+
+    var updateMap = new Map(); //this maintains which weight was updated this solveFn
+
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getSprings().forEach(function (s) {
+      var _s$weights = _slicedToArray(s.weights, 2),
+          w0 = _s$weights[0],
+          w1 = _s$weights[1];
+
+      var springLength = s.getLength();
+      var springStretch = springLength - s.restingLength; //if w is to the left of w1, then it is being pulled right which is positive
+
+      var iHatW0 = (w1.position.x - w0.position.x) / springLength; //if w is above w1, then it is being pulled down which is positive
+
+      var jHatW0 = (w1.position.y - w0.position.y) / springLength; //if it has not started updating then its current ax, ay is 0
+
+      var w0UpdateCache = updateMap.has(w0) ? updateMap.get(w0) : {
+        ax: 0,
+        ay: 0,
+        updates: 0
+      };
+      var w1UpdateCache = updateMap.has(w1) ? updateMap.get(w1) : {
+        ax: 0,
+        ay: 0,
+        updates: 0 // console.log(w0UpdateCache)
+
+      };
+      var w0UpdateValue = {
+        ax: w0UpdateCache.ax + s.k * springStretch * iHatW0 / w0.mass,
+        ay: w0UpdateCache.ay + s.k * springStretch * jHatW0 / w0.mass,
+        updates: w0UpdateCache.updates++
+      };
+      updateMap.set(w0, w0UpdateValue); //where the -1 * ihat, jhat is because the force in direction is equal but opposite
+
+      updateMap.set(w1, {
+        ax: w1UpdateCache.ax + s.k * springStretch * -1 * iHatW0 / w1.mass,
+        ay: w1UpdateCache.ay + s.k * springStretch * -1 * jHatW0 / w1.mass,
+        updates: w1UpdateCache.updates++
+      });
+
+      if (w0UpdateCache.updates == _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getState().adjList.get(w0).length) {
+        var dx = w0.velocity.x;
+        var dy = w0.velocity.y;
+        var ddx = updateMap.get(w0).ax;
+        var ddy = updateMap.get(w0).ay;
+
+        var _indexMap$get = indexMap.get(w0),
+            _indexMap$get2 = _slicedToArray(_indexMap$get, 4),
+            dx_i = _indexMap$get2[0],
+            ddx_i = _indexMap$get2[1],
+            dy_i = _indexMap$get2[2],
+            ddy_i = _indexMap$get2[3];
+
+        r[dx_i] = dx;
+        r[ddx_i] = ddx;
+        r[dy_i] = dy;
+        r[ddy_i] = ddy;
+      }
+
+      if (w1UpdateCache.updates == _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getState().adjList.get(w1).length) {
+        var _dx = w1.velocity.x;
+        var _dy = w1.velocity.y;
+        var _ddx = updateMap.get(w1).ax;
+        var _ddy = updateMap.get(w1).ay;
+
+        var _indexMap$get3 = indexMap.get(w1),
+            _indexMap$get4 = _slicedToArray(_indexMap$get3, 4),
+            _dx_i = _indexMap$get4[0],
+            _ddx_i = _indexMap$get4[1],
+            _dy_i = _indexMap$get4[2],
+            _ddy_i = _indexMap$get4[3];
+
+        r[_dx_i] = _dx;
+        r[_ddx_i] = _ddx;
+        r[_dy_i] = _dy;
+        r[_ddy_i] = _ddy;
+      }
+    });
+    return r;
+  };
+
+  return {
+    initialConditions: initialConditions,
+    solveFn: solveFn
+  };
+};
+
+logic.solveSystem_AttemptedOptimization = function () {
+  var output = [];
+  var solver = new odex__WEBPACK_IMPORTED_MODULE_0__["Solver"](_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getSize() * 4);
+
+  var _buildSystem = buildSystem(),
+      initialConditions = _buildSystem.initialConditions,
+      solveFn = _buildSystem.solveFn;
+
+  solver.denseOutput = true;
+  var indexMap = new Map(); // key : 0, value : w1, key : 4, value : w2, ...
+
+  var weightBlockIndex = 0; //each weight has 4 returned values, x, dx, y, dy
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    indexMap.set(weightBlockIndex, w);
+    weightBlockIndex += 4;
+  }); //MUTATES THE WEIGHTS
+
+  var integrationCb = function integrationCb(t, stepResults) {
+    // console.log('in integration cb')
+    for (var k = 0; k < stepResults.length; k += 4) {
+      var w = indexMap.get(k);
+      w.frames.push({
+        position: {
+          x: stepResults[k],
+          y: stepResults[k + 2]
+        },
+        velocity: {
+          x: stepResults[k + 1],
+          y: stepResults[k + 3]
+        }
+      });
+    }
+  };
+
+  var result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime, solver.grid(state.stepSize, integrationCb)); //setting the weights back to their starting points
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    w.position = w.initialPosition;
+    w.velocity = w.initialVelocity;
+  });
+  return output;
+}; //for drawing a weight I want its opactiy to reflect its velocity. Thus i need each weight to have its max velocity
+//adds on average about 100ms in benchmarking
+
+
+var setMetadata = function setMetadata() {
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+    var maxVelocityX = -Infinity,
+        minVelocityX = Infinity;
+    var maxVelocityY = -Infinity,
+        minVelocityY = Infinity;
+    w.systemData.frames.forEach(function (f) {
+      if (f.velocity.x > maxVelocityX) {
+        maxVelocityX = f.velocity.x;
+      } else if (f.velocity.x < minVelocityX) {
+        minVelocityY = f.velocity.x;
+      }
+
+      if (f.velocity.y > maxVelocityY) {
+        maxVelocityY = f.velocity.y;
+      } else if (f.velocity.y < minVelocityY) {
+        minVelocityY = f.velocity.y;
+      }
+    });
+    w.systemData.metadata.maxVelocity = {
+      x: maxVelocityX,
+      y: maxVelocityY
+    };
+    w.systemData.metadata.minVelocity = {
+      x: minVelocityX,
+      y: minVelocityY
+    };
+  });
+};
+
+logic.solveSystem = function () {
+  var output = [];
+  var solver = new odex__WEBPACK_IMPORTED_MODULE_0__["Solver"](_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getSize() * 4);
+
+  var _buildSystem2 = buildSystem(),
+      initialConditions = _buildSystem2.initialConditions,
+      solveFn = _buildSystem2.solveFn;
+
+  solver.denseOutput = true;
+  var indexMap = new Map(); // key : 0, value : w1, key : 4, value : w2, ...
+
+  var weightBlockIndex = 0; //each weight has 4 returned values, x, dx, y, dy
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    indexMap.set(weightBlockIndex, w);
+    weightBlockIndex += 4;
+  }); //MUTATES THE WEIGHTS
+
+  var integrationCb = function integrationCb(t, stepResults) {
+    // console.log('in integration cb')
+    for (var k = 0; k < stepResults.length; k += 4) {
+      var w = indexMap.get(k);
+      w.systemData.frames.push({
+        position: {
+          x: stepResults[k],
+          y: stepResults[k + 2]
+        },
+        velocity: {
+          x: stepResults[k + 1],
+          y: stepResults[k + 3]
+        }
+      });
+    }
+  }; // const result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime)
+
+
+  var result = solver.solve(solveFn, state.startingValue, initialConditions, state.maxTime, solver.grid(state.stepSize, integrationCb)); //setting the weights back to their starting points
+
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
+    w.position = w.initialPosition;
+    w.velocity = w.initialVelocity;
+  });
+  setMetadata(); //This adds things like maxVelocity to the weights, (I suspect future adds)
+
+  return output;
+}; //for testing. currently the integration cb slows by about 3x.
+
+
+logic.benchmark = function () {
+  var iterations = 10;
+  console.log('%cBenchmarking solver with graph', 'color:blue', _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getState().adjList);
+  console.time('solverBenchmark');
+
+  for (var i = 0; i < iterations; i++) {
+    logic.solveSystem();
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+      w.systemData.frames = [];
+    });
+  }
+
+  console.timeEnd('solverBenchmark');
+};
+
+window.benchmark = logic.benchmark;
+logic.generateICVec = generateICVec; //for testing
+
+
 
 /***/ }),
 
@@ -33264,7 +34933,11 @@ var State = function State() {
     defaultValues: {
       weightMass: 10,
       springK: 1,
-      velocity: 0
+      velocity: {
+        x: 0,
+        y: 0 //switch to injected config when time
+
+      }
     }
   };
 };
@@ -33287,6 +34960,10 @@ var solve = function solve(clearFrames) {
 logic.update = function (_ref) {
   var frameIndex = _ref.frameIndex;
 
+  if (state.flags.needsSolve === true) {
+    solve();
+  }
+
   if (!frameIndex) {
     frameIndex = state.currentFrame;
   }
@@ -33297,6 +34974,10 @@ logic.update = function (_ref) {
 };
 
 logic.step = function () {
+  if (state.flags.needsSolve === true) {
+    solve();
+  }
+
   state.currentFrame++;
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
     return w.update(state.currentFrame);
@@ -33311,7 +34992,7 @@ logic.addWeight = function (_ref2) {
   state.flags.needsSolve = true; //as this changes sys state
   //position is the true position, the canvas handles the shift 
 
-  if (!x || !y) {
+  if (!position.x && position.x !== 0 || !position.y && position.y !== 0) {
     throw new Error('system addWeight needs canvas x and y');
   }
 
@@ -33346,6 +35027,7 @@ logic.addWeight = function (_ref2) {
 
 logic.reset = function () {
   state = State();
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].reset();
 };
 
 logic.getObjs = function () {
@@ -33363,7 +35045,7 @@ logic.getCenter = function () {
     state.center.frameCalculated = state.currentFrame;
   }
 
-  return 0;
+  return state.center.position;
 };
 
 logic.getState = function () {
@@ -33626,7 +35308,7 @@ test.funSolve = function () {
       y: offset
     },
     velocity: {
-      x: 0,
+      x: 20,
       y: 0
     },
     mass: 50
@@ -33646,7 +35328,7 @@ test.funSolve = function () {
   var lastMass;
 
   var smallMasses = function () {
-    var count = 50;
+    var count = 20;
     var size = 300;
 
     for (var i = 0; i < count; i++) {
@@ -33678,22 +35360,22 @@ test.funSolve = function () {
 test.basicSolve = function () {
   var w1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
-      x: 0,
-      y: 400
+      x: document.getElementById('springCanvas').width / 2,
+      y: document.getElementById('springCanvas').height / 2
     },
     velocity: {
-      x: 50,
+      x: 0,
       y: 0
     },
     mass: 10
   });
   var w2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight({
     position: {
-      x: 400,
-      y: 400
+      x: document.getElementById('springCanvas').width * 5 / 8,
+      y: document.getElementById('springCanvas').height / 2
     },
     velocity: {
-      x: -50,
+      x: 50,
       y: 0
     },
     mass: 10
@@ -33706,8 +35388,8 @@ test.basicSolve = function () {
 
   var sharedSpring1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_0__["default"].addEdge(w1, w2); // const sharedSpring2 = graph.addEdge(w3, w2)
   // console.log('sharedSpring,', sharedSpring)
-  // sharedSpring1.setRestingLength(50);
 
+  sharedSpring1.setRestingLength(50);
   _system_solver__WEBPACK_IMPORTED_MODULE_1__["default"].solveSystem();
 };
 
@@ -33719,9 +35401,9 @@ test.runAll = function () {
   // test.basicSolve();
 
   test.funSolve();
-};
+}; // test.runAll();
 
-test.runAll();
+
 
 
 /***/ }),
@@ -33816,23 +35498,32 @@ test.runAll = function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 /* harmony import */ var _orchestrator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./orchestrator */ "./src/springs/orchestrator.js");
+/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
 
-var logic = {};
-var handlers = {};
+
+var logic = {}; //any interaction with orchestrator is done by event emitting. This is because nearly all components require knowledge of the animating.
+
 window.addEventListener('keyup', function (ev) {
   var isSpaceKey = ev.keyCode == 32;
 
   if (isSpaceKey) {
     ev.preventDefault();
-    var isAnimating = _orchestrator__WEBPACK_IMPORTED_MODULE_0__["default"].toggleAnimation(); //this only toggles if specs are met.
+    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {
+      calledBy: 'view.js/keyup'
+    });
   }
 
   if (ev.key === 'r' || ev.key === 'R') {
     _orchestrator__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/reset', {
+      calledBy: 'view.js/keyup'
+    });
   }
 });
 window.addEventListener('resize', function () {
-  _orchestrator__WEBPACK_IMPORTED_MODULE_0__["default"].resize();
+  _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/resize', {
+    calledBy: 'view.js/resize'
+  });
 });
 
 logic.init = function () {
@@ -33850,8 +35541,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! E:\Dev\greg\springy\node_modules\@babel\polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! E:\Dev\greg\springy\src\main.js */"./src/main.js");
+__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
 
 
 /***/ })

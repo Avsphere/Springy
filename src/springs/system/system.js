@@ -21,7 +21,7 @@ const State = () => ({
     defaultValues : {
         weightMass : 10,
         springK : 1,
-        velocity : 0
+        velocity : { x : 0, y : 0 } //switch to injected config when time
     }
 })
 
@@ -40,12 +40,18 @@ const solve = (clearFrames) => {
 
 
 logic.update = ({ frameIndex }) => {
+    if (state.flags.needsSolve === true) {
+        solve();
+    }
     if ( !frameIndex ) { frameIndex = state.currentFrame }
     sysGraph.getWeights().forEach(w => w.update(state.currentFrame))
 }
 
 
 logic.step = () => {
+    if ( state.flags.needsSolve === true ) {
+        solve();
+    }
     state.currentFrame++;
     sysGraph.getWeights().forEach( w => w.update(state.currentFrame) )
 }
@@ -54,7 +60,7 @@ logic.step = () => {
 logic.addWeight = ({ mass, position, springK, velocity }) => {
     state.flags.needsSolve = true; //as this changes sys state
     //position is the true position, the canvas handles the shift 
-    if (!x || !y ) { throw new Error('system addWeight needs canvas x and y') }
+    if (!position.x && position.x !== 0 || !position.y && position.y !== 0 ) { throw new Error('system addWeight needs canvas x and y') }
     if (!mass) { mass = state.defaultValues.weightMass }
     if ( !springK ) { springK = state.defaultValues.springK }
     if ( !velocity ) { velocity = state.defaultValues.velocity }
@@ -69,7 +75,11 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
 
 logic.reset = () => {
     state = State();
+    sysGraph.reset();
 }
+
+
+
 
 
 logic.getObjs = () => ({
@@ -84,7 +94,7 @@ logic.getCenter = () => {
         state.center.position = sysGraph.getCenter();
         state.center.frameCalculated = state.currentFrame
     }
-    return 0;
+    return state.center.position
 }
 
 logic.getState = () => state //for debugging only

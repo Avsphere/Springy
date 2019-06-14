@@ -32,7 +32,14 @@ const Weight = ({ position, mass, velocity, color, id }) => {
         },
         id: id || shortid.generate(),
         color: color || randomColor(),
-        frames : [], 
+        //This makes drawing in isolation easier and faster, it was a pain when pieces existed in system but not the weight
+        systemData : {
+            frames : [], //this holds it position and velocity at each step
+            metadata : {
+                maxVelocity : { x : 0, y : 0 }, //this is set in the solver.
+                minVelocity : { x : 0, y : 0 }, //this is set in the solver.
+            }
+        }, 
         mass: mass || 10,
         type: 'weight',
     }
@@ -40,11 +47,11 @@ const Weight = ({ position, mass, velocity, color, id }) => {
 
 
     logic.update = (frameIndex=0) => {
-        if ( frameIndex > state.frames.length ) {
+        if (frameIndex > state.systemData.frames.length ) {
             throw new Error('out of frames!')
         }
-        state.position = state.frames[frameIndex].position;
-        state.velocity = state.frames[frameIndex].velocity
+        state.position = state.systemData.frames[frameIndex].position;
+        state.velocity = state.systemData.frames[frameIndex].velocity
     }
 
 

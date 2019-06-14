@@ -2,6 +2,7 @@ import { parse as urlParse } from 'url'
 import view from './view.js';
 import system from './system/system';
 import orchestrator from './orchestrator';
+import springCanvas from './springCanvas/springCanvas';
 import shortid from 'shortid';
 import tests from './tests/allTests';
 
@@ -26,7 +27,8 @@ logic.init = async() => {
     window.view = {};
     window.dbug = {
         system: system,
-        orchestrator: orchestrator
+        orchestrator: orchestrator,
+        springCanvas: springCanvas
         
     };
     window.tests = tests
