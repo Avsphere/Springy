@@ -98,7 +98,6 @@ logic.draw = () => {
 logic.setOverlays = (b=false) => state.drawOverlays = b
 
 logic.init = () => {
-    console.log("SPRING CANVS")
     state = State();
     setCanvasDimensions();
     initListenAndHandle(state);
@@ -106,6 +105,9 @@ logic.init = () => {
 }
 
 logic.getState = () => state
-logic.reset = () => logic.init; //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
+logic.reset = () => {
+    state = State();
+    setCanvasDimensions();
+}; 
 
 export { logic as default }

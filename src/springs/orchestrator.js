@@ -1,17 +1,25 @@
 import system from './system/system'
 import springCanvas from './springCanvas/springCanvas'
 import plotCanvas from './plotCanvas/plotCanvas'
+import monitorPanel from './panels/monitor'
 import emitter from './emitter.js'
 import defaults from './defaults'
 const state = {
     isAnimating : false,
-    debugging : true
+    debugging : true,
+    debug : { 
+        redraw : false //bc some events are annoying  
+    }
 }
 
 const logic = {}
 
 const getDrawableComponents = () => {
     return [ springCanvas ]
+}
+
+const getPanels = () => {
+    return [monitorPanel]
 }
 
 
@@ -34,7 +42,6 @@ const stopAnimating = () => {
 const toggleAnimate = () => {
     state.isAnimating = !state.isAnimating;
     if (state.isAnimating) {
-        //
         getDrawableComponents().forEach(d => {
             d.setOverlays(true);
         })
@@ -66,6 +73,7 @@ const resize = () => {
 }
 
 const reset = () => {
+    //ORDER MATTERS, panels need to subscribe to other components
     if (state.isAnimating) {
         stopAnimating();
     }
@@ -73,7 +81,13 @@ const reset = () => {
     getDrawableComponents().forEach(d => {
         d.reset();
     })
+
     system.reset();
+
+    getPanels().forEach(p => {
+        p.reset();
+    })
+
     redraw();
 }
 
@@ -104,7 +118,7 @@ emitter.on('orchestrator/reset', (d) => {
 
 //few cases justify this emit
 emitter.on('orchestrator/redraw', (d) => {
-    if (state.debugging) { console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy) }
+    if (state.debugging && state.debug.redraw ) { console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy) }
     redraw();
 })
 
@@ -118,6 +132,7 @@ emitter.on('orchestrator/resize', (d) => {
 logic.init = () => {
     springCanvas.init();
     plotCanvas.init();
+    monitorPanel.init();
     // defaults.load('circleSystem')
     // toggleAnimate();
 }

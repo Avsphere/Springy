@@ -1,18 +1,17 @@
 import helpers from './helpers'
 import sysGraph from './graph/graph' 
 import solver from './solver' 
+import emitter from '../emitter' 
 
 const State = () => ({
     currentFrame : 0,
-    solvedSystem : {
-        data : [],
-        meta : {
-            averageVelocity : 0,
-            maxVelocity : 0,
-        }
-    }, //solver returns as frameIndex : frameData  
     flags : {
         needsSolve : true
+    },
+    solverConfig : {
+        stepSize : .05,
+        maxTime : 200,
+        frameCount : 200/.05
     },
     center : {
         frameCalculated : 0,
@@ -23,46 +22,75 @@ const State = () => ({
         springK : 1,
         velocity : { x : 0, y : 0 } //switch to injected config when time
     },
-    snap : 5 //this means it rounds the x and y to the nearest 5 when spawning a weight
+    snap : 5, //this means it rounds the x and y to the nearest 5 when spawning a weight
+    
 })
 
 const logic = {}
 let state = State();
+//note that system state can be refreshed for a new system, but emitting / associates exist at singleton level
+let onChangeSubscribers = [] //emits events to these paths, i.e. panels/monitor/sysChange
+
+
+const emitChange = (changeType) => {
+    onChangeSubscribers.forEach(eventName => emitter.emit(eventName, { calledBy : 'system/emitChange', changeType : changeType}))
+}
+
+
+
+
+const stateChanged = (changeType='state') => {
+    const changeTypes = [ 'state', 'structure', 'shift' ]
+    if ( !changeTypes.includes(changeType) ) {
+        throw new Error('system unknown change type')
+    }
+
+    if (changeType === 'structure' || changeType === 'shift' ) {
+        state.flags.needsSolve = true;
+    }
+
+    emitChange(changeType);
+}
+
+const checkForSolve = () => {
+    if ( state.flags.needsSolve === true ) {
+        solve();
+    }
+    if (state.currentFrame === state.solverConfig.frameCount ) {
+        systemChanged() //in this case the change is self invoked...
+    }
+}
 
 
 const solve = (clearFrames=true) => {
     state.flags.needsSolve = false;
     //the only reason clearFrames would be false is if we were adding more frames to the current animation
     if (clearFrames) {
-        console.log('clearing frames') 
         sysGraph.getWeights().forEach(w => w.systemData.frames = [] )
         state.currentFrame = 0;
     }
-    solver.solveSystem()
+    solver.solveSystem(state.solverConfig)
 }
 
 
-
+//update and solve are only solve callers
 logic.update = ({ frameIndex }) => {
-    if (state.flags.needsSolve === true) {
-        solve();
-    }
+    checkForSolve();
     if ( !frameIndex ) { frameIndex = state.currentFrame }
     sysGraph.getWeights().forEach(w => w.update(state.currentFrame))
+    stateChanged();
 }
 
-
+//update and solve are only solve callers
 logic.step = () => {
-    if ( state.flags.needsSolve === true ) {
-        solve();
-    }
+    checkForSolve();
     state.currentFrame++;
     sysGraph.getWeights().forEach( w => w.update(state.currentFrame) )
+    stateChanged();
 }
 
 
 logic.addWeight = ({ mass, position, springK, velocity }) => {
-    state.flags.needsSolve = true; //as this changes sys state
 
     //position is the true position, the canvas handles the shift 
     if (!position.x && position.x !== 0 || !position.y && position.y !== 0 ) { throw new Error('system addWeight needs canvas x and y') }
@@ -82,9 +110,26 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
         //in this case I auto connect edges
         sysGraph.addEdge(weight, newWeight, springK)
     }
-
+    stateChanged('structure')
     return newWeight;
 }
+
+logic.moveWeight = ({ weight, relativePosition, manuallyMoved }) => {
+
+    weight.position.x = relativePosition.x;
+    weight.position.y = relativePosition.y;
+    weight.initialPosition.x = relativePosition.x;
+    weight.initialPosition.y = relativePosition.y;
+
+    //manually moving a weight resets its velocity
+    if (manuallyMoved === true) {
+        // weight.initialVelocity.x = 0
+        // weight.initialVelocity.y = 0
+        // weight.velocity.x = 0
+        // weight.velocity.y = 0
+    }
+    stateChanged('shift')
+} 
 
 
 logic.reset = () => {
@@ -93,29 +138,20 @@ logic.reset = () => {
 }
 
 logic.findNearestWeight = ({ relativeMousePosition }) => {
-    console.log('in find nearest', relativeMousePosition)
+    // console.log('in find nearest', relativeMousePosition)
     return sysGraph.findNearest(relativeMousePosition)
 }
 
 
-logic.moveWeight = ({weight, relativePosition, manuallyMoved}) => {
-    if ( !weight || !relativePosition ) { throw new Error('moveWeight bad params')}
-    state.flags.needsSolve = true; //as this changes sys state
-    
-    weight.position.x = relativePosition.x;
-    weight.position.y = relativePosition.y;
-    weight.initialPosition.x = relativePosition.x;
-    weight.initialPosition.y = relativePosition.y;
-    
-    //manually moving a weight resets its velocity
-    if ( manuallyMoved === true ) {
-        // weight.initialVelocity.x = 0
-        // weight.initialVelocity.y = 0
-        // weight.velocity.x = 0
-        // weight.velocity.y = 0
+logic.subscribeToOnChange = (eventName) => {
+    if ( !onChangeSubscribers.includes(eventName) ) {
+        onChangeSubscribers.push(eventName)
+    } else {
+        console.warn('onchange subscribe dupe subscribe', eventName, onChangeSubscribers)
     }
+}
 
-} 
+
 
 logic.getObjs = () => ({
     weights : sysGraph.getState().weights,

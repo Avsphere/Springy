@@ -214,7 +214,9 @@ const setMetadata = () => {
 }
 
 
-logic.solveSystem = () => {
+logic.solveSystem = ({ stepSize, maxTime }) => {
+    state.maxTime = maxTime || state.maxTime; //setting like so bc there may be other ways to change in future
+    state.stepSize = stepSize || state.stepSize
     let output = []
     const solver = new odex.Solver(graph.getSize() * 4);
     const { initialConditions, solveFn } = buildSystem()
@@ -246,7 +248,10 @@ logic.solveSystem = () => {
         w.velocity = w.initialVelocity;
     })
     setMetadata(); //This adds things like maxVelocity to the weights, (I suspect future adds)
-    return output;
+    return {
+        output : output,
+        result : result
+    }
 }
 
 

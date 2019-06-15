@@ -33323,8 +33323,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
 /* harmony import */ var _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./plotCanvas/plotCanvas */ "./src/springs/plotCanvas/plotCanvas.js");
-/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
-/* harmony import */ var _defaults__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./defaults */ "./src/springs/defaults.js");
+/* harmony import */ var _panels_monitor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./panels/monitor */ "./src/springs/panels/monitor.js");
+/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
+/* harmony import */ var _defaults__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./defaults */ "./src/springs/defaults.js");
+
 
 
 
@@ -33332,12 +33334,20 @@ __webpack_require__.r(__webpack_exports__);
 
 var state = {
   isAnimating: false,
-  debugging: true
+  debugging: true,
+  debug: {
+    redraw: false //bc some events are annoying  
+
+  }
 };
 var logic = {};
 
 var getDrawableComponents = function getDrawableComponents() {
   return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"]];
+};
+
+var getPanels = function getPanels() {
+  return [_panels_monitor__WEBPACK_IMPORTED_MODULE_3__["default"]];
 };
 
 var animate = function animate() {
@@ -33360,7 +33370,6 @@ var toggleAnimate = function toggleAnimate() {
   state.isAnimating = !state.isAnimating;
 
   if (state.isAnimating) {
-    //
     getDrawableComponents().forEach(function (d) {
       d.setOverlays(true);
     });
@@ -33397,6 +33406,7 @@ var resize = function resize() {
 };
 
 var reset = function reset() {
+  //ORDER MATTERS, panels need to subscribe to other components
   if (state.isAnimating) {
     stopAnimating();
   } //clears the drawables, resets the system
@@ -33406,17 +33416,20 @@ var reset = function reset() {
     d.reset();
   });
   _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+  getPanels().forEach(function (p) {
+    p.reset();
+  });
   redraw();
 };
 
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/toggleAnimate', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/toggleAnimate', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator toggleAnimate event called by ', 'color:green', d.calledBy);
   }
 
   toggleAnimate();
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/stopAnimation', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/stopAnimation', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator stopAnimation event called by ', 'color:green', d.calledBy);
   }
@@ -33425,7 +33438,7 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/stopAnimati
     stopAnimating();
   }
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/startAnimation', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/startAnimation', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator startAnimation event called by ', 'color:green', d.calledBy);
   }
@@ -33434,7 +33447,7 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/startAnimat
     animate();
   }
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/reset', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/reset', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy);
   }
@@ -33442,14 +33455,14 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/reset', fun
   reset();
 }); //few cases justify this emit
 
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/redraw', function (d) {
-  if (state.debugging) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/redraw', function (d) {
+  if (state.debugging && state.debug.redraw) {
     console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy);
   }
 
   redraw();
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/resize', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/resize', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator resize event called by ', 'color:green', d.calledBy);
   }
@@ -33460,10 +33473,170 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/resize', fu
 
 logic.init = function () {
   _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].init();
-  _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init(); // defaults.load('circleSystem')
+  _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init();
+  _panels_monitor__WEBPACK_IMPORTED_MODULE_3__["default"].init(); // defaults.load('circleSystem')
   // toggleAnimate();
 };
 
+
+
+/***/ }),
+
+/***/ "./src/springs/panels/monitor.js":
+/*!***************************************!*\
+  !*** ./src/springs/panels/monitor.js ***!
+  \***************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+/*
+    This works closely with system and springCanvas. It is a more specific system interaction tool
+
+*/
+
+var updateOpacity = function updateOpacity(rgb, opacity) {
+  var aux = rgb.split(',').splice(0, 3);
+  aux.push("".concat(opacity, ")"));
+  return aux.join(',');
+};
+
+var State = function State() {
+  return {
+    canvas: document.getElementById('springCanvas'),
+    ctx: document.getElementById('springCanvas').getContext('2d'),
+    monitorWrapperId: '#monitorWrapper',
+    monitorDisplayId: '#monitorDisplay',
+    headerWrapperId: '#monitorHeader',
+    setterWrapperId: '#setterWrapper',
+    debug: true
+  };
+};
+
+var logic = {};
+var state; //allows for an easier reset, set in init.
+
+var hasSubscribed = false; //On resets I am not resubscribing
+
+var updateMonitorFn; //set on instantiation 
+
+var trimId = function trimId(oId) {
+  return oId.substr(0, 4);
+};
+
+var buildWeightHtml = function buildWeightHtml(w) {
+  var color = updateOpacity(w.color, .5);
+  var inlineStyle = "background-color : ".concat(color);
+  var html = "<div class=\"input-group mb-2 weightInput\">\n                        <div class=\"input-group-prepend\">\n                            <span class=\"input-group-text\" style=\"".concat(inlineStyle, "\">").concat(trimId(w.id), "</span>\n                        </div>\n                        <input type=\"text\" class=\"form-control\" id=\"xValue_").concat(w.id, "\" >\n                        <input type = \"text\" class = \"form-control velocityValue\" id=\"velocity_").concat(w.id, "\">\n                        <input type=\"text\" class=\"form-control\" id=\"w_").concat(w.id, "\" >\n                        </div>");
+  return html;
+}; //this is called from the subscribed emit found in the init
+
+
+var update = function update(changeType) {
+  if (changeType === 'structure') {
+    //in this case another mass may have been added so I need to rebuild html
+    logic.buildMonitorDisplay();
+  } else if (changeType === 'shift' || changeType === 'state') {
+    updateMonitorFn();
+  }
+}; //builds a single card
+
+
+var buildMonitorDisplayCard = function buildMonitorDisplayCard(w) {
+  var velocityId = "vel_".concat(w.id);
+  var positionId = "pos_".concat(w.id);
+  var massId = "mass_".concat(w.id);
+  var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
+  var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
+  var massHtml = "Mass : ".concat(w.mass);
+  var color = updateOpacity(w.color, .5);
+  var inlineStyle = "background-color : ".concat(color);
+  var html = "<div class=\"card\" style=\"width: 85%;\">\n        <div class=\"card-header\" style=\"".concat(inlineStyle, "\">\n            W : ").concat(trimId(w.id), "\n        </div>\n        <ul class=\"list-group list-group-flush\">\n            <li class=\"list-group-item\" id=\"").concat(positionId, "\">").concat(positionHtml, "</li>\n            <li class=\"list-group-item\" id=\"").concat(velocityId, "\">").concat(velocityHtml, "</li>\n            <li class=\"list-group-item\" id=\"").concat(massId, "\" >").concat(massHtml, "</li>\n        </ul>\n        </div>");
+  var weightCard = jquery__WEBPACK_IMPORTED_MODULE_3___default()(html); // weightInput.on('click', (ev) => {
+  //     console.log('keyup on w input ', w)
+  // })
+
+  return weightCard;
+};
+
+var buildBaseHtml = function buildBaseHtml() {
+  var html = "\n    <div id=\"".concat(state.headerWrapperId, "\">\n    <h4> Click a list item to set its values and view its springs </h4>\n    </div>\n    ");
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorWrapperId).append(html);
+  return html;
+};
+
+logic.buildMonitorDisplay = function () {
+  console.log('building');
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorDisplayId).html('');
+
+  var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
+      weights = _system$getObjs.weights,
+      springs = _system$getObjs.springs;
+
+  var displayCards = weights.map(buildMonitorDisplayCard);
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorDisplayId).append(displayCards);
+
+  var update = function update() {
+    var _system$getObjs2 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
+        weights = _system$getObjs2.weights,
+        springs = _system$getObjs2.springs;
+
+    weights.forEach(function (w) {
+      var $velocity = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#vel_".concat(w.id));
+      var $position = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#pos_".concat(w.id));
+      var $mass = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#mass_".concat(w.id));
+      var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
+      var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
+      var massHtml = "Mass : ".concat(w.mass);
+      $position.html(positionHtml);
+      $velocity.html(velocityHtml);
+      $mass.html(massHtml); // $($velocityId).value('bird')
+    });
+  };
+
+  return update;
+};
+
+logic.draw = function () {};
+
+logic.init = function () {
+  state = State(); // $(state.headerWrapperId).html(buildBaseHtml());
+  //currently i am keeping emits at a singleton level, not sure how it will work
+
+  updateMonitorFn = logic.buildMonitorDisplay();
+
+  if (!hasSubscribed) {
+    var systemSubscription = 'panel-systemOnChange-sub';
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].subscribeToOnChange(systemSubscription);
+    _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].on(systemSubscription, function (_ref) {
+      var changeType = _ref.changeType;
+      update(changeType);
+    });
+    hasSubscribed = true;
+  }
+};
+
+logic.getState = function () {
+  return state;
+};
+
+logic.reset = function () {
+  logic.init();
+}; //for testing
+
+
+window.monitor = logic;
 
 
 /***/ }),
@@ -34185,7 +34358,6 @@ logic.setOverlays = function () {
 };
 
 logic.init = function () {
-  console.log("SPRING CANVS");
   state = State();
   setCanvasDimensions();
   Object(_listenAndHandle__WEBPACK_IMPORTED_MODULE_0__["default"])(state);
@@ -34197,9 +34369,9 @@ logic.getState = function () {
 };
 
 logic.reset = function () {
-  return logic.init;
-}; //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
-
+  state = State();
+  setCanvasDimensions();
+};
 
 
 
@@ -34928,7 +35100,12 @@ var setMetadata = function setMetadata() {
   });
 };
 
-logic.solveSystem = function () {
+logic.solveSystem = function (_ref3) {
+  var stepSize = _ref3.stepSize,
+      maxTime = _ref3.maxTime;
+  state.maxTime = maxTime || state.maxTime; //setting like so bc there may be other ways to change in future
+
+  state.stepSize = stepSize || state.stepSize;
   var output = [];
   var solver = new odex__WEBPACK_IMPORTED_MODULE_0__["Solver"](_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getSize() * 4);
 
@@ -34972,7 +35149,10 @@ logic.solveSystem = function () {
   });
   setMetadata(); //This adds things like maxVelocity to the weights, (I suspect future adds)
 
-  return output;
+  return {
+    output: output,
+    result: result
+  };
 }; //for testing. currently the integration cb slows by about 3x.
 
 
@@ -35011,6 +35191,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./helpers */ "./src/springs/system/helpers.js");
 /* harmony import */ var _graph_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./graph/graph */ "./src/springs/system/graph/graph.js");
 /* harmony import */ var _solver__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./solver */ "./src/springs/system/solver.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+
 
 
 
@@ -35018,16 +35200,13 @@ __webpack_require__.r(__webpack_exports__);
 var State = function State() {
   return {
     currentFrame: 0,
-    solvedSystem: {
-      data: [],
-      meta: {
-        averageVelocity: 0,
-        maxVelocity: 0
-      }
-    },
-    //solver returns as frameIndex : frameData  
     flags: {
       needsSolve: true
+    },
+    solverConfig: {
+      stepSize: .05,
+      maxTime: 200,
+      frameCount: 200 / .05
     },
     center: {
       frameCalculated: 0,
@@ -35051,29 +35230,62 @@ var State = function State() {
 };
 
 var logic = {};
-var state = State();
+var state = State(); //note that system state can be refreshed for a new system, but emitting / associates exist at singleton level
+
+var onChangeSubscribers = []; //emits events to these paths, i.e. panels/monitor/sysChange
+
+var emitChange = function emitChange(changeType) {
+  onChangeSubscribers.forEach(function (eventName) {
+    return _emitter__WEBPACK_IMPORTED_MODULE_3__["default"].emit(eventName, {
+      calledBy: 'system/emitChange',
+      changeType: changeType
+    });
+  });
+};
+
+var stateChanged = function stateChanged() {
+  var changeType = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'state';
+  var changeTypes = ['state', 'structure', 'shift'];
+
+  if (!changeTypes.includes(changeType)) {
+    throw new Error('system unknown change type');
+  }
+
+  if (changeType === 'structure' || changeType === 'shift') {
+    state.flags.needsSolve = true;
+  }
+
+  emitChange(changeType);
+};
+
+var checkForSolve = function checkForSolve() {
+  if (state.flags.needsSolve === true) {
+    solve();
+  }
+
+  if (state.currentFrame === state.solverConfig.frameCount) {
+    systemChanged(); //in this case the change is self invoked...
+  }
+};
 
 var solve = function solve() {
   var clearFrames = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
   state.flags.needsSolve = false; //the only reason clearFrames would be false is if we were adding more frames to the current animation
 
   if (clearFrames) {
-    console.log('clearing frames');
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
       return w.systemData.frames = [];
     });
     state.currentFrame = 0;
   }
 
-  _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem();
-};
+  _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem(state.solverConfig);
+}; //update and solve are only solve callers
+
 
 logic.update = function (_ref) {
   var frameIndex = _ref.frameIndex;
-
-  if (state.flags.needsSolve === true) {
-    solve();
-  }
+  checkForSolve();
 
   if (!frameIndex) {
     frameIndex = state.currentFrame;
@@ -35082,17 +35294,17 @@ logic.update = function (_ref) {
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
     return w.update(state.currentFrame);
   });
-};
+  stateChanged();
+}; //update and solve are only solve callers
+
 
 logic.step = function () {
-  if (state.flags.needsSolve === true) {
-    solve();
-  }
-
+  checkForSolve();
   state.currentFrame++;
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
     return w.update(state.currentFrame);
   });
+  stateChanged();
 };
 
 logic.addWeight = function (_ref2) {
@@ -35100,9 +35312,8 @@ logic.addWeight = function (_ref2) {
       position = _ref2.position,
       springK = _ref2.springK,
       velocity = _ref2.velocity;
-  state.flags.needsSolve = true; //as this changes sys state
-  //position is the true position, the canvas handles the shift 
 
+  //position is the true position, the canvas handles the shift 
   if (!position.x && position.x !== 0 || !position.y && position.y !== 0) {
     throw new Error('system addWeight needs canvas x and y');
   }
@@ -35138,31 +35349,14 @@ logic.addWeight = function (_ref2) {
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(weight, newWeight, springK);
   }
 
+  stateChanged('structure');
   return newWeight;
 };
 
-logic.reset = function () {
-  state = State();
-  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].reset();
-};
-
-logic.findNearestWeight = function (_ref3) {
-  var relativeMousePosition = _ref3.relativeMousePosition;
-  console.log('in find nearest', relativeMousePosition);
-  return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(relativeMousePosition);
-};
-
-logic.moveWeight = function (_ref4) {
-  var weight = _ref4.weight,
-      relativePosition = _ref4.relativePosition,
-      manuallyMoved = _ref4.manuallyMoved;
-
-  if (!weight || !relativePosition) {
-    throw new Error('moveWeight bad params');
-  }
-
-  state.flags.needsSolve = true; //as this changes sys state
-
+logic.moveWeight = function (_ref3) {
+  var weight = _ref3.weight,
+      relativePosition = _ref3.relativePosition,
+      manuallyMoved = _ref3.manuallyMoved;
   weight.position.x = relativePosition.x;
   weight.position.y = relativePosition.y;
   weight.initialPosition.x = relativePosition.x;
@@ -35172,6 +35366,27 @@ logic.moveWeight = function (_ref4) {
     // weight.initialVelocity.y = 0
     // weight.velocity.x = 0
     // weight.velocity.y = 0
+  }
+
+  stateChanged('shift');
+};
+
+logic.reset = function () {
+  state = State();
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].reset();
+};
+
+logic.findNearestWeight = function (_ref4) {
+  var relativeMousePosition = _ref4.relativeMousePosition;
+  // console.log('in find nearest', relativeMousePosition)
+  return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(relativeMousePosition);
+};
+
+logic.subscribeToOnChange = function (eventName) {
+  if (!onChangeSubscribers.includes(eventName)) {
+    onChangeSubscribers.push(eventName);
+  } else {
+    console.warn('onchange subscribe dupe subscribe', eventName, onChangeSubscribers);
   }
 };
 
