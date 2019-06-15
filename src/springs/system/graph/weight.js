@@ -41,6 +41,7 @@ const Weight = ({ position, mass, velocity, color, id }) => {
             }
         }, 
         mass: mass || 10,
+        radius : 0, // set in the init block
         type: 'weight',
     }
     const logic = {}
@@ -55,8 +56,8 @@ const Weight = ({ position, mass, velocity, color, id }) => {
     }
 
 
-
-
+    //radius is inherently a draw attribute, but others use it for things like mass placement, thus it is here for easy access
+    state.radius = state.mass < 5 ? 5 : state.mass > 100 ? 100 : state.mass;
 
     return Object.assign(state, logic)
 }

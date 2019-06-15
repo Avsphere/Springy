@@ -15,7 +15,6 @@ window.addEventListener('keyup', (ev) => {
     }
 
     if (ev.key === 'r' || ev.key === 'R') {
-        orchestrator.reset();
         emitter.emit('orchestrator/reset', { calledBy : 'view.js/keyup'})
     }
 })

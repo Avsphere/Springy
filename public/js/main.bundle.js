@@ -27456,66 +27456,6 @@ exports.Solver = Solver;
 
 /***/ }),
 
-/***/ "./node_modules/os-browserify/browser.js":
-/*!***********************************************!*\
-  !*** ./node_modules/os-browserify/browser.js ***!
-  \***********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-exports.endianness = function () { return 'LE' };
-
-exports.hostname = function () {
-    if (typeof location !== 'undefined') {
-        return location.hostname
-    }
-    else return '';
-};
-
-exports.loadavg = function () { return [] };
-
-exports.uptime = function () { return 0 };
-
-exports.freemem = function () {
-    return Number.MAX_VALUE;
-};
-
-exports.totalmem = function () {
-    return Number.MAX_VALUE;
-};
-
-exports.cpus = function () { return [] };
-
-exports.type = function () { return 'Browser' };
-
-exports.release = function () {
-    if (typeof navigator !== 'undefined') {
-        return navigator.appVersion;
-    }
-    return '';
-};
-
-exports.networkInterfaces
-= exports.getNetworkInterfaces
-= function () { return {} };
-
-exports.arch = function () { return 'javascript' };
-
-exports.platform = function () { return 'browser' };
-
-exports.tmpdir = exports.tmpDir = function () {
-    return '/tmp';
-};
-
-exports.EOL = '\n';
-
-exports.homedir = function () {
-	return '/'
-};
-
-
-/***/ }),
-
 /***/ "./node_modules/popper.js/dist/esm/popper.js":
 /*!***************************************************!*\
   !*** ./node_modules/popper.js/dist/esm/popper.js ***!
@@ -33337,7 +33277,7 @@ regeneratorRuntime.mark(function _callee() {
         case 0:
           console.log('in the main init');
           _urlParse = Object(url__WEBPACK_IMPORTED_MODULE_0__["parse"])(window.location.href), pathname = _urlParse.pathname;
-          page = pathname.split('/').pop().toLocaleLowerCase();
+          page = pathname.split('/').pop().toLocaleLowerCase(); // $('#canvasContainer').height = window.innerHeight * .85
 
           if (!window.localStorage.getItem('key')) {
             window.localStorage.setItem('key', shortid__WEBPACK_IMPORTED_MODULE_5___default.a.generate());
@@ -33413,14 +33353,22 @@ var animate = function animate() {
 var stopAnimating = function stopAnimating() {
   state.isAnimating = false;
   window.cancelAnimationFrame(state.animationFrame);
+  redraw();
 };
 
 var toggleAnimate = function toggleAnimate() {
   state.isAnimating = !state.isAnimating;
 
   if (state.isAnimating) {
+    //
+    getDrawableComponents().forEach(function (d) {
+      d.setOverlays(true);
+    });
     animate();
   } else {
+    getDrawableComponents().forEach(function (d) {
+      d.setOverlays(false);
+    });
     stopAnimating();
   }
 };
@@ -33458,6 +33406,7 @@ var reset = function reset() {
     d.reset();
   });
   _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
+  redraw();
 };
 
 _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/toggleAnimate', function (d) {
@@ -33506,13 +33455,13 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_3__["default"].on('orchestrator/resize', fu
   }
 
   resize();
+  redraw();
 });
 
 logic.init = function () {
   _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].init();
-  _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init();
-  _defaults__WEBPACK_IMPORTED_MODULE_4__["default"].load('circleSystem');
-  animate();
+  _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init(); // defaults.load('circleSystem')
+  // toggleAnimate();
 };
 
 
@@ -33573,7 +33522,6 @@ var State = function State() {
       drag: false //false or the handler
 
     },
-    transforms: {},
     controlFlags: {
       showPlot: true,
       cursorStats: false,
@@ -33617,6 +33565,51 @@ logic.resize = function () {
 
 logic.init = function () {
   state = State();
+};
+
+
+
+/***/ }),
+
+/***/ "./src/springs/springCanvas/drawMousePosition.js":
+/*!*******************************************************!*\
+  !*** ./src/springs/springCanvas/drawMousePosition.js ***!
+  \*******************************************************/
+/*! exports provided: draw */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "draw", function() { return draw; });
+var state = {
+  axis: {
+    width: 1
+  },
+  lineSpacing: 50,
+  //px
+  lineCount: 20
+};
+
+var draw = function draw(_ref) {
+  var springCanvasState = _ref.springCanvasState,
+      systemCenter = _ref.systemCenter;
+  var lastMousePosition = springCanvasState.lastMousePosition,
+      ctx = springCanvasState.ctx,
+      canvas = springCanvasState.canvas; //recall that lastMousePosition is set in listenAndHandle
+
+  var exact = lastMousePosition.exact; //needs to be drawn at true center + shift
+
+  var canvasCenter = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+  };
+  ctx.font = "11px Arial";
+  ctx.fillStyle = "#000000";
+  var relative = {
+    x: systemCenter.x - (canvasCenter.x - exact.x),
+    y: systemCenter.y - (canvasCenter.y - exact.y)
+  };
+  ctx.fillText("(".concat(relative.x.toFixed(2), ", ").concat(relative.y.toFixed(2), ")"), exact.x - 25, exact.y - 10);
 };
 
 
@@ -33734,32 +33727,58 @@ var updateOpacity = function updateOpacity(rgb, opacity) {
 };
 
 var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
+var hasInitialized = false;
+var canvasCenter;
+var metadata; //refactor this
 
-var draw = function draw(_ref) {
+var init = function init(_ref) {
   var state = _ref.state,
       weight = _ref.weight,
       systemCenter = _ref.systemCenter;
-  var displayFlags = state.displayFlags,
-      ctx = state.ctx,
-      canvas = state.canvas;
-  var canvasCenter = {
+  var canvas = state.canvas;
+  canvasCenter = {
     x: canvas.width / 2,
     y: canvas.height / 2
   };
+  hasInitialized = true;
+};
+
+var draw = function draw(_ref2) {
+  var state = _ref2.state,
+      weight = _ref2.weight,
+      systemCenter = _ref2.systemCenter;
+
+  if (hasInitialized === false) {
+    init({
+      state: state,
+      weight: weight,
+      systemCenter: systemCenter
+    });
+  }
+
+  var displayFlags = state.displayFlags,
+      ctx = state.ctx,
+      canvas = state.canvas;
   var shift = {
     x: canvasCenter.x - systemCenter.x,
     y: canvasCenter.y - systemCenter.y
   };
-  var radius = weight.mass < 5 ? 5 : weight.mass > 100 ? 100 : weight.mass;
   var drawAt = {
     x: weight.position.x + shift.x,
     y: weight.position.y + shift.y
   };
+  var _weight$systemData$me = weight.systemData.metadata,
+      maxVelocity = _weight$systemData$me.maxVelocity,
+      minVelocity = _weight$systemData$me.minVelocity,
+      avgVelocity = _weight$systemData$me.avgVelocity;
   ctx.strokeStyle = weight.color;
   ctx.beginPath();
-  ctx.arc(drawAt.x, drawAt.y, radius, 0, Math.PI * 2, true);
+  ctx.arc(drawAt.x, drawAt.y, weight.radius, 0, Math.PI * 2, true);
   ctx.closePath();
   ctx.stroke();
+  var fillOpacity = (Math.abs(weight.velocity.x) + Math.abs(weight.velocity.y)) / (maxVelocity.x + maxVelocity.y + 1);
+  ctx.fillStyle = updateOpacity(weight.color, fillOpacity);
+  ctx.fill();
 };
 
 
@@ -33853,7 +33872,23 @@ var handlerState = {
   },
   spring: {
     k: 1
-  }
+  },
+  mouseMove: {
+    throttle: 5,
+    //only captures every x mouseMove calls
+    calls: 0 //is incremented by 1 each call
+
+  },
+  clickBuffer: 5,
+  //x px away + whatever for easier selecting
+  spawnBuffer: 15,
+  //x px away + whatever to prevent spawning massess too close
+  debug: {
+    dragHandler: true,
+    leftClick: false
+  },
+  dragHandler: {} //set when the weight is being dragged
+
 };
 
 var getMousePosition = function getMousePosition(ev) {
@@ -33875,45 +33910,108 @@ var getRelativeMousePosition = function getRelativeMousePosition(ev) {
   };
   var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getCenter();
   return {
-    x: sysCenter.x - (canvasCenter.x - x),
-    y: sysCenter.y - (canvasCenter.y - y)
+    exact: {
+      x: x,
+      y: y
+    },
+    relative: {
+      x: sysCenter.x - (canvasCenter.x - x),
+      y: sysCenter.y - (canvasCenter.y - y)
+    }
+  };
+};
+
+var removeDragHandler = function removeDragHandler() {
+  state.canvas.removeEventListener('mousemove', handlerState.dragHandler);
+};
+
+var initDragHandler = function initDragHandler(weight) {
+  return function (ev) {
+    var _getRelativeMousePosi = getRelativeMousePosition(ev),
+        exact = _getRelativeMousePosi.exact,
+        relative = _getRelativeMousePosi.relative;
+
+    var inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10;
+    var inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10;
+
+    if (!inXBounds || !inYBounds) {
+      removeDragHandler();
+    } else {
+      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].moveWeight({
+        weight: weight,
+        relativePosition: relative,
+        manuallyMoved: true
+      });
+      _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
+        calledBy: 'springCanvas/listenAndHandle/dragHandler'
+      });
+    }
   };
 };
 
 var handleLeftClick = function handleLeftClick(ev) {
-  var _getRelativeMousePosi = getRelativeMousePosition(ev),
-      x = _getRelativeMousePosi.x,
-      y = _getRelativeMousePosi.y;
+  var _getRelativeMousePosi2 = getRelativeMousePosition(ev),
+      exact = _getRelativeMousePosi2.exact,
+      relative = _getRelativeMousePosi2.relative;
 
   _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
     calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
-  }); // console.log('true mouse: ', trueMouse)
-  // console.log('relative mouse ', x, y)
+  }); //if there is a nearby weight then i select it;
 
-  var weightConfig = {
-    mass: handlerState.weight.mass,
-    position: {
-      x: x,
-      y: y
-    },
-    springK: handlerState.spring.k,
-    velocity: handlerState.weight.velocity
-  };
-  var newWeight = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight(weightConfig);
+  var _system$findNearestWe = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearestWeight({
+    relativeMousePosition: relative
+  }),
+      dist = _system$findNearestWe.dist,
+      weight = _system$findNearestWe.weight;
 
-  if (state.debug) {
-    var trueMouse = getMousePosition(ev);
+  if (dist !== false && weight !== false && dist < handlerState.spawnBuffer + weight.radius) {
+    handlerState.dragHandler = initDragHandler(weight);
+    _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].once('springCanvas/listenAndHandle/stopDragHandler', function (d) {
+      if (handlerState.debug.dragHandler) {
+        console.log('%c dragHandler emit caught. calledBy (should be only orchestrator) ', d.calledBy);
+      }
+
+      removeDragHandler();
+    });
+    state.canvas.addEventListener('mousemove', handlerState.dragHandler);
+  } else {
+    var weightConfig = {
+      mass: handlerState.weight.mass,
+      position: {
+        x: relative.x,
+        y: relative.y
+      },
+      springK: handlerState.spring.k,
+      velocity: handlerState.weight.velocity
+    };
+
+    var _newWeight = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].addWeight(weightConfig); //I need to redraw to show new weight
+
+
+    _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
+      calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
+    });
+  }
+
+  if (handlerState.debug.leftClick) {
     console.log('listenAndHandle leftclick spawning weight ', newWeight);
-    console.log('true mouse: ', trueMouse);
-    console.log('relative mouse ', x, y);
+    console.log('exact mouse: ', exact);
+    console.log('relative mouse ', relative);
   }
 };
 
 var handleRightClick = function handleRightClick(ev) {};
 
-var handleMouseUp = function handleMouseUp(ev) {};
+var handleMouseUp = function handleMouseUp(ev) {
+  removeDragHandler(); //always test for a remove
+}; //This sets the mouseMove state value which is used in the springCanvas draw loop
 
-var handleMouseMove = function handleMouseMove(ev) {}; //these are all of the spring canvas listeners and their associated handlers
+
+var handleMouseMove = function handleMouseMove(ev) {
+  if (state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0) {
+    state.lastMousePosition = getRelativeMousePosition(ev);
+  }
+}; //these are all of the spring canvas listeners and their associated handlers
 
 
 var initListenAndHandle = function initListenAndHandle(springCanvasState) {
@@ -33954,6 +34052,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _drawWeight__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./drawWeight */ "./src/springs/springCanvas/drawWeight.js");
 /* harmony import */ var _drawSpring__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./drawSpring */ "./src/springs/springCanvas/drawSpring.js");
 /* harmony import */ var _drawSystemCenter__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./drawSystemCenter */ "./src/springs/springCanvas/drawSystemCenter.js");
+/* harmony import */ var _drawMousePosition__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./drawMousePosition */ "./src/springs/springCanvas/drawMousePosition.js");
+
 
 
 
@@ -33973,25 +34073,26 @@ var State = function State() {
     },
     canvas: document.getElementById('springCanvas'),
     ctx: document.getElementById('springCanvas').getContext('2d'),
-    activeHandlers: {
-      //specifically temp handlers
-      drag: false //false or the handler
-
+    debug: true,
+    debugOptions: {
+      logCursor: false
     },
-    //everything is relative to systemCenter. if canvasCenter is 100 and sysCenter is 200 then shift is -100
-    transforms: {
-      shift: {
+    lastMousePosition: {
+      exact: {
         x: 0,
         y: 0
       },
-      scale: 0,
-      systemCenter: {
+      relative: {
         x: 0,
         y: 0
       }
     },
+    canvasScalarDimensions: {
+      width: .95,
+      height: .88
+    },
     displayFlags: {
-      cursorStats: false,
+      cursorPosition: true,
       showWeightIds: false,
       showSpringIds: false,
       showWeightDetails: true,
@@ -34000,10 +34101,8 @@ var State = function State() {
       lockY: true,
       showSystemCenter: true
     },
-    debug: true,
-    debugOptions: {
-      logCursor: false
-    }
+    drawOverlays: false //when this is false things like mouse cursor Position will not be drawn 
+
   });
 };
 
@@ -34011,25 +34110,10 @@ var logic = {};
 var state; //allows for an easier reset, set in init.
 
 var setCanvasDimensions = function setCanvasDimensions() {
-  var canvasContainerWidth = $('#canvasContainer').innerWidth();
-  state.canvas.width = canvasContainerWidth * .95;
-  state.canvas.height = window.innerHeight * .95;
-};
+  var canvasContainer = $('#canvasContainer');
+  state.canvas.width = canvasContainer.innerWidth() * state.canvasScalarDimensions.width; // state.canvas.height = canvasContainer.innerHeight() * .95
 
-var getMousePosition = function getMousePosition(ev) {
-  return {
-    x: ev.clientX - state.canvas.getBoundingClientRect().left,
-    y: ev.clientY - state.canvas.getBoundingClientRect().top
-  };
-}; //This is only called here and in the listenAndHandle
-
-
-var updateTransforms = function updateTransforms() {
-  var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter(); //note that getCenters if second invoke uses cached prev result
-
-  state.transforms.systemCenter = sysCenter;
-  state.transforms.shift.x = state.canvas.width / 2 - sysCenter.x;
-  state.transforms.shift.y = state.canvas.height / 2 - sysCenter.y; // console.log('shift x : ', state.transforms.shift.x )
+  state.canvas.height = window.innerHeight * state.canvasScalarDimensions.height;
 };
 
 logic.clear = function () {
@@ -34043,14 +34127,6 @@ logic.clear = function () {
 logic.resize = function () {
   setCanvasDimensions();
 };
-
-logic.debug = function () {
-  if (state.debugOptions.logCursor) {
-    state.canvas.addEventListener('mousemove', function (ev) {
-      console.log('springCanvasDebug: ', getMousePosition(ev));
-    });
-  }
-};
 /* draws the grid / weights*/
 
 
@@ -34059,18 +34135,32 @@ logic.draw = function () {
       springs = _system$getObjs.springs,
       weights = _system$getObjs.weights;
 
+  var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter();
+
   if (state.displayFlags.showGrid === true) {
     _grid__WEBPACK_IMPORTED_MODULE_2__["default"].draw({
       springCanvasState: state,
-      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
+      systemCenter: sysCenter
     });
   }
 
   if (state.displayFlags.showSystemCenter === true) {
     Object(_drawSystemCenter__WEBPACK_IMPORTED_MODULE_5__["draw"])({
       springCanvasState: state,
-      systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
+      systemCenter: sysCenter
     });
+  }
+
+  if (state.displayFlags.cursorPosition && state.drawOverlays) {
+    var inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10;
+    var inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10; //ha... not that is is "invisible"
+
+    if (inVisibleX && inVisibleY) {
+      Object(_drawMousePosition__WEBPACK_IMPORTED_MODULE_6__["draw"])({
+        springCanvasState: state,
+        systemCenter: sysCenter
+      });
+    }
   }
 
   weights.forEach(function (weight) {
@@ -34089,23 +34179,17 @@ logic.draw = function () {
   });
 };
 
-logic.getShift = function () {
-  updateTransforms();
-  return state.transforms.shift;
+logic.setOverlays = function () {
+  var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+  return state.drawOverlays = b;
 };
 
 logic.init = function () {
+  console.log("SPRING CANVS");
   state = State();
   setCanvasDimensions();
   Object(_listenAndHandle__WEBPACK_IMPORTED_MODULE_0__["default"])(state);
-
-  if (state.debug) {
-    logic.debug();
-  }
-};
-
-logic.setDebug = function (bool) {
-  state.debug = bool;
+  state.canvas.style.cursor = 'crosshair';
 };
 
 logic.getState = function () {
@@ -34113,7 +34197,7 @@ logic.getState = function () {
 };
 
 logic.reset = function () {
-  return logic.init();
+  return logic.init;
 }; //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
 
 
@@ -34134,9 +34218,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _weight__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./weight */ "./src/springs/system/graph/weight.js");
 /* harmony import */ var _spring__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./spring */ "./src/springs/system/graph/spring.js");
 /* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../helpers */ "./src/springs/system/helpers.js");
-/* harmony import */ var os__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! os */ "./node_modules/os-browserify/browser.js");
-/* harmony import */ var os__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(os__WEBPACK_IMPORTED_MODULE_3__);
-
 
 
 
@@ -34147,7 +34228,8 @@ var State = function State() {
     adjList: new Map(),
     weights: [],
     //for easier drawing
-    springs: []
+    springs: [],
+    debug: false
   };
 };
 
@@ -34275,14 +34357,22 @@ logic.removeWeight = function (weightToRemove) {
 };
 
 logic.findNearest = function (positionVec) {
-  if (state.adjList.size === 0) {
-    throw new Error('cannot find nearest when size is 0;');
-  }
-
   var nearest = {
     dist: Infinity,
     weight: {}
   };
+
+  if (state.adjList.size === 0) {
+    if (state.debug) {
+      console.log('findNearest cannot find when size is 0, returning falsey');
+    }
+
+    return {
+      dist: false,
+      weight: false
+    };
+  }
+
   state.adjList.forEach(function (edgeList, weight) {
     var dist = _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(weight.position, positionVec);
 
@@ -34484,6 +34574,8 @@ var Weight = function Weight(_ref) {
       }
     },
     mass: mass || 10,
+    radius: 0,
+    // set in the init block
     type: 'weight'
   };
   var logic = {};
@@ -34497,8 +34589,10 @@ var Weight = function Weight(_ref) {
 
     state.position = state.systemData.frames[frameIndex].position;
     state.velocity = state.systemData.frames[frameIndex].velocity;
-  };
+  }; //radius is inherently a draw attribute, but others use it for things like mass placement, thus it is here for easy access
 
+
+  state.radius = state.mass < 5 ? 5 : state.mass > 100 ? 100 : state.mass;
   return Object.assign(state, logic);
 };
 
@@ -34798,11 +34892,16 @@ var setMetadata = function setMetadata() {
         minVelocityX = Infinity;
     var maxVelocityY = -Infinity,
         minVelocityY = Infinity;
+    var avgVelocity = {
+      x: 0,
+      y: 0
+    };
+    var frameCount = w.systemData.frames.length;
     w.systemData.frames.forEach(function (f) {
       if (f.velocity.x > maxVelocityX) {
         maxVelocityX = f.velocity.x;
       } else if (f.velocity.x < minVelocityX) {
-        minVelocityY = f.velocity.x;
+        minVelocityX = f.velocity.x;
       }
 
       if (f.velocity.y > maxVelocityY) {
@@ -34810,6 +34909,9 @@ var setMetadata = function setMetadata() {
       } else if (f.velocity.y < minVelocityY) {
         minVelocityY = f.velocity.y;
       }
+
+      avgVelocity.x += f.velocity.x;
+      avgVelocity.y += f.velocity.y;
     });
     w.systemData.metadata.maxVelocity = {
       x: maxVelocityX,
@@ -34818,6 +34920,10 @@ var setMetadata = function setMetadata() {
     w.systemData.metadata.minVelocity = {
       x: minVelocityX,
       y: minVelocityY
+    };
+    w.systemData.metadata.avgVelocity = {
+      x: avgVelocity.x / frameCount,
+      y: avgVelocity.y / frameCount
     };
   });
 };
@@ -34938,20 +35044,25 @@ var State = function State() {
         y: 0 //switch to injected config when time
 
       }
-    }
+    },
+    snap: 5 //this means it rounds the x and y to the nearest 5 when spawning a weight
+
   };
 };
 
 var logic = {};
 var state = State();
 
-var solve = function solve(clearFrames) {
-  state.flags.needsSolve = false;
+var solve = function solve() {
+  var clearFrames = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+  state.flags.needsSolve = false; //the only reason clearFrames would be false is if we were adding more frames to the current animation
 
   if (clearFrames) {
+    console.log('clearing frames');
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
-      return w.frames = [];
+      return w.systemData.frames = [];
     });
+    state.currentFrame = 0;
   }
 
   _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem();
@@ -35012,22 +35123,56 @@ logic.addWeight = function (_ref2) {
       dist = _sysGraph$findNearest.dist,
       weight = _sysGraph$findNearest.weight;
 
+  var snappedPosition = {
+    x: position.x - position.x % state.snap,
+    y: position.y - position.y % state.snap
+  };
   var newWeight = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-    position: position,
+    position: snappedPosition,
     mass: mass,
     velocity: velocity
   });
-  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge({
-    m1: weight,
-    m2: newWeight,
-    springK: springK
-  });
+
+  if (dist !== false || weight !== false) {
+    //in this case I auto connect edges
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(weight, newWeight, springK);
+  }
+
   return newWeight;
 };
 
 logic.reset = function () {
   state = State();
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].reset();
+};
+
+logic.findNearestWeight = function (_ref3) {
+  var relativeMousePosition = _ref3.relativeMousePosition;
+  console.log('in find nearest', relativeMousePosition);
+  return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(relativeMousePosition);
+};
+
+logic.moveWeight = function (_ref4) {
+  var weight = _ref4.weight,
+      relativePosition = _ref4.relativePosition,
+      manuallyMoved = _ref4.manuallyMoved;
+
+  if (!weight || !relativePosition) {
+    throw new Error('moveWeight bad params');
+  }
+
+  state.flags.needsSolve = true; //as this changes sys state
+
+  weight.position.x = relativePosition.x;
+  weight.position.y = relativePosition.y;
+  weight.initialPosition.x = relativePosition.x;
+  weight.initialPosition.y = relativePosition.y; //manually moving a weight resets its velocity
+
+  if (manuallyMoved === true) {// weight.initialVelocity.x = 0
+    // weight.initialVelocity.y = 0
+    // weight.velocity.x = 0
+    // weight.velocity.y = 0
+  }
 };
 
 logic.getObjs = function () {
@@ -35037,8 +35182,8 @@ logic.getObjs = function () {
   };
 };
 
-logic.getCenter = function () {
-  if (state.center.frameCalculated === state.currentFrame) {
+logic.getCenter = function (forceCalc) {
+  if (!forceCalc && state.center.frameCalculated === state.currentFrame) {
     return state.center.position;
   } else {
     state.center.position = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter();
@@ -35514,7 +35659,6 @@ window.addEventListener('keyup', function (ev) {
   }
 
   if (ev.key === 'r' || ev.key === 'R') {
-    _orchestrator__WEBPACK_IMPORTED_MODULE_0__["default"].reset();
     _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/reset', {
       calledBy: 'view.js/keyup'
     });

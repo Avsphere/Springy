@@ -21,7 +21,10 @@ block content
               .defaultsWrapper
             #nav-profile.tab-pane.fade(role='tabpanel')
               .profileWrapper
-      .col-9#canvasContainer
-        canvas#plotCanvas( style="display:none;" )
-        canvas#springCanvas
+      .col-9#canvasInterface
+        .toggler(style="width:100%")
+          h1 Very important things
+        #canvasContainer
+          canvas#plotCanvas( style="display:none;" )
+          canvas#springCanvas
       

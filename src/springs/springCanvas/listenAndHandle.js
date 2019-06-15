@@ -13,7 +13,18 @@ const handlerState = {
     },
     spring : {
         k : 1
-    }
+    },
+    mouseMove : {
+        throttle : 5, //only captures every x mouseMove calls
+        calls : 0 //is incremented by 1 each call
+    },
+    clickBuffer: 5, //x px away + whatever for easier selecting
+    spawnBuffer : 15, //x px away + whatever to prevent spawning massess too close
+    debug : {
+        dragHandler : true,
+        leftClick : false
+    },
+    dragHandler: {} //set when the weight is being dragged
 }
 
 const getMousePosition = (ev) => ({
@@ -31,29 +42,67 @@ const getRelativeMousePosition = (ev) => {
     }
     const sysCenter = system.getCenter()
     return {
-        x: sysCenter.x - (canvasCenter.x - x),
-        y: sysCenter.y - (canvasCenter.y - y)
+        exact : { x : x, y : y },
+        relative: { x: sysCenter.x - (canvasCenter.x - x), y: sysCenter.y - (canvasCenter.y - y) }
     }
 }
 
 
-const handleLeftClick = (ev) => {
-    const { x, y } = getRelativeMousePosition(ev);
-    emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
-    // console.log('true mouse: ', trueMouse)
-    // console.log('relative mouse ', x, y)
-    const weightConfig = { 
-        mass: handlerState.weight.mass,
-        position : { x : x, y : y },
-        springK : handlerState.spring.k,
-        velocity: handlerState.weight.velocity
+const removeDragHandler = () => {
+    state.canvas.removeEventListener('mousemove', handlerState.dragHandler)
+}
+
+const initDragHandler = (weight) => (ev) => {
+    const { exact, relative } = getRelativeMousePosition(ev);
+    const inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10
+    const inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10
+    if ( !inXBounds || !inYBounds ) {
+        removeDragHandler();
+    } else {
+        system.moveWeight({ weight, relativePosition: relative, manuallyMoved : true })
+        emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/dragHandler' })
     }
-    const newWeight = system.addWeight(weightConfig)
-    if (state.debug) {
-        const trueMouse = getMousePosition(ev)
+}
+
+
+
+
+const handleLeftClick = (ev) => {
+    const { exact, relative } = getRelativeMousePosition(ev);
+    emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
+
+
+    //if there is a nearby weight then i select it;
+
+    const { dist, weight } = system.findNearestWeight({ relativeMousePosition : relative })
+    if (dist !== false && weight !== false && dist < handlerState.spawnBuffer + weight.radius ) {
+        handlerState.dragHandler = initDragHandler(weight)
+        
+        emitter.once('springCanvas/listenAndHandle/stopDragHandler', (d) => {
+            if (handlerState.debug.dragHandler ) {
+                console.log('%c dragHandler emit caught. calledBy (should be only orchestrator) ', d.calledBy)
+            }
+            removeDragHandler()
+        })
+
+        state.canvas.addEventListener('mousemove', handlerState.dragHandler )
+    } else {
+        const weightConfig = {
+            mass: handlerState.weight.mass,
+            position: { x: relative.x, y: relative.y },
+            springK: handlerState.spring.k,
+            velocity: handlerState.weight.velocity
+        }
+        const newWeight = system.addWeight(weightConfig)
+        //I need to redraw to show new weight
+        emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/handleLeftClick' })
+    }
+
+
+    if (handlerState.debug.leftClick) {
         console.log('listenAndHandle leftclick spawning weight ', newWeight)
-        console.log('true mouse: ', trueMouse)
-        console.log('relative mouse ', x, y)
+        console.log('exact mouse: ', exact)
+        console.log('relative mouse ', relative)
     }
 
 
@@ -65,11 +114,15 @@ const handleRightClick = (ev) => {
 }
 
 const handleMouseUp = (ev) => {
+    removeDragHandler() //always test for a remove
 
 }
 
+//This sets the mouseMove state value which is used in the springCanvas draw loop
 const handleMouseMove = (ev) => {
-
+    if ( state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0 ) {
+        state.lastMousePosition = getRelativeMousePosition(ev);
+    }
 }
 
 //these are all of the spring canvas listeners and their associated handlers

@@ -28,13 +28,21 @@ const animate = () => {
 const stopAnimating = () => {
     state.isAnimating = false
     window.cancelAnimationFrame(state.animationFrame);
+    redraw()
 }
 
 const toggleAnimate = () => {
     state.isAnimating = !state.isAnimating;
     if (state.isAnimating) {
+        //
+        getDrawableComponents().forEach(d => {
+            d.setOverlays(true);
+        })
         animate();
     } else {
+        getDrawableComponents().forEach(d => {
+            d.setOverlays(false);
+        })
         stopAnimating();
     }
 }
@@ -66,6 +74,7 @@ const reset = () => {
         d.reset();
     })
     system.reset();
+    redraw();
 }
 
 emitter.on('orchestrator/toggleAnimate', (d) => {
@@ -102,14 +111,15 @@ emitter.on('orchestrator/redraw', (d) => {
 emitter.on('orchestrator/resize', (d) => {
     if (state.debugging) { console.log('%c orchestrator resize event called by ', 'color:green', d.calledBy) }
     resize()
+    redraw()
 })
 
 
 logic.init = () => {
     springCanvas.init();
     plotCanvas.init();
-    defaults.load('circleSystem')
-    animate();
+    // defaults.load('circleSystem')
+    // toggleAnimate();
 }
 
 

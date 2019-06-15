@@ -10,7 +10,6 @@ const State = () => Object.assign({
     activeHandlers: { //specifically temp handlers
         drag: false //false or the handler
     },
-    transforms: {}, 
     controlFlags: {
         showPlot: true,
         cursorStats: false,

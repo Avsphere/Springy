@@ -197,14 +197,19 @@ const setMetadata = () => {
     graph.getWeights().forEach(w => {
         let maxVelocityX = -Infinity, minVelocityX = Infinity
         let maxVelocityY = -Infinity, minVelocityY = Infinity
+        let avgVelocity = { x : 0, y : 0}
+        const frameCount = w.systemData.frames.length
         w.systemData.frames.forEach( f => {
             if ( f.velocity.x > maxVelocityX ) { maxVelocityX = f.velocity.x }
-            else if (f.velocity.x < minVelocityX) { minVelocityY = f.velocity.x}
+            else if (f.velocity.x < minVelocityX) { minVelocityX = f.velocity.x}
             if ( f.velocity.y > maxVelocityY ) { maxVelocityY = f.velocity.y }
             else if ( f.velocity.y < minVelocityY ) { minVelocityY = f.velocity.y }
+            avgVelocity.x += f.velocity.x
+            avgVelocity.y += f.velocity.y
         })
         w.systemData.metadata.maxVelocity = { x: maxVelocityX, y: maxVelocityY }
-        w.systemData.metadata.minVelocity = { x : minVelocityX, y : minVelocityY }
+        w.systemData.metadata.minVelocity = { x: minVelocityX, y: minVelocityY }
+        w.systemData.metadata.avgVelocity = { x: avgVelocity.x / frameCount, y: avgVelocity.y / frameCount }
     }) 
 }
 

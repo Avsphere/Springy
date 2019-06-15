@@ -12,19 +12,25 @@ body {
 
 #springCanvas {
   border : 1px solid green;
-  /* margin-left: 2%; */
+  /* margin-top: 2%; */
   /* cursor : url('./circleCursor.png'), auto; */
 }
 
 #plotCanvas {
   border : 1px solid black;
-  margin-left: 2%;
-  margin-top: 2%;
+  /* margin-left: 2%; */
+  /* margin-top: 2%; */
   /* cursor : url('./circleCursor.png'), auto; */
 }
 
 #canvasContainer {
   /* border : 1px solid red; */
+  /* cursor : url('./circleCursor.png'), auto; */
+}
+
+#canvasInterface {
+  /* border : 1px solid red; */
+  margin-top: 1%;
   /* cursor : url('./circleCursor.png'), auto; */
 }
 

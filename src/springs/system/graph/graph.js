@@ -1,7 +1,6 @@
 import Weight from './weight'
 import Spring from './spring'
 import helpers from '../helpers';
-import { networkInterfaces } from 'os';
 
 
 const logic = {}
@@ -9,7 +8,8 @@ const logic = {}
 const State = () => ({
     adjList : new Map(),
     weights : [], //for easier drawing
-    springs : []
+    springs : [],
+    debug : false
 }) 
 let state = State();
 
@@ -87,8 +87,13 @@ logic.removeWeight = (weightToRemove) => {
 }
 
 logic.findNearest = (positionVec) => {
-    if ( state.adjList.size === 0 ) { throw new Error('cannot find nearest when size is 0;')}
     const nearest = { dist : Infinity, weight : {} }
+    if (state.adjList.size === 0 ) { 
+        if ( state.debug ) {
+            console.log('findNearest cannot find when size is 0, returning falsey')
+        }
+        return { dist : false, weight : false } 
+    }
     
     state.adjList.forEach((edgeList, weight) => {
         const dist = helpers.eucDistance(weight.position, positionVec);

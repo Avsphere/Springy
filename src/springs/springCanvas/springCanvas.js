@@ -4,6 +4,7 @@ import grid from './grid'
 import { draw as drawWeight } from './drawWeight'
 import { draw as drawSpring } from './drawSpring'
 import { draw as drawSystemCenter } from './drawSystemCenter'
+import { draw as drawMousePosition } from './drawMousePosition'
 
 const State = () => Object.assign({
     canvasSettings: {
@@ -13,57 +14,41 @@ const State = () => Object.assign({
     },
     canvas: document.getElementById('springCanvas'),
     ctx: document.getElementById('springCanvas').getContext('2d'),
-    activeHandlers: { //specifically temp handlers
-        drag: false //false or the handler
+    debug : true,
+    debugOptions : {
+        logCursor : false
     },
-    //everything is relative to systemCenter. if canvasCenter is 100 and sysCenter is 200 then shift is -100
-    transforms : {
-        shift : {
-            x : 0,
-            y : 0
-        },
-        scale : 0,
-        systemCenter : { x : 0, y : 0 } 
-    }, 
-    displayFlags : {
-        cursorStats: false,
+    lastMousePosition: {
+        exact: { x: 0, y: 0 },
+        relative: { x: 0, y: 0 }
+    },
+    canvasScalarDimensions : {
+        width : .95,
+        height : .88,
+    },
+    displayFlags: {
+        cursorPosition: true,
         showWeightIds: false,
         showSpringIds: false,
         showWeightDetails: true,
         showSpringDetails: true,
         showGrid: false,
         lockY: true,
-        showSystemCenter : true
-    },
-    debug : true,
-    debugOptions : {
-        logCursor : false
-    }
+        showSystemCenter: true,
+    }, 
+    drawOverlays: false, //when this is false things like mouse cursor Position will not be drawn 
+
 })
 
 const logic = {}
 let state; //allows for an easier reset, set in init.
 
 const setCanvasDimensions = () => {
-    const canvasContainerWidth = $('#canvasContainer').innerWidth();
-    state.canvas.width = canvasContainerWidth * .95;
-    state.canvas.height = window.innerHeight * .95
+    const canvasContainer = $('#canvasContainer')
+    state.canvas.width = canvasContainer.innerWidth() * state.canvasScalarDimensions.width;
+    // state.canvas.height = canvasContainer.innerHeight() * .95
+    state.canvas.height = window.innerHeight * state.canvasScalarDimensions.height
 
-}
-
-
-const getMousePosition = (ev) => ({
-    x: ev.clientX - state.canvas.getBoundingClientRect().left,
-    y: ev.clientY - state.canvas.getBoundingClientRect().top
-})
-
-//This is only called here and in the listenAndHandle
-const updateTransforms = () => {
-    const sysCenter = system.getCenter() //note that getCenters if second invoke uses cached prev result
-    state.transforms.systemCenter = sysCenter
-    state.transforms.shift.x = state.canvas.width/2 - sysCenter.x; 
-    state.transforms.shift.y = state.canvas.height/2 - sysCenter.y; 
-    // console.log('shift x : ', state.transforms.shift.x )
 }
 
 logic.clear = (x=0, y=0, x1=state.canvas.width, y1=state.canvas.height) => {
@@ -74,22 +59,25 @@ logic.resize = () => {
     setCanvasDimensions();
 }
 
-logic.debug = () => {
-    if ( state.debugOptions.logCursor ) {
-        state.canvas.addEventListener('mousemove', (ev) => {
-            console.log('springCanvasDebug: ', getMousePosition(ev));
-        })
-    }
-}
 
 /* draws the grid / weights*/
 logic.draw = () => {
     const { springs, weights } = system.getObjs()
+    const sysCenter = system.getCenter()
+    
     if ( state.displayFlags.showGrid === true ) {
-        grid.draw({ springCanvasState: state, systemCenter: system.getCenter() })
+        grid.draw({ springCanvasState: state, systemCenter: sysCenter })
     }
     if ( state.displayFlags.showSystemCenter === true ) {
-        drawSystemCenter({ springCanvasState: state, systemCenter: system.getCenter() })
+        drawSystemCenter({ springCanvasState: state, systemCenter: sysCenter })
+    }
+    if ( state.displayFlags.cursorPosition && state.drawOverlays ) {
+        const inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10
+        const inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10
+        //ha... not that is is "invisible"
+        if (inVisibleX && inVisibleY ) {
+            drawMousePosition({ springCanvasState : state, systemCenter : sysCenter })
+        }
     }
     weights.forEach(weight => drawWeight(
         { 
@@ -107,23 +95,17 @@ logic.draw = () => {
     )
 }
 
-logic.getShift = () => {
-    updateTransforms();
-    return state.transforms.shift
-}
-
+logic.setOverlays = (b=false) => state.drawOverlays = b
 
 logic.init = () => {
+    console.log("SPRING CANVS")
     state = State();
     setCanvasDimensions();
     initListenAndHandle(state);
-    if ( state.debug ) { logic.debug(); }
+    state.canvas.style.cursor = 'crosshair'
 }
 
-logic.setDebug = (bool) => {
-    state.debug = bool
-}
 logic.getState = () => state
-logic.reset = () => logic.init(); //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
+logic.reset = () => logic.init; //in this case I am aliasing because in the initializing loop it comes off as conceptually strange
 
 export { logic as default }
