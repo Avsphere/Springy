@@ -59,7 +59,7 @@ const initDragHandler = (weight) => (ev) => {
     if ( !inXBounds || !inYBounds ) {
         removeDragHandler();
     } else {
-        system.moveWeight({ weight, relativePosition: relative, manuallyMoved : true })
+        system.setWeight({ weight, ...relative, manuallyMoved : true })
         emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/dragHandler' })
     }
 }

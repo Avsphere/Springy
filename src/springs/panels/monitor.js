@@ -21,7 +21,7 @@ const State = () => ({
     monitorWrapperId : '#monitorWrapper',
     monitorDisplayId: '#monitorDisplay',
     headerWrapperId: '#monitorHeader',
-    setterWrapperId : '#setterWrapper',
+    setterWrapperId: '#monitorSetter',
     debug: true,
 
 })
@@ -63,36 +63,6 @@ const update = (changeType) => {
 
  
 //builds a single card
-const buildMonitorDisplayCard = (w) => {
-    const velocityId = `vel_${w.id}`
-    const positionId = `pos_${w.id}`
-    const massId = `mass_${w.id}`
-
-    const velocityHtml = `Velocity : (${w.velocity.x.toFixed(2)}, ${w.velocity.y.toFixed(2)})`
-    const positionHtml = `Position : (${w.position.x.toFixed(2)}, ${w.position.y.toFixed(2)})`
-    const massHtml = `Mass : ${w.mass}`
-    const color = updateOpacity(w.color, .5)
-    const inlineStyle = `background-color : ${color}`
-
-    const html = `<div class="card" style="width: 85%;">
-        <div class="card-header" style="${inlineStyle}">
-            W : ${trimId(w.id)}
-        </div>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item" id="${positionId}">${positionHtml}</li>
-            <li class="list-group-item" id="${velocityId}">${velocityHtml}</li>
-            <li class="list-group-item" id="${massId}" >${massHtml}</li>
-        </ul>
-        </div>`
-    
-    const weightCard = $(html)
-    
-    // weightInput.on('click', (ev) => {
-    //     console.log('keyup on w input ', w)
-    // })
-
-    return weightCard
-}
 
 
 
@@ -109,8 +79,117 @@ const buildBaseHtml = () => {
 
 
 
+//what is built when you clikc on one of the weight items
+const buildSetter = (w) => {
+    const posXId = `posX${w.id}`
+    const posYId = `posY${w.id}`
+    const velXId = `velX${w.id}`
+    const velYId = `velY${w.id}`
+    const massId = `mass${w.id}`
+    const buildInputRow = () => {
+        const color = updateOpacity(w.color, .5)
+        const inlineStyle = `background-color : ${color}`
+
+        //code that is making me want to cry... need to level up my game here... also need to stop wasting time
+        const html = `<div class="card" style="width: 85%;">
+        <div class="card-header" id=""style="${inlineStyle}">
+            <span> Setting Weight Id : ${trimId(w.id)} </span>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item" ><div class="row">
+                            <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="pos x" id="${posXId}" >
+                            </div>
+                            <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="pos y" id="${posYId}" >
+                            </div></li>
+            <li class="list-group-item" ><div class="row">
+                            <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="vel x" id="${velXId}" >
+                            </div>
+                            <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="vel y" id="${velYId}" >
+                            </div></li>
+            <li class="list-group-item" ><div class="row">
+                            <div class="col-sm-12">
+                            <input type="text" class="form-control" placeholder="mass" id="${massId}" >
+                            </div>
+                            </li>
+        </ul>
+        </div>`
+        return html;
+    }
+
+    const setterCard = $(buildInputRow())
+
+    setterCard.on('keyup', (ev) => {
+        
+        const target = ev.target;
+        const val = Number.parseFloat($(target).val())
+
+        if (ev.keyCode == 32) {
+            return; //NO SPACES
+        }
+        if (!isNaN(val)) {
+            emitter.emit('orchestrator/stopAnimation', { calledBy: 'panels/monitor/setterCardKeyup' })
+            if ( target.id.includes(posXId) ) {
+                system.setWeight({ weight: w, x: val })
+
+            } else if (target.id.includes(posYId) ) {
+                system.setWeight({ weight: w, y: val })
+
+            } else if (target.id.includes(velXId)) {
+                system.setWeight({ weight: w, vx: val })
+
+            } else if (target.id.includes(velYId)) {
+                system.setWeight({ weight: w, vy: val })
+
+            } else if (target.id.includes(massId)) {
+                system.setWeight({ weight: w, mass: val })
+
+            }
+            //now redraw to reflect
+            emitter.emit('orchestrator/redraw', { calledBy: 'panels/monitor/setterCardKeyup' })
+        } 
+    })
+
+
+
+    $(state.setterWrapperId).html(setterCard)
+}
+
+
+
 logic.buildMonitorDisplay = () => {
-    console.log('building')
+    const buildMonitorDisplayCard = (w) => {
+        const velocityId = `vel_${w.id}`
+        const positionId = `pos_${w.id}`
+        const headerId = `header_${w.id}`
+
+        const velocityHtml = `Velocity : (${w.velocity.x.toFixed(2)}, ${w.velocity.y.toFixed(2)})`
+        const positionHtml = `Position : (${w.position.x.toFixed(2)}, ${w.position.y.toFixed(2)})`
+        const headerHtml = `<span> Id : ${trimId(w.id)} <span style="float:right"> Mass : ${w.mass.toFixed(2)}</span> </span>`
+        const color = updateOpacity(w.color, .5)
+        const inlineStyle = `background-color : ${color}`
+
+        const html = `<div class="card" style="width: 85%;">
+        <div class="card-header" id="${headerId}"style="${inlineStyle}">
+            ${headerHtml}
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item" id="${positionId}">${positionHtml}</li>
+            <li class="list-group-item" id="${velocityId}">${velocityHtml}</li>
+        </ul>
+        </div>`
+
+        const weightCard = $(html)
+
+        weightCard.on('click', (ev) => {
+            buildSetter(w)
+        })
+
+        return weightCard
+    }
     $(state.monitorDisplayId).html('')
 
     const { weights, springs } = system.getObjs();
@@ -123,16 +202,14 @@ logic.buildMonitorDisplay = () => {
         weights.forEach(w => {
             const $velocity = $(`#vel_${w.id}`)
             const $position = $(`#pos_${w.id}`)
-            const $mass = $(`#mass_${w.id}`)
+            const $header = $(`#header_${w.id}`)
             const velocityHtml = `Velocity : (${w.velocity.x.toFixed(2)}, ${w.velocity.y.toFixed(2)})`
             const positionHtml = `Position : (${w.position.x.toFixed(2)}, ${w.position.y.toFixed(2)})`
-            const massHtml = `Mass : ${w.mass}`
+            const headerHtml = `<span> Id : ${trimId(w.id)} <span style="float:right"> Mass : ${w.mass.toFixed(2)}</span> </span>`
 
             $position.html(positionHtml)
             $velocity.html(velocityHtml)
-            $mass.html(massHtml)
-            // $($velocityId).value('bird')
-
+            $header.html(headerHtml)
         }) 
     }
     return update;
@@ -147,16 +224,13 @@ logic.buildMonitorDisplay = () => {
 
 
 
-logic.draw = () => {
-   
-}
-
 
 
 logic.init = () => {
     state = State();
     // $(state.headerWrapperId).html(buildBaseHtml());
     //currently i am keeping emits at a singleton level, not sure how it will work
+    $(state.setterWrapperId).html('') //clear the previous setter box if there was one
     updateMonitorFn = logic.buildMonitorDisplay();
     if ( !hasSubscribed ) {
         const systemSubscription = 'panel-systemOnChange-sub'
@@ -167,6 +241,7 @@ logic.init = () => {
         hasSubscribed = true;
     }
 
+    $(state.monitorDisplayId).css('height', window.innerHeight / 2)
 
 }
 

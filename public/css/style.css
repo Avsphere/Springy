@@ -5,6 +5,15 @@ body {
   font-family: Sans-Serif;
 }
 
+/* height is set in js... need to levelup my css html; */
+#monitorDisplay {
+  overflow-y: scroll;
+
+}
+
+#monitorSetter {
+  margin-top: 5%; 
+}
 .learningCanvas {
   /* border : 1px solid black; */
   /* cursor : url('./circleCursor.png'), auto; */

@@ -114,27 +114,39 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     return newWeight;
 }
 
-logic.moveWeight = ({ weight, relativePosition, manuallyMoved }) => {
 
-    weight.position.x = relativePosition.x;
-    weight.position.y = relativePosition.y;
-    weight.initialPosition.x = relativePosition.x;
-    weight.initialPosition.y = relativePosition.y;
+//only settables and only location (outside of solver)... in need of a refactor
+logic.setWeight = ({ weight, x, y, vx, vy, mass, manuallyMoved }) => {
 
-    //manually moving a weight resets its velocity
-    if (manuallyMoved === true) {
-        // weight.initialVelocity.x = 0
-        // weight.initialVelocity.y = 0
-        // weight.velocity.x = 0
-        // weight.velocity.y = 0
+    if ( x || x === 0 ) {
+        weight.position.x = x
+        weight.initialPosition.x = x
     }
+    if ( y || y === 0 ) {
+        weight.position.y = y
+        weight.initialPosition.y = y
+    }
+    if ( vx || vx === 0 ) {
+        weight.velocity.x = vx
+        weight.initialVelocity.x = vx
+    }
+    if ( vy || vy === 0 ) {
+        weight.velocity.y = vy
+        weight.initialVelocity.y = vy
+    }
+    if ( mass || mass === 0 ) {
+        weight.mass = mass
+    }
+
     stateChanged('shift')
-} 
+}
+
 
 
 logic.reset = () => {
     state = State();
     sysGraph.reset();
+    stateChanged('structure')
 }
 
 logic.findNearestWeight = ({ relativeMousePosition }) => {

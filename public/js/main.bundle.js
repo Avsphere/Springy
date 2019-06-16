@@ -33519,7 +33519,7 @@ var State = function State() {
     monitorWrapperId: '#monitorWrapper',
     monitorDisplayId: '#monitorDisplay',
     headerWrapperId: '#monitorHeader',
-    setterWrapperId: '#setterWrapper',
+    setterWrapperId: '#monitorSetter',
     debug: true
   };
 };
@@ -33553,31 +33553,96 @@ var update = function update(changeType) {
 }; //builds a single card
 
 
-var buildMonitorDisplayCard = function buildMonitorDisplayCard(w) {
-  var velocityId = "vel_".concat(w.id);
-  var positionId = "pos_".concat(w.id);
-  var massId = "mass_".concat(w.id);
-  var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
-  var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
-  var massHtml = "Mass : ".concat(w.mass);
-  var color = updateOpacity(w.color, .5);
-  var inlineStyle = "background-color : ".concat(color);
-  var html = "<div class=\"card\" style=\"width: 85%;\">\n        <div class=\"card-header\" style=\"".concat(inlineStyle, "\">\n            W : ").concat(trimId(w.id), "\n        </div>\n        <ul class=\"list-group list-group-flush\">\n            <li class=\"list-group-item\" id=\"").concat(positionId, "\">").concat(positionHtml, "</li>\n            <li class=\"list-group-item\" id=\"").concat(velocityId, "\">").concat(velocityHtml, "</li>\n            <li class=\"list-group-item\" id=\"").concat(massId, "\" >").concat(massHtml, "</li>\n        </ul>\n        </div>");
-  var weightCard = jquery__WEBPACK_IMPORTED_MODULE_3___default()(html); // weightInput.on('click', (ev) => {
-  //     console.log('keyup on w input ', w)
-  // })
-
-  return weightCard;
-};
-
 var buildBaseHtml = function buildBaseHtml() {
   var html = "\n    <div id=\"".concat(state.headerWrapperId, "\">\n    <h4> Click a list item to set its values and view its springs </h4>\n    </div>\n    ");
   jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorWrapperId).append(html);
   return html;
+}; //what is built when you clikc on one of the weight items
+
+
+var buildSetter = function buildSetter(w) {
+  var posXId = "posX".concat(w.id);
+  var posYId = "posY".concat(w.id);
+  var velXId = "velX".concat(w.id);
+  var velYId = "velY".concat(w.id);
+  var massId = "mass".concat(w.id);
+
+  var buildInputRow = function buildInputRow() {
+    var color = updateOpacity(w.color, .5);
+    var inlineStyle = "background-color : ".concat(color); //code that is making me want to cry... need to level up my game here... also need to stop wasting time
+
+    var html = "<div class=\"card\" style=\"width: 85%;\">\n        <div class=\"card-header\" id=\"\"style=\"".concat(inlineStyle, "\">\n            <span> Setting Weight Id : ").concat(trimId(w.id), " </span>\n        </div>\n        <ul class=\"list-group list-group-flush\">\n            <li class=\"list-group-item\" ><div class=\"row\">\n                            <div class=\"col-sm-6\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"pos x\" id=\"").concat(posXId, "\" >\n                            </div>\n                            <div class=\"col-sm-6\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"pos y\" id=\"").concat(posYId, "\" >\n                            </div></li>\n            <li class=\"list-group-item\" ><div class=\"row\">\n                            <div class=\"col-sm-6\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"vel x\" id=\"").concat(velXId, "\" >\n                            </div>\n                            <div class=\"col-sm-6\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"vel y\" id=\"").concat(velYId, "\" >\n                            </div></li>\n            <li class=\"list-group-item\" ><div class=\"row\">\n                            <div class=\"col-sm-12\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"mass\" id=\"").concat(massId, "\" >\n                            </div>\n                            </li>\n        </ul>\n        </div>");
+    return html;
+  };
+
+  var setterCard = jquery__WEBPACK_IMPORTED_MODULE_3___default()(buildInputRow());
+  setterCard.on('keyup', function (ev) {
+    var target = ev.target;
+    var val = Number.parseFloat(jquery__WEBPACK_IMPORTED_MODULE_3___default()(target).val());
+
+    if (ev.keyCode == 32) {
+      return; //NO SPACES
+    }
+
+    if (!isNaN(val)) {
+      _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/stopAnimation', {
+        calledBy: 'panels/monitor/setterCardKeyup'
+      });
+
+      if (target.id.includes(posXId)) {
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+          weight: w,
+          x: val
+        });
+      } else if (target.id.includes(posYId)) {
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+          weight: w,
+          y: val
+        });
+      } else if (target.id.includes(velXId)) {
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+          weight: w,
+          vx: val
+        });
+      } else if (target.id.includes(velYId)) {
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+          weight: w,
+          vy: val
+        });
+      } else if (target.id.includes(massId)) {
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+          weight: w,
+          mass: val
+        });
+      } //now redraw to reflect
+
+
+      _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/redraw', {
+        calledBy: 'panels/monitor/setterCardKeyup'
+      });
+    }
+  });
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.setterWrapperId).html(setterCard);
 };
 
 logic.buildMonitorDisplay = function () {
-  console.log('building');
+  var buildMonitorDisplayCard = function buildMonitorDisplayCard(w) {
+    var velocityId = "vel_".concat(w.id);
+    var positionId = "pos_".concat(w.id);
+    var headerId = "header_".concat(w.id);
+    var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
+    var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
+    var headerHtml = "<span> Id : ".concat(trimId(w.id), " <span style=\"float:right\"> Mass : ").concat(w.mass.toFixed(2), "</span> </span>");
+    var color = updateOpacity(w.color, .5);
+    var inlineStyle = "background-color : ".concat(color);
+    var html = "<div class=\"card\" style=\"width: 85%;\">\n        <div class=\"card-header\" id=\"".concat(headerId, "\"style=\"").concat(inlineStyle, "\">\n            ").concat(headerHtml, "\n        </div>\n        <ul class=\"list-group list-group-flush\">\n            <li class=\"list-group-item\" id=\"").concat(positionId, "\">").concat(positionHtml, "</li>\n            <li class=\"list-group-item\" id=\"").concat(velocityId, "\">").concat(velocityHtml, "</li>\n        </ul>\n        </div>");
+    var weightCard = jquery__WEBPACK_IMPORTED_MODULE_3___default()(html);
+    weightCard.on('click', function (ev) {
+      buildSetter(w);
+    });
+    return weightCard;
+  };
+
   jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorDisplayId).html('');
 
   var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
@@ -33595,24 +33660,24 @@ logic.buildMonitorDisplay = function () {
     weights.forEach(function (w) {
       var $velocity = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#vel_".concat(w.id));
       var $position = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#pos_".concat(w.id));
-      var $mass = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#mass_".concat(w.id));
+      var $header = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#header_".concat(w.id));
       var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
       var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
-      var massHtml = "Mass : ".concat(w.mass);
+      var headerHtml = "<span> Id : ".concat(trimId(w.id), " <span style=\"float:right\"> Mass : ").concat(w.mass.toFixed(2), "</span> </span>");
       $position.html(positionHtml);
       $velocity.html(velocityHtml);
-      $mass.html(massHtml); // $($velocityId).value('bird')
+      $header.html(headerHtml);
     });
   };
 
   return update;
 };
 
-logic.draw = function () {};
-
 logic.init = function () {
   state = State(); // $(state.headerWrapperId).html(buildBaseHtml());
   //currently i am keeping emits at a singleton level, not sure how it will work
+
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.setterWrapperId).html(''); //clear the previous setter box if there was one
 
   updateMonitorFn = logic.buildMonitorDisplay();
 
@@ -33625,6 +33690,8 @@ logic.init = function () {
     });
     hasSubscribed = true;
   }
+
+  jquery__WEBPACK_IMPORTED_MODULE_3___default()(state.monitorDisplayId).css('height', window.innerHeight / 2);
 };
 
 logic.getState = function () {
@@ -34031,6 +34098,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return initListenAndHandle; });
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 var state = {}; //set in init, this is exactly the springCanvas state
@@ -34110,11 +34181,11 @@ var initDragHandler = function initDragHandler(weight) {
     if (!inXBounds || !inYBounds) {
       removeDragHandler();
     } else {
-      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].moveWeight({
-        weight: weight,
-        relativePosition: relative,
+      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight(_objectSpread({
+        weight: weight
+      }, relative, {
         manuallyMoved: true
-      });
+      }));
       _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
         calledBy: 'springCanvas/listenAndHandle/dragHandler'
       });
@@ -35351,21 +35422,40 @@ logic.addWeight = function (_ref2) {
 
   stateChanged('structure');
   return newWeight;
-};
+}; //only settables and only location (outside of solver)... in need of a refactor
 
-logic.moveWeight = function (_ref3) {
+
+logic.setWeight = function (_ref3) {
   var weight = _ref3.weight,
-      relativePosition = _ref3.relativePosition,
+      x = _ref3.x,
+      y = _ref3.y,
+      vx = _ref3.vx,
+      vy = _ref3.vy,
+      mass = _ref3.mass,
       manuallyMoved = _ref3.manuallyMoved;
-  weight.position.x = relativePosition.x;
-  weight.position.y = relativePosition.y;
-  weight.initialPosition.x = relativePosition.x;
-  weight.initialPosition.y = relativePosition.y; //manually moving a weight resets its velocity
 
-  if (manuallyMoved === true) {// weight.initialVelocity.x = 0
-    // weight.initialVelocity.y = 0
-    // weight.velocity.x = 0
-    // weight.velocity.y = 0
+  if (x || x === 0) {
+    weight.position.x = x;
+    weight.initialPosition.x = x;
+  }
+
+  if (y || y === 0) {
+    weight.position.y = y;
+    weight.initialPosition.y = y;
+  }
+
+  if (vx || vx === 0) {
+    weight.velocity.x = vx;
+    weight.initialVelocity.x = vx;
+  }
+
+  if (vy || vy === 0) {
+    weight.velocity.y = vy;
+    weight.initialVelocity.y = vy;
+  }
+
+  if (mass || mass === 0) {
+    weight.mass = mass;
   }
 
   stateChanged('shift');
@@ -35374,6 +35464,7 @@ logic.moveWeight = function (_ref3) {
 logic.reset = function () {
   state = State();
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].reset();
+  stateChanged('structure');
 };
 
 logic.findNearestWeight = function (_ref4) {
