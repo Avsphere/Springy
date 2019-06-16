@@ -51,9 +51,8 @@ const buildSystem = () => {
                 const iHat = (w2.position.x - w.position.x) / springLength
                 //if w is above w2, then it is being pulled down which is positive
                 const jHat = (w2.position.y - w.position.y) / springLength
-
-                ax.push(spring.k * springStretch * iHat / w.mass)
-                ay.push(spring.k * springStretch * jHat / w.mass)
+                ax.push( (spring.k * springStretch * iHat) / w.mass)
+                ay.push( (spring.k * springStretch * jHat) / w.mass)
 
             })
             const dx = w.velocity.x, dy = w.velocity.y;

@@ -3,15 +3,18 @@ import sysGraph from './graph/graph'
 import solver from './solver' 
 import emitter from '../emitter' 
 
+const DEF_STEP = .05
+const DEF_MAXT = 200
+
 const State = () => ({
     currentFrame : 0,
     flags : {
         needsSolve : true
     },
     solverConfig : {
-        stepSize : .05,
-        maxTime : 200,
-        frameCount : 200/.05
+        stepSize: DEF_STEP,
+        maxTime: DEF_MAXT,
+        frameCount: DEF_MAXT / DEF_STEP
     },
     center : {
         frameCalculated : 0,
@@ -57,7 +60,7 @@ const checkForSolve = () => {
         solve();
     }
     if (state.currentFrame === state.solverConfig.frameCount ) {
-        systemChanged() //in this case the change is self invoked...
+        stateChanged() //in this case the change is self invoked...
     }
 }
 
@@ -135,7 +138,7 @@ logic.setWeight = ({ weight, x, y, vx, vy, mass, manuallyMoved }) => {
         weight.initialVelocity.y = vy
     }
     if ( mass || mass === 0 ) {
-        weight.mass = mass
+        weight.setMass(mass) //because this also changes the radius
     }
 
     stateChanged('shift')
@@ -149,9 +152,9 @@ logic.reset = () => {
     stateChanged('structure')
 }
 
-logic.findNearestWeight = ({ relativeMousePosition }) => {
+logic.findNearestWeight = ({ mousePosition }) => {
     // console.log('in find nearest', relativeMousePosition)
-    return sysGraph.findNearest(relativeMousePosition)
+    return sysGraph.findNearest(mousePosition)
 }
 
 

@@ -24,7 +24,8 @@ const handlerState = {
         dragHandler : true,
         leftClick : false
     },
-    dragHandler: {} //set when the weight is being dragged
+    dragHandler: {}, //set when the weight is being dragged
+    useRelative : false
 }
 
 const getMousePosition = (ev) => ({
@@ -54,12 +55,13 @@ const removeDragHandler = () => {
 
 const initDragHandler = (weight) => (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
+    const mousePosition = handlerState.useRelative ? relative : exact
     const inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10
     const inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10
     if ( !inXBounds || !inYBounds ) {
         removeDragHandler();
     } else {
-        system.setWeight({ weight, ...relative, manuallyMoved : true })
+        system.setWeight({ weight, ...mousePosition, manuallyMoved : true })
         emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/dragHandler' })
     }
 }
@@ -69,12 +71,14 @@ const initDragHandler = (weight) => (ev) => {
 
 const handleLeftClick = (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
+    const mousePosition = handlerState.useRelative ? relative : exact
+    console.log('ugh', mousePosition)
     emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
 
 
     //if there is a nearby weight then i select it;
 
-    const { dist, weight } = system.findNearestWeight({ relativeMousePosition : relative })
+    const { dist, weight } = system.findNearestWeight({ mousePosition : mousePosition })
     if (dist !== false && weight !== false && dist < handlerState.spawnBuffer + weight.radius ) {
         handlerState.dragHandler = initDragHandler(weight)
         
@@ -89,7 +93,7 @@ const handleLeftClick = (ev) => {
     } else {
         const weightConfig = {
             mass: handlerState.weight.mass,
-            position: { x: relative.x, y: relative.y },
+            position: { x: mousePosition.x, y: mousePosition.y },
             springK: handlerState.spring.k,
             velocity: handlerState.weight.velocity
         }

@@ -2,6 +2,7 @@ import system from './system/system'
 import springCanvas from './springCanvas/springCanvas'
 import plotCanvas from './plotCanvas/plotCanvas'
 import monitorPanel from './panels/monitor'
+import controlPanel from './panels/control'
 import emitter from './emitter.js'
 import defaults from './defaults'
 const state = {
@@ -133,7 +134,9 @@ logic.init = () => {
     springCanvas.init();
     plotCanvas.init();
     monitorPanel.init();
-    // defaults.load('circleSystem')
+    controlPanel.init();
+    // defaults.load('basic')
+    // redraw();
     // toggleAnimate();
 }
 

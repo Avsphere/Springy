@@ -98,15 +98,23 @@
 
 __webpack_require__(/*! ./noConflict */ "./node_modules/@babel/polyfill/lib/noConflict.js");
 
-var _global = _interopRequireDefault(__webpack_require__(/*! core-js/library/fn/global */ "./node_modules/core-js/library/fn/global.js"));
+function _global() {
+  const data = _interopRequireDefault(__webpack_require__(/*! core-js/library/fn/global */ "./node_modules/core-js/library/fn/global.js"));
+
+  _global = function () {
+    return data;
+  };
+
+  return data;
+}
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-if (_global.default._babelPolyfill && typeof console !== "undefined" && console.warn) {
+if (_global().default._babelPolyfill && typeof console !== "undefined" && console.warn) {
   console.warn("@babel/polyfill is loaded more than once on this page. This is probably not desirable/intended " + "and may have consequences if different versions of the polyfills are applied sequentially. " + "If you do need to load the polyfill more than once, use @babel/polyfill/noConflict " + "instead to bypass the warning.");
 }
 
-_global.default._babelPolyfill = true;
+_global().default._babelPolyfill = true;
 
 /***/ }),
 
@@ -177,6 +185,7 @@ var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ "./node_modules/
 var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ "./node_modules/axios/lib/helpers/parseHeaders.js");
 var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ "./node_modules/axios/lib/helpers/isURLSameOrigin.js");
 var createError = __webpack_require__(/*! ../core/createError */ "./node_modules/axios/lib/core/createError.js");
+var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(/*! ./../helpers/btoa */ "./node_modules/axios/lib/helpers/btoa.js");
 
 module.exports = function xhrAdapter(config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -188,6 +197,22 @@ module.exports = function xhrAdapter(config) {
     }
 
     var request = new XMLHttpRequest();
+    var loadEvent = 'onreadystatechange';
+    var xDomain = false;
+
+    // For IE 8/9 CORS support
+    // Only supports POST and GET calls and doesn't returns the response headers.
+    // DON'T do this for testing b/c XMLHttpRequest is mocked, not XDomainRequest.
+    if ( true &&
+        typeof window !== 'undefined' &&
+        window.XDomainRequest && !('withCredentials' in request) &&
+        !isURLSameOrigin(config.url)) {
+      request = new window.XDomainRequest();
+      loadEvent = 'onload';
+      xDomain = true;
+      request.onprogress = function handleProgress() {};
+      request.ontimeout = function handleTimeout() {};
+    }
 
     // HTTP basic authentication
     if (config.auth) {
@@ -202,8 +227,8 @@ module.exports = function xhrAdapter(config) {
     request.timeout = config.timeout;
 
     // Listen for ready state
-    request.onreadystatechange = function handleLoad() {
-      if (!request || request.readyState !== 4) {
+    request[loadEvent] = function handleLoad() {
+      if (!request || (request.readyState !== 4 && !xDomain)) {
         return;
       }
 
@@ -220,8 +245,9 @@ module.exports = function xhrAdapter(config) {
       var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
       var response = {
         data: responseData,
-        status: request.status,
-        statusText: request.statusText,
+        // IE sends 1223 instead of 204 (https://github.com/axios/axios/issues/201)
+        status: request.status === 1223 ? 204 : request.status,
+        statusText: request.status === 1223 ? 'No Content' : request.statusText,
         headers: responseHeaders,
         config: config,
         request: request
@@ -1034,6 +1060,54 @@ module.exports = function bind(fn, thisArg) {
 
 /***/ }),
 
+/***/ "./node_modules/axios/lib/helpers/btoa.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/btoa.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// btoa polyfill for IE<10 courtesy https://github.com/davidchambers/Base64.js
+
+var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+function E() {
+  this.message = 'String contains an invalid character';
+}
+E.prototype = new Error;
+E.prototype.code = 5;
+E.prototype.name = 'InvalidCharacterError';
+
+function btoa(input) {
+  var str = String(input);
+  var output = '';
+  for (
+    // initialize result and counter
+    var block, charCode, idx = 0, map = chars;
+    // if the next str index does not exist:
+    //   change the mapping table to "="
+    //   check if d has no fractional digits
+    str.charAt(idx | 0) || (map = '=', idx % 1);
+    // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
+    output += map.charAt(63 & block >> 8 - idx % 1 * 8)
+  ) {
+    charCode = str.charCodeAt(idx += 3 / 4);
+    if (charCode > 0xFF) {
+      throw new E();
+    }
+    block = block << 8 | charCode;
+  }
+  return output;
+}
+
+module.exports = btoa;
+
+
+/***/ }),
+
 /***/ "./node_modules/axios/lib/helpers/buildURL.js":
 /*!****************************************************!*\
   !*** ./node_modules/axios/lib/helpers/buildURL.js ***!
@@ -1448,7 +1522,7 @@ module.exports = function spread(callback) {
 
 
 var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
-var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/axios/node_modules/is-buffer/index.js");
+var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/is-buffer/index.js");
 
 /*global toString:true*/
 
@@ -1748,28 +1822,6 @@ module.exports = {
   extend: extend,
   trim: trim
 };
-
-
-/***/ }),
-
-/***/ "./node_modules/axios/node_modules/is-buffer/index.js":
-/*!************************************************************!*\
-  !*** ./node_modules/axios/node_modules/is-buffer/index.js ***!
-  \************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-/*!
- * Determine if an object is a Buffer
- *
- * @author   Feross Aboukhadijeh <https://feross.org>
- * @license  MIT
- */
-
-module.exports = function isBuffer (obj) {
-  return obj != null && obj.constructor != null &&
-    typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
-}
 
 
 /***/ }),
@@ -6566,7 +6618,7 @@ module.exports = function (it) {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.9' };
+var core = module.exports = { version: '2.6.5' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -7672,7 +7724,7 @@ module.exports = function (NAME, wrapper, methods, common, IS_MAP, IS_WEAK) {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.9' };
+var core = module.exports = { version: '2.6.5' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -8902,7 +8954,6 @@ module.exports.f = function (C) {
 "use strict";
 
 // 19.1.2.1 Object.assign(target, source, ...)
-var DESCRIPTORS = __webpack_require__(/*! ./_descriptors */ "./node_modules/core-js/modules/_descriptors.js");
 var getKeys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var gOPS = __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js");
 var pIE = __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js");
@@ -8932,10 +8983,7 @@ module.exports = !$assign || __webpack_require__(/*! ./_fails */ "./node_modules
     var length = keys.length;
     var j = 0;
     var key;
-    while (length > j) {
-      key = keys[j++];
-      if (!DESCRIPTORS || isEnum.call(S, key)) T[key] = S[key];
-    }
+    while (length > j) if (isEnum.call(S, key = keys[j++])) T[key] = S[key];
   } return T;
 } : $assign;
 
@@ -9242,7 +9290,6 @@ module.exports = function (KEY, exec) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-var DESCRIPTORS = __webpack_require__(/*! ./_descriptors */ "./node_modules/core-js/modules/_descriptors.js");
 var getKeys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var toIObject = __webpack_require__(/*! ./_to-iobject */ "./node_modules/core-js/modules/_to-iobject.js");
 var isEnum = __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js").f;
@@ -9254,13 +9301,9 @@ module.exports = function (isEntries) {
     var i = 0;
     var result = [];
     var key;
-    while (length > i) {
-      key = keys[i++];
-      if (!DESCRIPTORS || isEnum.call(O, key)) {
-        result.push(isEntries ? [key, O[key]] : O[key]);
-      }
-    }
-    return result;
+    while (length > i) if (isEnum.call(O, key = keys[i++])) {
+      result.push(isEntries ? [key, O[key]] : O[key]);
+    } return result;
   };
 };
 
@@ -14636,14 +14679,12 @@ var enumKeys = __webpack_require__(/*! ./_enum-keys */ "./node_modules/core-js/m
 var isArray = __webpack_require__(/*! ./_is-array */ "./node_modules/core-js/modules/_is-array.js");
 var anObject = __webpack_require__(/*! ./_an-object */ "./node_modules/core-js/modules/_an-object.js");
 var isObject = __webpack_require__(/*! ./_is-object */ "./node_modules/core-js/modules/_is-object.js");
-var toObject = __webpack_require__(/*! ./_to-object */ "./node_modules/core-js/modules/_to-object.js");
 var toIObject = __webpack_require__(/*! ./_to-iobject */ "./node_modules/core-js/modules/_to-iobject.js");
 var toPrimitive = __webpack_require__(/*! ./_to-primitive */ "./node_modules/core-js/modules/_to-primitive.js");
 var createDesc = __webpack_require__(/*! ./_property-desc */ "./node_modules/core-js/modules/_property-desc.js");
 var _create = __webpack_require__(/*! ./_object-create */ "./node_modules/core-js/modules/_object-create.js");
 var gOPNExt = __webpack_require__(/*! ./_object-gopn-ext */ "./node_modules/core-js/modules/_object-gopn-ext.js");
 var $GOPD = __webpack_require__(/*! ./_object-gopd */ "./node_modules/core-js/modules/_object-gopd.js");
-var $GOPS = __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js");
 var $DP = __webpack_require__(/*! ./_object-dp */ "./node_modules/core-js/modules/_object-dp.js");
 var $keys = __webpack_require__(/*! ./_object-keys */ "./node_modules/core-js/modules/_object-keys.js");
 var gOPD = $GOPD.f;
@@ -14660,7 +14701,7 @@ var SymbolRegistry = shared('symbol-registry');
 var AllSymbols = shared('symbols');
 var OPSymbols = shared('op-symbols');
 var ObjectProto = Object[PROTOTYPE];
-var USE_NATIVE = typeof $Symbol == 'function' && !!$GOPS.f;
+var USE_NATIVE = typeof $Symbol == 'function';
 var QObject = global.QObject;
 // Don't use setters in Qt Script, https://github.com/zloirock/core-js/issues/173
 var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
@@ -14770,7 +14811,7 @@ if (!USE_NATIVE) {
   $DP.f = $defineProperty;
   __webpack_require__(/*! ./_object-gopn */ "./node_modules/core-js/modules/_object-gopn.js").f = gOPNExt.f = $getOwnPropertyNames;
   __webpack_require__(/*! ./_object-pie */ "./node_modules/core-js/modules/_object-pie.js").f = $propertyIsEnumerable;
-  $GOPS.f = $getOwnPropertySymbols;
+  __webpack_require__(/*! ./_object-gops */ "./node_modules/core-js/modules/_object-gops.js").f = $getOwnPropertySymbols;
 
   if (DESCRIPTORS && !__webpack_require__(/*! ./_library */ "./node_modules/core-js/modules/_library.js")) {
     redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
@@ -14819,16 +14860,6 @@ $export($export.S + $export.F * !USE_NATIVE, 'Object', {
   getOwnPropertyNames: $getOwnPropertyNames,
   // 19.1.2.8 Object.getOwnPropertySymbols(O)
   getOwnPropertySymbols: $getOwnPropertySymbols
-});
-
-// Chrome 38 and 39 `Object.getOwnPropertySymbols` fails on primitives
-// https://bugs.chromium.org/p/v8/issues/detail?id=3443
-var FAILS_ON_PRIMITIVES = $fails(function () { $GOPS.f(1); });
-
-$export($export.S + $export.F * FAILS_ON_PRIMITIVES, 'Object', {
-  getOwnPropertySymbols: function getOwnPropertySymbols(it) {
-    return $GOPS.f(toObject(it));
-  }
 });
 
 // 24.3.2 JSON.stringify(value [, replacer [, space]])
@@ -16039,6 +16070,38 @@ function unwrapListeners(arr) {
 
 /***/ }),
 
+/***/ "./node_modules/is-buffer/index.js":
+/*!*****************************************!*\
+  !*** ./node_modules/is-buffer/index.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+
+// The _isBuffer check is for Safari 5-7 support, because it's missing
+// Object.prototype.constructor. Remove this eventually
+module.exports = function (obj) {
+  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
+}
+
+function isBuffer (obj) {
+  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+}
+
+// For Node v0.10 support. Remove this eventually.
+function isSlowBuffer (obj) {
+  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/jquery/dist/jquery.js":
 /*!********************************************!*\
   !*** ./node_modules/jquery/dist/jquery.js ***!
@@ -16047,7 +16110,7 @@ function unwrapListeners(arr) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
- * jQuery JavaScript Library v3.4.1
+ * jQuery JavaScript Library v3.3.1
  * https://jquery.com/
  *
  * Includes Sizzle.js
@@ -16057,7 +16120,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
  * Released under the MIT license
  * https://jquery.org/license
  *
- * Date: 2019-05-01T21:04Z
+ * Date: 2018-01-20T17:24Z
  */
 ( function( global, factory ) {
 
@@ -16139,33 +16202,20 @@ var isWindow = function isWindow( obj ) {
 	var preservedScriptAttributes = {
 		type: true,
 		src: true,
-		nonce: true,
 		noModule: true
 	};
 
-	function DOMEval( code, node, doc ) {
+	function DOMEval( code, doc, node ) {
 		doc = doc || document;
 
-		var i, val,
+		var i,
 			script = doc.createElement( "script" );
 
 		script.text = code;
 		if ( node ) {
 			for ( i in preservedScriptAttributes ) {
-
-				// Support: Firefox 64+, Edge 18+
-				// Some browsers don't support the "nonce" property on scripts.
-				// On the other hand, just using `getAttribute` is not enough as
-				// the `nonce` attribute is reset to an empty string whenever it
-				// becomes browsing-context connected.
-				// See https://github.com/whatwg/html/issues/2369
-				// See https://html.spec.whatwg.org/#nonce-attributes
-				// The `node.getAttribute` check was added for the sake of
-				// `jQuery.globalEval` so that it can fake a nonce-containing node
-				// via an object.
-				val = node[ i ] || node.getAttribute && node.getAttribute( i );
-				if ( val ) {
-					script.setAttribute( i, val );
+				if ( node[ i ] ) {
+					script[ i ] = node[ i ];
 				}
 			}
 		}
@@ -16190,7 +16240,7 @@ function toType( obj ) {
 
 
 var
-	version = "3.4.1",
+	version = "3.3.1",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -16319,28 +16369,25 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 			// Extend the base object
 			for ( name in options ) {
+				src = target[ name ];
 				copy = options[ name ];
 
-				// Prevent Object.prototype pollution
 				// Prevent never-ending loop
-				if ( name === "__proto__" || target === copy ) {
+				if ( target === copy ) {
 					continue;
 				}
 
 				// Recurse if we're merging plain objects or arrays
 				if ( deep && copy && ( jQuery.isPlainObject( copy ) ||
 					( copyIsArray = Array.isArray( copy ) ) ) ) {
-					src = target[ name ];
 
-					// Ensure proper type for the source value
-					if ( copyIsArray && !Array.isArray( src ) ) {
-						clone = [];
-					} else if ( !copyIsArray && !jQuery.isPlainObject( src ) ) {
-						clone = {};
+					if ( copyIsArray ) {
+						copyIsArray = false;
+						clone = src && Array.isArray( src ) ? src : [];
+
 					} else {
-						clone = src;
+						clone = src && jQuery.isPlainObject( src ) ? src : {};
 					}
-					copyIsArray = false;
 
 					// Never move original objects, clone them
 					target[ name ] = jQuery.extend( deep, clone, copy );
@@ -16393,6 +16440,9 @@ jQuery.extend( {
 	},
 
 	isEmptyObject: function( obj ) {
+
+		/* eslint-disable no-unused-vars */
+		// See https://github.com/eslint/eslint/issues/6125
 		var name;
 
 		for ( name in obj ) {
@@ -16402,8 +16452,8 @@ jQuery.extend( {
 	},
 
 	// Evaluates a script in a global context
-	globalEval: function( code, options ) {
-		DOMEval( code, { nonce: options && options.nonce } );
+	globalEval: function( code ) {
+		DOMEval( code );
 	},
 
 	each: function( obj, callback ) {
@@ -16559,14 +16609,14 @@ function isArrayLike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v2.3.4
+ * Sizzle CSS Selector Engine v2.3.3
  * https://sizzlejs.com/
  *
- * Copyright JS Foundation and other contributors
+ * Copyright jQuery Foundation and other contributors
  * Released under the MIT license
- * https://js.foundation/
+ * http://jquery.org/license
  *
- * Date: 2019-04-08
+ * Date: 2016-08-08
  */
 (function( window ) {
 
@@ -16600,7 +16650,6 @@ var i,
 	classCache = createCache(),
 	tokenCache = createCache(),
 	compilerCache = createCache(),
-	nonnativeSelectorCache = createCache(),
 	sortOrder = function( a, b ) {
 		if ( a === b ) {
 			hasDuplicate = true;
@@ -16662,7 +16711,8 @@ var i,
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
 	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace + "*" ),
-	rdescend = new RegExp( whitespace + "|>" ),
+
+	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*?)" + whitespace + "*\\]", "g" ),
 
 	rpseudo = new RegExp( pseudos ),
 	ridentifier = new RegExp( "^" + identifier + "$" ),
@@ -16683,7 +16733,6 @@ var i,
 			whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
 	},
 
-	rhtml = /HTML$/i,
 	rinputs = /^(?:input|select|textarea|button)$/i,
 	rheader = /^h\d$/i,
 
@@ -16738,9 +16787,9 @@ var i,
 		setDocument();
 	},
 
-	inDisabledFieldset = addCombinator(
+	disabledAncestor = addCombinator(
 		function( elem ) {
-			return elem.disabled === true && elem.nodeName.toLowerCase() === "fieldset";
+			return elem.disabled === true && ("form" in elem || "label" in elem);
 		},
 		{ dir: "parentNode", next: "legend" }
 	);
@@ -16853,22 +16902,18 @@ function Sizzle( selector, context, results, seed ) {
 
 			// Take advantage of querySelectorAll
 			if ( support.qsa &&
-				!nonnativeSelectorCache[ selector + " " ] &&
-				(!rbuggyQSA || !rbuggyQSA.test( selector )) &&
+				!compilerCache[ selector + " " ] &&
+				(!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
 
-				// Support: IE 8 only
+				if ( nodeType !== 1 ) {
+					newContext = context;
+					newSelector = selector;
+
+				// qSA looks outside Element context, which is not what we want
+				// Thanks to Andrew Dupont for this workaround technique
+				// Support: IE <=8
 				// Exclude object elements
-				(nodeType !== 1 || context.nodeName.toLowerCase() !== "object") ) {
-
-				newSelector = selector;
-				newContext = context;
-
-				// qSA considers elements outside a scoping root when evaluating child or
-				// descendant combinators, which is not what we want.
-				// In such cases, we work around the behavior by prefixing every selector in the
-				// list with an ID selector referencing the scope context.
-				// Thanks to Andrew Dupont for this technique.
-				if ( nodeType === 1 && rdescend.test( selector ) ) {
+				} else if ( context.nodeName.toLowerCase() !== "object" ) {
 
 					// Capture the context ID, setting it first if necessary
 					if ( (nid = context.getAttribute( "id" )) ) {
@@ -16890,16 +16935,17 @@ function Sizzle( selector, context, results, seed ) {
 						context;
 				}
 
-				try {
-					push.apply( results,
-						newContext.querySelectorAll( newSelector )
-					);
-					return results;
-				} catch ( qsaError ) {
-					nonnativeSelectorCache( selector, true );
-				} finally {
-					if ( nid === expando ) {
-						context.removeAttribute( "id" );
+				if ( newSelector ) {
+					try {
+						push.apply( results,
+							newContext.querySelectorAll( newSelector )
+						);
+						return results;
+					} catch ( qsaError ) {
+					} finally {
+						if ( nid === expando ) {
+							context.removeAttribute( "id" );
+						}
 					}
 				}
 			}
@@ -17063,7 +17109,7 @@ function createDisabledPseudo( disabled ) {
 					// Where there is no isDisabled, check manually
 					/* jshint -W018 */
 					elem.isDisabled !== !disabled &&
-						inDisabledFieldset( elem ) === disabled;
+						disabledAncestor( elem ) === disabled;
 			}
 
 			return elem.disabled === disabled;
@@ -17120,13 +17166,10 @@ support = Sizzle.support = {};
  * @returns {Boolean} True iff elem is a non-HTML XML node
  */
 isXML = Sizzle.isXML = function( elem ) {
-	var namespace = elem.namespaceURI,
-		docElem = (elem.ownerDocument || elem).documentElement;
-
-	// Support: IE <=8
-	// Assume HTML when documentElement doesn't yet exist, such as inside loading iframes
-	// https://bugs.jquery.com/ticket/4833
-	return !rhtml.test( namespace || docElem && docElem.nodeName || "HTML" );
+	// documentElement is verified for cases where it doesn't yet exist
+	// (such as loading iframes in IE - #4833)
+	var documentElement = elem && (elem.ownerDocument || elem).documentElement;
+	return documentElement ? documentElement.nodeName !== "HTML" : false;
 };
 
 /**
@@ -17548,8 +17591,11 @@ Sizzle.matchesSelector = function( elem, expr ) {
 		setDocument( elem );
 	}
 
+	// Make sure that attribute selectors are quoted
+	expr = expr.replace( rattributeQuotes, "='$1']" );
+
 	if ( support.matchesSelector && documentIsHTML &&
-		!nonnativeSelectorCache[ expr + " " ] &&
+		!compilerCache[ expr + " " ] &&
 		( !rbuggyMatches || !rbuggyMatches.test( expr ) ) &&
 		( !rbuggyQSA     || !rbuggyQSA.test( expr ) ) ) {
 
@@ -17563,9 +17609,7 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch (e) {
-			nonnativeSelectorCache( expr, true );
-		}
+		} catch (e) {}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -18024,7 +18068,7 @@ Expr = Sizzle.selectors = {
 		"contains": markFunction(function( text ) {
 			text = text.replace( runescape, funescape );
 			return function( elem ) {
-				return ( elem.textContent || getText( elem ) ).indexOf( text ) > -1;
+				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
 			};
 		}),
 
@@ -18163,11 +18207,7 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"lt": createPositionalPseudo(function( matchIndexes, length, argument ) {
-			var i = argument < 0 ?
-				argument + length :
-				argument > length ?
-					length :
-					argument;
+			var i = argument < 0 ? argument + length : argument;
 			for ( ; --i >= 0; ) {
 				matchIndexes.push( i );
 			}
@@ -19217,18 +19257,18 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-		if ( typeof elem.contentDocument !== "undefined" ) {
-			return elem.contentDocument;
-		}
+        if ( nodeName( elem, "iframe" ) ) {
+            return elem.contentDocument;
+        }
 
-		// Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
-		// Treat the template element as a regular one in browsers that
-		// don't support it.
-		if ( nodeName( elem, "template" ) ) {
-			elem = elem.content || elem;
-		}
+        // Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
+        // Treat the template element as a regular one in browsers that
+        // don't support it.
+        if ( nodeName( elem, "template" ) ) {
+            elem = elem.content || elem;
+        }
 
-		return jQuery.merge( [], elem.childNodes );
+        return jQuery.merge( [], elem.childNodes );
 	}
 }, function( name, fn ) {
 	jQuery.fn[ name ] = function( until, selector ) {
@@ -20537,26 +20577,6 @@ var rcssNum = new RegExp( "^(?:([+-])=|)(" + pnum + ")([a-z%]*)$", "i" );
 
 var cssExpand = [ "Top", "Right", "Bottom", "Left" ];
 
-var documentElement = document.documentElement;
-
-
-
-	var isAttached = function( elem ) {
-			return jQuery.contains( elem.ownerDocument, elem );
-		},
-		composed = { composed: true };
-
-	// Support: IE 9 - 11+, Edge 12 - 18+, iOS 10.0 - 10.2 only
-	// Check attachment across shadow DOM boundaries when possible (gh-3504)
-	// Support: iOS 10.0-10.2 only
-	// Early iOS 10 versions support `attachShadow` but not `getRootNode`,
-	// leading to errors. We need to check for `getRootNode`.
-	if ( documentElement.getRootNode ) {
-		isAttached = function( elem ) {
-			return jQuery.contains( elem.ownerDocument, elem ) ||
-				elem.getRootNode( composed ) === elem.ownerDocument;
-		};
-	}
 var isHiddenWithinTree = function( elem, el ) {
 
 		// isHiddenWithinTree might be called from jQuery#filter function;
@@ -20571,7 +20591,7 @@ var isHiddenWithinTree = function( elem, el ) {
 			// Support: Firefox <=43 - 45
 			// Disconnected elements can have computed display: none, so first confirm that elem is
 			// in the document.
-			isAttached( elem ) &&
+			jQuery.contains( elem.ownerDocument, elem ) &&
 
 			jQuery.css( elem, "display" ) === "none";
 	};
@@ -20613,8 +20633,7 @@ function adjustCSS( elem, prop, valueParts, tween ) {
 		unit = valueParts && valueParts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
 
 		// Starting value computation is required for potential unit mismatches
-		initialInUnit = elem.nodeType &&
-			( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
+		initialInUnit = ( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
 			rcssNum.exec( jQuery.css( elem, prop ) );
 
 	if ( initialInUnit && initialInUnit[ 3 ] !== unit ) {
@@ -20761,7 +20780,7 @@ jQuery.fn.extend( {
 } );
 var rcheckableType = ( /^(?:checkbox|radio)$/i );
 
-var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]*)/i );
+var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]+)/i );
 
 var rscriptType = ( /^$|^module$|\/(?:java|ecma)script/i );
 
@@ -20833,7 +20852,7 @@ function setGlobalEval( elems, refElements ) {
 var rhtml = /<|&#?\w+;/;
 
 function buildFragment( elems, context, scripts, selection, ignored ) {
-	var elem, tmp, tag, wrap, attached, j,
+	var elem, tmp, tag, wrap, contains, j,
 		fragment = context.createDocumentFragment(),
 		nodes = [],
 		i = 0,
@@ -20897,13 +20916,13 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 			continue;
 		}
 
-		attached = isAttached( elem );
+		contains = jQuery.contains( elem.ownerDocument, elem );
 
 		// Append to fragment
 		tmp = getAll( fragment.appendChild( elem ), "script" );
 
 		// Preserve script evaluation history
-		if ( attached ) {
+		if ( contains ) {
 			setGlobalEval( tmp );
 		}
 
@@ -20946,6 +20965,8 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 } )();
+var documentElement = document.documentElement;
+
 
 
 var
@@ -20961,19 +20982,8 @@ function returnFalse() {
 	return false;
 }
 
-// Support: IE <=9 - 11+
-// focus() and blur() are asynchronous, except when they are no-op.
-// So expect focus to be synchronous when the element is already active,
-// and blur to be synchronous when the element is not already active.
-// (focus and blur are always synchronous in other supported browsers,
-// this just defines when we can count on it).
-function expectSync( elem, type ) {
-	return ( elem === safeActiveElement() ) === ( type === "focus" );
-}
-
 // Support: IE <=9 only
-// Accessing document.activeElement can throw unexpectedly
-// https://bugs.jquery.com/ticket/13393
+// See #13393 for more info
 function safeActiveElement() {
 	try {
 		return document.activeElement;
@@ -21273,10 +21283,9 @@ jQuery.event = {
 			while ( ( handleObj = matched.handlers[ j++ ] ) &&
 				!event.isImmediatePropagationStopped() ) {
 
-				// If the event is namespaced, then each handler is only invoked if it is
-				// specially universal or its namespaces are a superset of the event's.
-				if ( !event.rnamespace || handleObj.namespace === false ||
-					event.rnamespace.test( handleObj.namespace ) ) {
+				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
+				// a subset or equal to those in the bound event (both can have no namespace).
+				if ( !event.rnamespace || event.rnamespace.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
 					event.data = handleObj.data;
@@ -21400,51 +21409,39 @@ jQuery.event = {
 			// Prevent triggered image.load events from bubbling to window.load
 			noBubble: true
 		},
+		focus: {
+
+			// Fire native event if possible so blur/focus sequence is correct
+			trigger: function() {
+				if ( this !== safeActiveElement() && this.focus ) {
+					this.focus();
+					return false;
+				}
+			},
+			delegateType: "focusin"
+		},
+		blur: {
+			trigger: function() {
+				if ( this === safeActiveElement() && this.blur ) {
+					this.blur();
+					return false;
+				}
+			},
+			delegateType: "focusout"
+		},
 		click: {
 
-			// Utilize native event to ensure correct state for checkable inputs
-			setup: function( data ) {
-
-				// For mutual compressibility with _default, replace `this` access with a local var.
-				// `|| data` is dead code meant only to preserve the variable through minification.
-				var el = this || data;
-
-				// Claim the first handler
-				if ( rcheckableType.test( el.type ) &&
-					el.click && nodeName( el, "input" ) ) {
-
-					// dataPriv.set( el, "click", ... )
-					leverageNative( el, "click", returnTrue );
+			// For checkbox, fire native event so checked state will be right
+			trigger: function() {
+				if ( this.type === "checkbox" && this.click && nodeName( this, "input" ) ) {
+					this.click();
+					return false;
 				}
-
-				// Return false to allow normal processing in the caller
-				return false;
-			},
-			trigger: function( data ) {
-
-				// For mutual compressibility with _default, replace `this` access with a local var.
-				// `|| data` is dead code meant only to preserve the variable through minification.
-				var el = this || data;
-
-				// Force setup before triggering a click
-				if ( rcheckableType.test( el.type ) &&
-					el.click && nodeName( el, "input" ) ) {
-
-					leverageNative( el, "click" );
-				}
-
-				// Return non-false to allow normal event-path propagation
-				return true;
 			},
 
-			// For cross-browser consistency, suppress native .click() on links
-			// Also prevent it if we're currently inside a leveraged native-event stack
+			// For cross-browser consistency, don't fire native .click() on links
 			_default: function( event ) {
-				var target = event.target;
-				return rcheckableType.test( target.type ) &&
-					target.click && nodeName( target, "input" ) &&
-					dataPriv.get( target, "click" ) ||
-					nodeName( target, "a" );
+				return nodeName( event.target, "a" );
 			}
 		},
 
@@ -21460,93 +21457,6 @@ jQuery.event = {
 		}
 	}
 };
-
-// Ensure the presence of an event listener that handles manually-triggered
-// synthetic events by interrupting progress until reinvoked in response to
-// *native* events that it fires directly, ensuring that state changes have
-// already occurred before other listeners are invoked.
-function leverageNative( el, type, expectSync ) {
-
-	// Missing expectSync indicates a trigger call, which must force setup through jQuery.event.add
-	if ( !expectSync ) {
-		if ( dataPriv.get( el, type ) === undefined ) {
-			jQuery.event.add( el, type, returnTrue );
-		}
-		return;
-	}
-
-	// Register the controller as a special universal handler for all event namespaces
-	dataPriv.set( el, type, false );
-	jQuery.event.add( el, type, {
-		namespace: false,
-		handler: function( event ) {
-			var notAsync, result,
-				saved = dataPriv.get( this, type );
-
-			if ( ( event.isTrigger & 1 ) && this[ type ] ) {
-
-				// Interrupt processing of the outer synthetic .trigger()ed event
-				// Saved data should be false in such cases, but might be a leftover capture object
-				// from an async native handler (gh-4350)
-				if ( !saved.length ) {
-
-					// Store arguments for use when handling the inner native event
-					// There will always be at least one argument (an event object), so this array
-					// will not be confused with a leftover capture object.
-					saved = slice.call( arguments );
-					dataPriv.set( this, type, saved );
-
-					// Trigger the native event and capture its result
-					// Support: IE <=9 - 11+
-					// focus() and blur() are asynchronous
-					notAsync = expectSync( this, type );
-					this[ type ]();
-					result = dataPriv.get( this, type );
-					if ( saved !== result || notAsync ) {
-						dataPriv.set( this, type, false );
-					} else {
-						result = {};
-					}
-					if ( saved !== result ) {
-
-						// Cancel the outer synthetic event
-						event.stopImmediatePropagation();
-						event.preventDefault();
-						return result.value;
-					}
-
-				// If this is an inner synthetic event for an event with a bubbling surrogate
-				// (focus or blur), assume that the surrogate already propagated from triggering the
-				// native event and prevent that from happening again here.
-				// This technically gets the ordering wrong w.r.t. to `.trigger()` (in which the
-				// bubbling surrogate propagates *after* the non-bubbling base), but that seems
-				// less bad than duplication.
-				} else if ( ( jQuery.event.special[ type ] || {} ).delegateType ) {
-					event.stopPropagation();
-				}
-
-			// If this is a native event triggered above, everything is now in order
-			// Fire an inner synthetic event with the original arguments
-			} else if ( saved.length ) {
-
-				// ...and capture the result
-				dataPriv.set( this, type, {
-					value: jQuery.event.trigger(
-
-						// Support: IE <=9 - 11+
-						// Extend with the prototype to reset the above stopImmediatePropagation()
-						jQuery.extend( saved[ 0 ], jQuery.Event.prototype ),
-						saved.slice( 1 ),
-						this
-					)
-				} );
-
-				// Abort handling of the native event
-				event.stopImmediatePropagation();
-			}
-		}
-	} );
-}
 
 jQuery.removeEvent = function( elem, type, handle ) {
 
@@ -21660,7 +21570,6 @@ jQuery.each( {
 	shiftKey: true,
 	view: true,
 	"char": true,
-	code: true,
 	charCode: true,
 	key: true,
 	keyCode: true,
@@ -21706,33 +21615,6 @@ jQuery.each( {
 		return event.which;
 	}
 }, jQuery.event.addProp );
-
-jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateType ) {
-	jQuery.event.special[ type ] = {
-
-		// Utilize native event if possible so blur/focus sequence is correct
-		setup: function() {
-
-			// Claim the first handler
-			// dataPriv.set( this, "focus", ... )
-			// dataPriv.set( this, "blur", ... )
-			leverageNative( this, type, expectSync );
-
-			// Return false to allow normal processing in the caller
-			return false;
-		},
-		trigger: function() {
-
-			// Force setup before trigger
-			leverageNative( this, type );
-
-			// Return non-false to allow normal event-path propagation
-			return true;
-		},
-
-		delegateType: delegateType
-	};
-} );
 
 // Create mouseenter/leave events using mouseover/out and event-time checks
 // so that event delegation works in jQuery.
@@ -21984,13 +21866,11 @@ function domManip( collection, args, callback, ignored ) {
 						if ( node.src && ( node.type || "" ).toLowerCase()  !== "module" ) {
 
 							// Optional AJAX dependency, but won't run scripts if not present
-							if ( jQuery._evalUrl && !node.noModule ) {
-								jQuery._evalUrl( node.src, {
-									nonce: node.nonce || node.getAttribute( "nonce" )
-								} );
+							if ( jQuery._evalUrl ) {
+								jQuery._evalUrl( node.src );
 							}
 						} else {
-							DOMEval( node.textContent.replace( rcleanScript, "" ), node, doc );
+							DOMEval( node.textContent.replace( rcleanScript, "" ), doc, node );
 						}
 					}
 				}
@@ -22012,7 +21892,7 @@ function remove( elem, selector, keepData ) {
 		}
 
 		if ( node.parentNode ) {
-			if ( keepData && isAttached( node ) ) {
+			if ( keepData && jQuery.contains( node.ownerDocument, node ) ) {
 				setGlobalEval( getAll( node, "script" ) );
 			}
 			node.parentNode.removeChild( node );
@@ -22030,7 +21910,7 @@ jQuery.extend( {
 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
 		var i, l, srcElements, destElements,
 			clone = elem.cloneNode( true ),
-			inPage = isAttached( elem );
+			inPage = jQuery.contains( elem.ownerDocument, elem );
 
 		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
@@ -22326,10 +22206,8 @@ var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
 
 		// Support: IE 9 only
 		// Detect overflow:scroll screwiness (gh-3699)
-		// Support: Chrome <=64
-		// Don't get tricked when zoom affects offsetWidth (gh-4029)
 		div.style.position = "absolute";
-		scrollboxSizeVal = roundPixelMeasures( div.offsetWidth / 3 ) === 12;
+		scrollboxSizeVal = div.offsetWidth === 36 || "absolute";
 
 		documentElement.removeChild( container );
 
@@ -22400,7 +22278,7 @@ function curCSS( elem, name, computed ) {
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 
-		if ( ret === "" && !isAttached( elem ) ) {
+		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
 			ret = jQuery.style( elem, name );
 		}
 
@@ -22456,12 +22334,29 @@ function addGetHookIf( conditionFn, hookFn ) {
 }
 
 
-var cssPrefixes = [ "Webkit", "Moz", "ms" ],
-	emptyStyle = document.createElement( "div" ).style,
-	vendorProps = {};
+var
 
-// Return a vendor-prefixed property or undefined
+	// Swappable if display is none or starts with table
+	// except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
+	rcustomProp = /^--/,
+	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
+	cssNormalTransform = {
+		letterSpacing: "0",
+		fontWeight: "400"
+	},
+
+	cssPrefixes = [ "Webkit", "Moz", "ms" ],
+	emptyStyle = document.createElement( "div" ).style;
+
+// Return a css property mapped to a potentially vendor prefixed property
 function vendorPropName( name ) {
+
+	// Shortcut for names that are not vendor prefixed
+	if ( name in emptyStyle ) {
+		return name;
+	}
 
 	// Check for vendor prefixed names
 	var capName = name[ 0 ].toUpperCase() + name.slice( 1 ),
@@ -22475,32 +22370,15 @@ function vendorPropName( name ) {
 	}
 }
 
-// Return a potentially-mapped jQuery.cssProps or vendor prefixed property
+// Return a property mapped along what jQuery.cssProps suggests or to
+// a vendor prefixed property.
 function finalPropName( name ) {
-	var final = jQuery.cssProps[ name ] || vendorProps[ name ];
-
-	if ( final ) {
-		return final;
+	var ret = jQuery.cssProps[ name ];
+	if ( !ret ) {
+		ret = jQuery.cssProps[ name ] = vendorPropName( name ) || name;
 	}
-	if ( name in emptyStyle ) {
-		return name;
-	}
-	return vendorProps[ name ] = vendorPropName( name ) || name;
+	return ret;
 }
-
-
-var
-
-	// Swappable if display is none or starts with table
-	// except "table", "table-cell", or "table-caption"
-	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
-	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-	rcustomProp = /^--/,
-	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
-	cssNormalTransform = {
-		letterSpacing: "0",
-		fontWeight: "400"
-	};
 
 function setPositiveNumber( elem, value, subtract ) {
 
@@ -22573,10 +22451,7 @@ function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computed
 			delta -
 			extra -
 			0.5
-
-		// If offsetWidth/offsetHeight is unknown, then we can't determine content-box scroll gutter
-		// Use an explicit zero to avoid NaN (gh-3964)
-		) ) || 0;
+		) );
 	}
 
 	return delta;
@@ -22586,16 +22461,9 @@ function getWidthOrHeight( elem, dimension, extra ) {
 
 	// Start with computed style
 	var styles = getStyles( elem ),
-
-		// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-4322).
-		// Fake content-box until we know it's needed to know the true value.
-		boxSizingNeeded = !support.boxSizingReliable() || extra,
-		isBorderBox = boxSizingNeeded &&
-			jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-		valueIsBorderBox = isBorderBox,
-
 		val = curCSS( elem, dimension, styles ),
-		offsetProp = "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 );
+		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+		valueIsBorderBox = isBorderBox;
 
 	// Support: Firefox <=54
 	// Return a confounding non-pixel value or feign ignorance, as appropriate.
@@ -22606,29 +22474,22 @@ function getWidthOrHeight( elem, dimension, extra ) {
 		val = "auto";
 	}
 
+	// Check for style in case a browser which returns unreliable values
+	// for getComputedStyle silently falls back to the reliable elem.style
+	valueIsBorderBox = valueIsBorderBox &&
+		( support.boxSizingReliable() || val === elem.style[ dimension ] );
 
 	// Fall back to offsetWidth/offsetHeight when value is "auto"
 	// This happens for inline elements with no explicit setting (gh-3571)
 	// Support: Android <=4.1 - 4.3 only
 	// Also use offsetWidth/offsetHeight for misreported inline dimensions (gh-3602)
-	// Support: IE 9-11 only
-	// Also use offsetWidth/offsetHeight for when box sizing is unreliable
-	// We use getClientRects() to check for hidden/disconnected.
-	// In those cases, the computed value can be trusted to be border-box
-	if ( ( !support.boxSizingReliable() && isBorderBox ||
-		val === "auto" ||
-		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) &&
-		elem.getClientRects().length ) {
+	if ( val === "auto" ||
+		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) {
 
-		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
+		val = elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ];
 
-		// Where available, offsetWidth/offsetHeight approximate border box dimensions.
-		// Where not available (e.g., SVG), assume unreliable box-sizing and interpret the
-		// retrieved value as a content box dimension.
-		valueIsBorderBox = offsetProp in elem;
-		if ( valueIsBorderBox ) {
-			val = elem[ offsetProp ];
-		}
+		// offsetWidth/offsetHeight provide border-box values
+		valueIsBorderBox = true;
 	}
 
 	// Normalize "" and auto
@@ -22674,13 +22535,6 @@ jQuery.extend( {
 		"flexGrow": true,
 		"flexShrink": true,
 		"fontWeight": true,
-		"gridArea": true,
-		"gridColumn": true,
-		"gridColumnEnd": true,
-		"gridColumnStart": true,
-		"gridRow": true,
-		"gridRowEnd": true,
-		"gridRowStart": true,
 		"lineHeight": true,
 		"opacity": true,
 		"order": true,
@@ -22736,9 +22590,7 @@ jQuery.extend( {
 			}
 
 			// If a number was passed in, add the unit (except for certain CSS properties)
-			// The isCustomProp check can be removed in jQuery 4.0 when we only auto-append
-			// "px" to a few hardcoded values.
-			if ( type === "number" && !isCustomProp ) {
+			if ( type === "number" ) {
 				value += ret && ret[ 3 ] || ( jQuery.cssNumber[ origName ] ? "" : "px" );
 			}
 
@@ -22838,29 +22690,18 @@ jQuery.each( [ "height", "width" ], function( i, dimension ) {
 		set: function( elem, value, extra ) {
 			var matches,
 				styles = getStyles( elem ),
-
-				// Only read styles.position if the test has a chance to fail
-				// to avoid forcing a reflow.
-				scrollboxSizeBuggy = !support.scrollboxSize() &&
-					styles.position === "absolute",
-
-				// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-3991)
-				boxSizingNeeded = scrollboxSizeBuggy || extra,
-				isBorderBox = boxSizingNeeded &&
-					jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-				subtract = extra ?
-					boxModelAdjustment(
-						elem,
-						dimension,
-						extra,
-						isBorderBox,
-						styles
-					) :
-					0;
+				isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+				subtract = extra && boxModelAdjustment(
+					elem,
+					dimension,
+					extra,
+					isBorderBox,
+					styles
+				);
 
 			// Account for unreliable border-box dimensions by comparing offset* to computed and
 			// faking a content-box to get border and padding (gh-3699)
-			if ( isBorderBox && scrollboxSizeBuggy ) {
+			if ( isBorderBox && support.scrollboxSize() === styles.position ) {
 				subtract -= Math.ceil(
 					elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
 					parseFloat( styles[ dimension ] ) -
@@ -23028,9 +22869,9 @@ Tween.propHooks = {
 			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.nodeType === 1 && (
-					jQuery.cssHooks[ tween.prop ] ||
-					tween.elem.style[ finalPropName( tween.prop ) ] != null ) ) {
+			} else if ( tween.elem.nodeType === 1 &&
+				( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null ||
+					jQuery.cssHooks[ tween.prop ] ) ) {
 				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
 			} else {
 				tween.elem[ tween.prop ] = tween.now;
@@ -24737,10 +24578,6 @@ jQuery.param = function( a, traditional ) {
 				encodeURIComponent( value == null ? "" : value );
 		};
 
-	if ( a == null ) {
-		return "";
-	}
-
 	// If an array was passed in, assume that it is an array of form elements.
 	if ( Array.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
 
@@ -25243,14 +25080,12 @@ jQuery.extend( {
 						if ( !responseHeaders ) {
 							responseHeaders = {};
 							while ( ( match = rheaders.exec( responseHeadersString ) ) ) {
-								responseHeaders[ match[ 1 ].toLowerCase() + " " ] =
-									( responseHeaders[ match[ 1 ].toLowerCase() + " " ] || [] )
-										.concat( match[ 2 ] );
+								responseHeaders[ match[ 1 ].toLowerCase() ] = match[ 2 ];
 							}
 						}
-						match = responseHeaders[ key.toLowerCase() + " " ];
+						match = responseHeaders[ key.toLowerCase() ];
 					}
-					return match == null ? null : match.join( ", " );
+					return match == null ? null : match;
 				},
 
 				// Raw string
@@ -25639,7 +25474,7 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 } );
 
 
-jQuery._evalUrl = function( url, options ) {
+jQuery._evalUrl = function( url ) {
 	return jQuery.ajax( {
 		url: url,
 
@@ -25649,16 +25484,7 @@ jQuery._evalUrl = function( url, options ) {
 		cache: true,
 		async: false,
 		global: false,
-
-		// Only evaluate the response if it is successful (gh-4126)
-		// dataFilter is not invoked for failure responses, so using it instead
-		// of the default converter is kludgy but it works.
-		converters: {
-			"text script": function() {}
-		},
-		dataFilter: function( response ) {
-			jQuery.globalEval( response, options );
-		}
+		"throws": true
 	} );
 };
 
@@ -25941,21 +25767,24 @@ jQuery.ajaxPrefilter( "script", function( s ) {
 // Bind script tag hack transport
 jQuery.ajaxTransport( "script", function( s ) {
 
-	// This transport only deals with cross domain or forced-by-attrs requests
-	if ( s.crossDomain || s.scriptAttrs ) {
+	// This transport only deals with cross domain requests
+	if ( s.crossDomain ) {
 		var script, callback;
 		return {
 			send: function( _, complete ) {
-				script = jQuery( "<script>" )
-					.attr( s.scriptAttrs || {} )
-					.prop( { charset: s.scriptCharset, src: s.url } )
-					.on( "load error", callback = function( evt ) {
+				script = jQuery( "<script>" ).prop( {
+					charset: s.scriptCharset,
+					src: s.url
+				} ).on(
+					"load error",
+					callback = function( evt ) {
 						script.remove();
 						callback = null;
 						if ( evt ) {
 							complete( evt.type === "error" ? 404 : 200, evt.type );
 						}
-					} );
+					}
+				);
 
 				// Use native DOM manipulation to avoid our domManip AJAX trickery
 				document.head.appendChild( script[ 0 ] );
@@ -26687,7 +26516,6 @@ return jQuery;
 module.exports = function (random, alphabet, size) {
   var mask = (2 << Math.log(alphabet.length - 1) / Math.LN2) - 1
   var step = Math.ceil(1.6 * mask * size / alphabet.length)
-  size = +size
 
   var id = ''
   while (true) {
@@ -33204,6 +33032,40 @@ defaults.circleSystem = function () {
   }
 };
 
+defaults.basic = function () {
+  _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/reset', {
+    calledBy: 'defaults/loadBasic'
+  });
+  var offset = 200;
+  var bigWeight = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+    position: {
+      x: 100,
+      y: 200
+    },
+    velocity: {
+      x: 0,
+      y: 0
+    },
+    mass: 1000
+  });
+  var smallWeight = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+    position: {
+      x: 200,
+      y: 200
+    },
+    velocity: {
+      x: 20,
+      y: 0
+    },
+    mass: 10
+  });
+  _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(bigWeight, smallWeight);
+
+  if (state.debug) {
+    console.log('%c Default basic system loaded! ', 'color:orange');
+  }
+};
+
 defaults.load = function (systemNameToLoad) {
   if (defaults.hasOwnProperty(systemNameToLoad)) {
     defaults[systemNameToLoad]();
@@ -33324,8 +33186,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
 /* harmony import */ var _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./plotCanvas/plotCanvas */ "./src/springs/plotCanvas/plotCanvas.js");
 /* harmony import */ var _panels_monitor__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./panels/monitor */ "./src/springs/panels/monitor.js");
-/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
-/* harmony import */ var _defaults__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./defaults */ "./src/springs/defaults.js");
+/* harmony import */ var _panels_control__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./panels/control */ "./src/springs/panels/control.js");
+/* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
+/* harmony import */ var _defaults__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./defaults */ "./src/springs/defaults.js");
+
 
 
 
@@ -33422,14 +33286,14 @@ var reset = function reset() {
   redraw();
 };
 
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/toggleAnimate', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/toggleAnimate', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator toggleAnimate event called by ', 'color:green', d.calledBy);
   }
 
   toggleAnimate();
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/stopAnimation', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/stopAnimation', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator stopAnimation event called by ', 'color:green', d.calledBy);
   }
@@ -33438,7 +33302,7 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/stopAnimati
     stopAnimating();
   }
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/startAnimation', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/startAnimation', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator startAnimation event called by ', 'color:green', d.calledBy);
   }
@@ -33447,7 +33311,7 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/startAnimat
     animate();
   }
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/reset', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/reset', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy);
   }
@@ -33455,14 +33319,14 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/reset', fun
   reset();
 }); //few cases justify this emit
 
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/redraw', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/redraw', function (d) {
   if (state.debugging && state.debug.redraw) {
     console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy);
   }
 
   redraw();
 });
-_emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/resize', function (d) {
+_emitter_js__WEBPACK_IMPORTED_MODULE_5__["default"].on('orchestrator/resize', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator resize event called by ', 'color:green', d.calledBy);
   }
@@ -33474,10 +33338,109 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_4__["default"].on('orchestrator/resize', fu
 logic.init = function () {
   _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].init();
   _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init();
-  _panels_monitor__WEBPACK_IMPORTED_MODULE_3__["default"].init(); // defaults.load('circleSystem')
+  _panels_monitor__WEBPACK_IMPORTED_MODULE_3__["default"].init();
+  _panels_control__WEBPACK_IMPORTED_MODULE_4__["default"].init(); // defaults.load('basic')
+  // redraw();
   // toggleAnimate();
 };
 
+
+
+/***/ }),
+
+/***/ "./src/springs/panels/control.js":
+/*!***************************************!*\
+  !*** ./src/springs/panels/control.js ***!
+  \***************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+/*
+    This works closely with system and springCanvas
+    This sets the displayFlags that springCanvas then passes to the draw
+
+*/
+
+var updateOpacity = function updateOpacity(rgb, opacity) {
+  var aux = rgb.split(',').splice(0, 3);
+  aux.push("".concat(opacity, ")"));
+  return aux.join(',');
+};
+
+var State = function State() {
+  return {
+    canvas: document.getElementById('springCanvas'),
+    ctx: document.getElementById('springCanvas').getContext('2d'),
+    controlWrapper: jquery__WEBPACK_IMPORTED_MODULE_3___default()('#controlsWrapper'),
+    flagsContainer: jquery__WEBPACK_IMPORTED_MODULE_3___default()('#flagsContainer'),
+    debug: true
+  };
+};
+
+var logic = {};
+var state; //allows for an easier reset, set in init.
+//bunch of checkboxes
+//whenever a checkbox is hit it changes that display flag
+
+var setHandles = function setHandles() {};
+
+var buildCheckBoxes = function buildCheckBoxes() {
+  var boxHtml = function boxHtml(key, value) {
+    var checked = value === true ? 'checked' : '';
+    return "<div class=\"form-check form-check-inline\">\n        <input class=\"form-check-input controlFlag\" data-displayKey=\"".concat(key, "\" type=\"checkbox\" ").concat(checked, " />\n        <label class=\"form-check-label\">").concat(key, "</label>\n        </div>");
+  };
+
+  var displayFlags = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].getDisplayFlags();
+  var $checkBoxes = [];
+
+  for (var key in displayFlags) {
+    var c = jquery__WEBPACK_IMPORTED_MODULE_3___default()(boxHtml(key, displayFlags[key]));
+    $checkBoxes.push(c);
+    jquery__WEBPACK_IMPORTED_MODULE_3___default()(flagsContainer).append(c);
+  }
+
+  $checkBoxes.forEach(function (c) {
+    c.on('click', function (ev) {
+      var displayKey = jquery__WEBPACK_IMPORTED_MODULE_3___default()(ev.target).attr('data-displayKey'); // console.log('here!', ev.target)
+
+      if (displayFlags.hasOwnProperty(displayKey)) {
+        console.log('here!', ev.target);
+        _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].setDisplayFlag(displayKey, ev.target.checked);
+        _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/redraw', {
+          calledBy: 'panels/control/checkBoxClicked'
+        });
+      }
+    });
+  });
+};
+
+logic.init = function () {
+  state = State();
+  buildCheckBoxes();
+};
+
+logic.getState = function () {
+  return state;
+};
+
+logic.reset = function () {
+  logic.init();
+}; //for testing
+
+
+window.monitor = logic;
 
 
 /***/ }),
@@ -33579,10 +33542,6 @@ var buildSetter = function buildSetter(w) {
   setterCard.on('keyup', function (ev) {
     var target = ev.target;
     var val = Number.parseFloat(jquery__WEBPACK_IMPORTED_MODULE_3___default()(target).val());
-
-    if (ev.keyCode == 32) {
-      return; //NO SPACES
-    }
 
     if (!isNaN(val)) {
       _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/stopAnimation', {
@@ -33876,11 +33835,8 @@ var draw = function draw(_ref) {
       canvas = state.canvas;
   var canvasCenter = {
     x: canvas.width / 2,
-    y: canvas.height / 2
-  };
-  var shift = {
-    x: canvasCenter.x - systemCenter.x,
-    y: canvasCenter.y - systemCenter.y
+    y: canvas.height / 2 // const shift = { x: canvasCenter.x - systemCenter.x, y: canvasCenter.y - systemCenter.y }
+
   };
   var currentLength = spring.getLength();
   var opacity = .2 + Math.abs(1 - currentLength / spring.restingLength); //for switch handle, perhaps change?
@@ -33894,9 +33850,11 @@ var draw = function draw(_ref) {
   var lineWidth_temp = ctx.lineWidth;
   ctx.beginPath();
   ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = state.k;
-  ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
-  ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
+  ctx.lineWidth = state.k; // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
+  // ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
+
+  ctx.moveTo(spring.weights[0].position.x + 0, spring.weights[0].position.y + 0);
+  ctx.lineTo(spring.weights[1].position.x + 0, spring.weights[1].position.y + 0);
   ctx.stroke();
   ctx.lineWidth = lineWidth_temp;
 };
@@ -33943,7 +33901,7 @@ var draw = function draw(_ref) {
   ctx.font = "13px Arial";
   ctx.fillStyle = "#000000"; //it displays the true center
 
-  ctx.fillText("Center : (".concat(systemCenter.x.toFixed(2), ", ").concat(systemCenter.y.toFixed(2), ")"), canvasCenter.x, canvasCenter.y - 10);
+  ctx.fillText("System Center : (".concat(systemCenter.x.toFixed(2), ", ").concat(systemCenter.y.toFixed(2), ")"), canvasCenter.x, canvasCenter.y - 10);
 };
 
 
@@ -33966,10 +33924,8 @@ var updateOpacity = function updateOpacity(rgb, opacity) {
   return aux.join(',');
 };
 
-var totalColors = ["#673AB7", "#009688", "#ff6922", "#2196F3", "#4CAF50", "#F44336", "#F49B3B", "#3F51B5", "#E91E63", "#607D8B", "#9C27B0", "#CDDC39", "#00BCD4"];
 var hasInitialized = false;
-var canvasCenter;
-var metadata; //refactor this
+var canvasCenter; //refactor this
 
 var init = function init(_ref) {
   var state = _ref.state,
@@ -33998,14 +33954,11 @@ var draw = function draw(_ref2) {
 
   var displayFlags = state.displayFlags,
       ctx = state.ctx,
-      canvas = state.canvas;
-  var shift = {
-    x: canvasCenter.x - systemCenter.x,
-    y: canvasCenter.y - systemCenter.y
-  };
+      canvas = state.canvas; // const shift = { x : canvasCenter.x - systemCenter.x, y : canvasCenter.y - systemCenter.y }
+
   var drawAt = {
-    x: weight.position.x + shift.x,
-    y: weight.position.y + shift.y
+    x: weight.position.x + 0,
+    y: weight.position.y + 0
   };
   var _weight$systemData$me = weight.systemData.metadata,
       maxVelocity = _weight$systemData$me.maxVelocity,
@@ -34019,6 +33972,13 @@ var draw = function draw(_ref2) {
   var fillOpacity = (Math.abs(weight.velocity.x) + Math.abs(weight.velocity.y)) / (maxVelocity.x + maxVelocity.y + 1);
   ctx.fillStyle = updateOpacity(weight.color, fillOpacity);
   ctx.fill();
+
+  if (displayFlags.showWeightIds) {
+    var fontSize = 12;
+    ctx.font = "".concat(fontSize, "px Arial");
+    ctx.fillStyle = "#000000";
+    ctx.fillText(weight.id, drawAt.x - weight.radius / 2, drawAt.y - weight.radius * 1.1);
+  }
 };
 
 
@@ -34131,8 +34091,9 @@ var handlerState = {
     dragHandler: true,
     leftClick: false
   },
-  dragHandler: {} //set when the weight is being dragged
-
+  dragHandler: {},
+  //set when the weight is being dragged
+  useRelative: false
 };
 
 var getMousePosition = function getMousePosition(ev) {
@@ -34175,6 +34136,7 @@ var initDragHandler = function initDragHandler(weight) {
         exact = _getRelativeMousePosi.exact,
         relative = _getRelativeMousePosi.relative;
 
+    var mousePosition = handlerState.useRelative ? relative : exact;
     var inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10;
     var inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10;
 
@@ -34183,7 +34145,7 @@ var initDragHandler = function initDragHandler(weight) {
     } else {
       _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight(_objectSpread({
         weight: weight
-      }, relative, {
+      }, mousePosition, {
         manuallyMoved: true
       }));
       _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
@@ -34198,12 +34160,14 @@ var handleLeftClick = function handleLeftClick(ev) {
       exact = _getRelativeMousePosi2.exact,
       relative = _getRelativeMousePosi2.relative;
 
+  var mousePosition = handlerState.useRelative ? relative : exact;
+  console.log('ugh', mousePosition);
   _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
     calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
   }); //if there is a nearby weight then i select it;
 
   var _system$findNearestWe = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearestWeight({
-    relativeMousePosition: relative
+    mousePosition: mousePosition
   }),
       dist = _system$findNearestWe.dist,
       weight = _system$findNearestWe.weight;
@@ -34222,8 +34186,8 @@ var handleLeftClick = function handleLeftClick(ev) {
     var weightConfig = {
       mass: handlerState.weight.mass,
       position: {
-        x: relative.x,
-        y: relative.y
+        x: mousePosition.x,
+        y: mousePosition.y
       },
       springK: handlerState.spring.k,
       velocity: handlerState.weight.velocity
@@ -34421,6 +34385,18 @@ logic.draw = function () {
       systemCenter: _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter()
     });
   });
+};
+
+logic.setDisplayFlag = function (flag, value) {
+  if (state.displayFlags.hasOwnProperty(flag)) {
+    state.displayFlags[flag] = value;
+  } else {
+    throw new Error("Unknown display flag, ".concat(flag, ", ").concat(value));
+  }
+};
+
+logic.getDisplayFlags = function () {
+  return state.displayFlags;
 };
 
 logic.setOverlays = function () {
@@ -34759,10 +34735,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../emitter.js */ "./src/springs/emitter.js");
 
 
-var totalColors = ['rgb(182, 41, 41)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'];
+var totalColors = ['rgb(182, 41, 41, 1.0)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'];
 
 var randomColor = function randomColor() {
   return totalColors[Math.floor(Math.random() * totalColors.length)];
+};
+
+var getRadiusFromMass = function getRadiusFromMass(m) {
+  if (m > 100) {
+    return 100;
+  } else if (m < 1) {
+    return 1;
+  } else {
+    return m;
+  }
 };
 
 var Weight = function Weight(_ref) {
@@ -34832,6 +34818,11 @@ var Weight = function Weight(_ref) {
 
     state.position = state.systemData.frames[frameIndex].position;
     state.velocity = state.systemData.frames[frameIndex].velocity;
+  };
+
+  logic.setMass = function (m) {
+    state.mass = m;
+    state.radius = getRadiusFromMass(m);
   }; //radius is inherently a draw attribute, but others use it for things like mass placement, thus it is here for easy access
 
 
@@ -35267,6 +35258,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+var DEF_STEP = .05;
+var DEF_MAXT = 200;
 
 var State = function State() {
   return {
@@ -35275,9 +35268,9 @@ var State = function State() {
       needsSolve: true
     },
     solverConfig: {
-      stepSize: .05,
-      maxTime: 200,
-      frameCount: 200 / .05
+      stepSize: DEF_STEP,
+      maxTime: DEF_MAXT,
+      frameCount: DEF_MAXT / DEF_STEP
     },
     center: {
       frameCalculated: 0,
@@ -35335,7 +35328,7 @@ var checkForSolve = function checkForSolve() {
   }
 
   if (state.currentFrame === state.solverConfig.frameCount) {
-    systemChanged(); //in this case the change is self invoked...
+    stateChanged(); //in this case the change is self invoked...
   }
 };
 
@@ -35455,7 +35448,7 @@ logic.setWeight = function (_ref3) {
   }
 
   if (mass || mass === 0) {
-    weight.mass = mass;
+    weight.setMass(mass); //because this also changes the radius
   }
 
   stateChanged('shift');
@@ -35468,9 +35461,9 @@ logic.reset = function () {
 };
 
 logic.findNearestWeight = function (_ref4) {
-  var relativeMousePosition = _ref4.relativeMousePosition;
+  var mousePosition = _ref4.mousePosition;
   // console.log('in find nearest', relativeMousePosition)
-  return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(relativeMousePosition);
+  return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(mousePosition);
 };
 
 logic.subscribeToOnChange = function (eventName) {
@@ -35955,9 +35948,9 @@ __webpack_require__.r(__webpack_exports__);
 var logic = {}; //any interaction with orchestrator is done by event emitting. This is because nearly all components require knowledge of the animating.
 
 window.addEventListener('keyup', function (ev) {
-  var isSpaceKey = ev.keyCode == 32;
+  var isSpaceKey = ev.keyCode == 32; //don't want to toggle when typing
 
-  if (isSpaceKey) {
+  if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
     ev.preventDefault();
     _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {
       calledBy: 'view.js/keyup'
@@ -35991,8 +35984,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
+__webpack_require__(/*! E:\Dev\greg\springy\node_modules\@babel\polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! E:\Dev\greg\springy\src\main.js */"./src/main.js");
 
 
 /***/ })

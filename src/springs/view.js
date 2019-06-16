@@ -9,7 +9,8 @@ const logic = {}
 window.addEventListener('keyup', (ev) => {
     const isSpaceKey = ev.keyCode == 32;
     
-    if (isSpaceKey) {
+    //don't want to toggle when typing
+    if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
         ev.preventDefault();
         emitter.emit('orchestrator/toggleAnimate', { calledBy: 'view.js/keyup' })
     }

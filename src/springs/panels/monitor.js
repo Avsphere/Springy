@@ -127,9 +127,7 @@ const buildSetter = (w) => {
         const target = ev.target;
         const val = Number.parseFloat($(target).val())
 
-        if (ev.keyCode == 32) {
-            return; //NO SPACES
-        }
+
         if (!isNaN(val)) {
             emitter.emit('orchestrator/stopAnimation', { calledBy: 'panels/monitor/setterCardKeyup' })
             if ( target.id.includes(posXId) ) {

@@ -55,6 +55,43 @@ defaults.circleSystem = () => {
     }
 }
 
+defaults.basic = () => {
+    emitter.emit('orchestrator/reset', {
+        calledBy: 'defaults/loadBasic'
+    })
+    const offset = 200;
+    const bigWeight = graph.addWeight({
+        position: {
+            x: 100,
+            y: 200
+        },
+        velocity: {
+            x: 0,
+            y: 0
+        },
+        mass: 1000,
+    })
+
+    const smallWeight = graph.addWeight({
+        position: {
+            x: 200,
+            y: 200
+        },
+        velocity: {
+            x: 20,
+            y: 0
+        },
+        mass: 10,
+    })
+
+    graph.addEdge(bigWeight, smallWeight)
+
+
+    if (state.debug) {
+        console.log('%c Default basic system loaded! ', 'color:orange')
+    }
+}
+
 
 defaults.load = (systemNameToLoad) => {
     if (defaults.hasOwnProperty(systemNameToLoad)) {

@@ -23,7 +23,7 @@ const draw = ({ springCanvasState, systemCenter }) => {
     ctx.font = `13px Arial`;
     ctx.fillStyle = "#000000";
     //it displays the true center
-    ctx.fillText(`Center : (${systemCenter.x.toFixed(2)}, ${systemCenter.y.toFixed(2)})`, canvasCenter.x, canvasCenter.y - 10)
+    ctx.fillText(`System Center : (${systemCenter.x.toFixed(2)}, ${systemCenter.y.toFixed(2)})`, canvasCenter.x, canvasCenter.y - 10)
 }
 
 

@@ -95,6 +95,16 @@ logic.draw = () => {
     )
 }
 
+logic.setDisplayFlag = (flag, value) => {
+    if ( state.displayFlags.hasOwnProperty(flag) ) {
+        state.displayFlags[flag] = value;
+    } else {
+        throw new Error(`Unknown display flag, ${flag}, ${value}`)
+    }
+}
+
+logic.getDisplayFlags = () => state.displayFlags
+
 logic.setOverlays = (b=false) => state.drawOverlays = b
 
 logic.init = () => {
