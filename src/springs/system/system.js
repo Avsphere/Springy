@@ -93,9 +93,9 @@ logic.step = () => {
 }
 
 
+//position is true position, passer should account for relativity
 logic.addWeight = ({ mass, position, springK, velocity }) => {
 
-    //position is the true position, the canvas handles the shift 
     if (!position.x && position.x !== 0 || !position.y && position.y !== 0 ) { throw new Error('system addWeight needs canvas x and y') }
     if (!mass) { mass = state.defaultValues.weightMass }
     if ( !springK ) { springK = state.defaultValues.springK }
@@ -115,6 +115,18 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     }
     stateChanged('structure')
     return newWeight;
+}
+
+//position is true position, passer should account for relativity
+logic.removeWeight = ({ position }) => {
+    if (!position.x && position.x !== 0 || !position.y && position.y !== 0) { throw new Error('system addWeight needs canvas x and y') }
+    const { dist, weight } = sysGraph.findNearest(position)
+    
+    if (dist !== false || weight !== false) {
+        console.log('removing weight')
+        sysGraph.removeWeight(weight)
+    }
+    stateChanged('structure')
 }
 
 
@@ -181,6 +193,42 @@ logic.getCenter = (forceCalc) => {
         state.center.frameCalculated = state.currentFrame
     }
     return state.center.position
+}
+
+logic.getBoundaryNodes = () => {
+    const weights = sysGraph.getWeights()
+    if (weights.length === 0 ) { 
+        throw new Error('boundary nodes needs a graph size of > 1')
+    }
+    const boundaries = {
+        minX: weights[0],
+        maxX: weights[0],
+        minY: weights[0],
+        maxY: weights[0]
+    }
+    // console.log(weights, initWeight)
+    sysGraph.forEach( (edgeList, w) => {
+        if (w.position.x < boundaries.minX.position.x ) {
+            boundaries.minX = w;
+        } else if ( w.position.x > boundaries.maxX.position.x ) {
+            boundaries.maxX = w
+        }
+
+        if (w.position.y < boundaries.minY.position.y) {
+            boundaries.minY = w;
+        } else if (w.position.y > boundaries.maxY.position.y) {
+            boundaries.maxY = w
+        }
+    })
+    return boundaries
+}
+
+
+logic.setSolver = ({ stepSize, maxTime }) => {
+    console.log(stepSize, maxTime)
+    state.solverConfig.stepSize = stepSize || state.solverConfig.stepSize
+    state.solverConfig.maxTime = maxTime || state.solverConfig.maxTime
+    state.solverConfig.frameCount = state.solverConfig.stepSize / state.solverConfig.maxTime
 }
 
 logic.getState = () => state //for debugging only

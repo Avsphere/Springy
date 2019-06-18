@@ -20,6 +20,7 @@ const State = () => ({
     ctx: document.getElementById('springCanvas').getContext('2d'),
     controlWrapper: $('#controlsWrapper'),
     flagsContainer: $('#flagsContainer'),
+    timeContainer : $('#timeControl'),
     debug: true,
 
 })
@@ -50,7 +51,7 @@ const buildCheckBoxes = () => {
     for (const key in displayFlags) {
         const c = $(boxHtml(key, displayFlags[key]))
         $checkBoxes.push(c)
-        $(flagsContainer).append(c) 
+        state.flagsContainer.append(c) 
     }
 
     $checkBoxes.forEach( c => {
@@ -58,7 +59,6 @@ const buildCheckBoxes = () => {
             const displayKey = $(ev.target).attr('data-displayKey');
             // console.log('here!', ev.target)
             if (displayFlags.hasOwnProperty(displayKey)) {
-            console.log('here!', ev.target)
 
                 springCanvas.setDisplayFlag(displayKey, ev.target.checked)
                 emitter.emit('orchestrator/redraw', {
@@ -69,6 +69,49 @@ const buildCheckBoxes = () => {
     })
 }
 
+const buildTimeControl = () => {
+    const buildInput = () => {
+        const inlineStyle = `background-color : rgba(27, 20, 100,0.5)`
+
+        //code that is making me want to cry... need to level up my game here... also need to stop wasting time
+        const html = `<div id="timeControllerContainer">
+        <div class="card" style="margin-top : 5%;">
+        <div class="card-header" id=""style="${inlineStyle}; text-align:center;">
+            <span> <h4> Time Controller </h4> </span>
+        </div>
+        </div>
+            <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="inputGroup-sizing-default">Step Size</span>
+        </div>
+        <input type="text" class="form-control" id="stepSize" aria-label="Default" aria-describedby="inputGroup-sizing-default" placeholder="i.e 0.5">
+        </div>
+        <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text" id="inputGroup-sizing-default">Max Time</span>
+        </div>
+        <input type="text" class="form-control" id="maxTime" aria-label="Default" aria-describedby="inputGroup-sizing-default" placeholder="i.e 200">
+        </div>
+        </div>`
+        return html;
+    }
+    const $inputContainer = $(buildInput())
+    
+    $inputContainer.on('keyup', (ev) => {
+        const target = ev.target;
+        const val = Number.parseFloat($(target).val())
+        if (ev.keyCode == 32) {
+            $(':focus').blur() 
+        }
+        else if ( target.id === 'stepSize' && !isNaN(val) ) {
+            system.setSolver({ stepSize : val })
+        } else if (target.id === 'maxTime' && !isNaN(val)) {
+            system.setSolver({ maxTime : val })
+        }
+    })
+    state.timeContainer.html($inputContainer)
+}
+
 
 
 
@@ -77,6 +120,7 @@ const buildCheckBoxes = () => {
 logic.init = () => {
     state = State();
     buildCheckBoxes()
+    buildTimeControl();
 }
 
 logic.getState = () => state

@@ -21,15 +21,12 @@ const init = ({ state, weight, systemCenter }) => {
 
 const draw = ({state, weight, systemCenter }) => {
     if (hasInitialized === false) { init({ state, weight, systemCenter }); }
-    const { displayFlags, ctx, canvas } = state;
-
-    // const shift = { x : canvasCenter.x - systemCenter.x, y : canvasCenter.y - systemCenter.y }
-
-
+    const { displayFlags, ctx, canvas, transforms, camera } = state;
+    const { shift } = transforms
 
     const drawAt = {
-        x : weight.position.x + 0,
-        y : weight.position.y + 0
+        x: weight.position.x + shift.x,
+        y: weight.position.y + shift.y
     }
 
     const { maxVelocity, minVelocity, avgVelocity } = weight.systemData.metadata

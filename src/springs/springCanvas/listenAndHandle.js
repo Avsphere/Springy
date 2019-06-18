@@ -36,15 +36,10 @@ const getMousePosition = (ev) => ({
 
 const getRelativeMousePosition = (ev) => {
     const { x, y } = getMousePosition(ev);
-    //everything is relative to systemCenter. so if x was 0 then the relative position would be sysCenter - (canvasCenter - x)
-    const canvasCenter = {
-        x: state.canvas.width / 2,
-        y: state.canvas.height / 2
-    }
-    const sysCenter = system.getCenter()
+
     return {
         exact : { x : x, y : y },
-        relative: { x: sysCenter.x - (canvasCenter.x - x), y: sysCenter.y - (canvasCenter.y - y) }
+        relative: { x: x + state.transforms.shift.x, y: y + state.transforms.shift.y }
     }
 }
 
@@ -56,6 +51,7 @@ const removeDragHandler = () => {
 const initDragHandler = (weight) => (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
     const mousePosition = handlerState.useRelative ? relative : exact
+
     const inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10
     const inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10
     if ( !inXBounds || !inYBounds ) {
@@ -72,7 +68,7 @@ const initDragHandler = (weight) => (ev) => {
 const handleLeftClick = (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
     const mousePosition = handlerState.useRelative ? relative : exact
-    console.log('ugh', mousePosition)
+
     emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
 
 

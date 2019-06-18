@@ -60,9 +60,9 @@ const update = (changeType) => {
     }
     
 }
-
- 
-//builds a single card
+const clearSetter = () => {
+    $(state.setterWrapperId).html('') //clear the previous setter box if there was one
+}
 
 
 
@@ -182,8 +182,16 @@ logic.buildMonitorDisplay = () => {
 
         const weightCard = $(html)
 
-        weightCard.on('click', (ev) => {
-            buildSetter(w)
+        weightCard.on('mousedown', (ev) => {
+
+            const rightClick = ev.which === 3 ? true : false
+            if ( rightClick ) {
+                system.removeWeight(w)
+                clearSetter();
+                emitter.emit('orchestrator/redraw', { calledBy: 'panels/monitor/setterCardDeleteWeight' })
+            } else {
+                buildSetter(w)
+            }
         })
 
         return weightCard
@@ -228,7 +236,7 @@ logic.init = () => {
     state = State();
     // $(state.headerWrapperId).html(buildBaseHtml());
     //currently i am keeping emits at a singleton level, not sure how it will work
-    $(state.setterWrapperId).html('') //clear the previous setter box if there was one
+    clearSetter();
     updateMonitorFn = logic.buildMonitorDisplay();
     if ( !hasSubscribed ) {
         const systemSubscription = 'panel-systemOnChange-sub'
