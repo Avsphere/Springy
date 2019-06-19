@@ -1,7 +1,6 @@
 import Weight from './weight'
 import Spring from './spring'
 import helpers from '../helpers';
-import { switchStatement } from 'babel-types';
 
 
 const logic = {}
