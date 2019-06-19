@@ -3,8 +3,9 @@ import springCanvas from './springCanvas/springCanvas'
 import plotCanvas from './plotCanvas/plotCanvas'
 import monitorPanel from './panels/monitor'
 import controlPanel from './panels/control'
+import defaultPanel from './panels/defaults'
 import emitter from './emitter.js'
-import defaults from './defaults'
+import defaults from './defaultSystems'
 const state = {
     isAnimating : false,
     debugging : true,
@@ -20,7 +21,11 @@ const getDrawableComponents = () => {
 }
 
 const getPanels = () => {
-    return [monitorPanel]
+    return [monitorPanel, controlPanel]
+}
+
+const resetPanels = () => {
+    getPanels().forEach( p => p.reset() )
 }
 
 
@@ -115,6 +120,13 @@ emitter.on('orchestrator/startAnimation', (d) => {
 emitter.on('orchestrator/reset', (d) => {
     if (state.debugging) { console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy) }
     reset()
+    //should also rebuild panels
+    resetPanels();
+})
+
+emitter.on('orchestrator/resetPanels', (d) => {
+    if (state.debugging) { console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy) }
+    resetPanels();
 })
 
 //few cases justify this emit
@@ -135,6 +147,7 @@ logic.init = () => {
     plotCanvas.init();
     monitorPanel.init();
     controlPanel.init();
+    defaultPanel.init();
     // defaults.load('basic')
     // redraw();
     // toggleAnimate();

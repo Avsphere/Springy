@@ -86,13 +86,15 @@ const buildSetter = (w) => {
     const velXId = `velX${w.id}`
     const velYId = `velY${w.id}`
     const massId = `mass${w.id}`
+    const displayId = `setterDisplay${w.id}`
     const buildInputRow = () => {
-        const color = updateOpacity(w.color, .5)
+        const color = w.fixed ? 'rgb(0, 0, 0, .4)' : updateOpacity(w.color, .5)
         const inlineStyle = `background-color : ${color}`
+        const isDisabled = w.fixed === true ? 'disabled' : ''
 
         //code that is making me want to cry... need to level up my game here... also need to stop wasting time
         const html = `<div class="card" style="width: 85%;">
-        <div class="card-header" id=""style="${inlineStyle}">
+        <div class="card-header" id="${displayId}"style="${inlineStyle}">
             <span> Setting Weight Id : ${trimId(w.id)} </span>
         </div>
         <ul class="list-group list-group-flush">
@@ -105,19 +107,35 @@ const buildSetter = (w) => {
                             </div></li>
             <li class="list-group-item" ><div class="row">
                             <div class="col-sm-6">
-                            <input type="text" class="form-control" placeholder="vel x" id="${velXId}" >
+                            <input type="text" class="form-control" placeholder="vel x" ${isDisabled} id="${velXId}" >
                             </div>
                             <div class="col-sm-6">
-                            <input type="text" class="form-control" placeholder="vel y" id="${velYId}" >
+                            <input type="text" class="form-control" placeholder="vel y" ${isDisabled} id="${velYId}" >
                             </div></li>
             <li class="list-group-item" ><div class="row">
-                            <div class="col-sm-12">
-                            <input type="text" class="form-control" placeholder="mass" id="${massId}" >
+                            <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="mass" ${isDisabled} id="${massId}" >
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check form-check-inline" style="margin-top:5%">
+                                <input class="form-check-input controlFlag" id="fixMass" type="checkbox" />
+                                <label class="form-check-label">Fixed</label>
+                                </div>
                             </div>
                             </li>
         </ul>
         </div>`
         return html;
+    }
+
+    const updateStylingForFixedMass = () => {
+        const headerId = `headerDisplay_${w.id}` //this is from the buildMonitorDisplayCard
+        const color = w.fixed ? 'rgb(0, 0, 0, .4)' : updateOpacity(w.color, .5)
+        $(`#${displayId}`).css('background-color', color)
+        $(`#${headerId}`).css('background-color', color)
+        $(`#${velXId}`).attr('disabled', w.fixed)
+        $(`#${velYId}`).attr('disabled', w.fixed)
+        $(`#${massId}`).attr('disabled', w.fixed)
     }
 
     const setterCard = $(buildInputRow())
@@ -136,19 +154,29 @@ const buildSetter = (w) => {
             } else if (target.id.includes(posYId) ) {
                 system.setWeight({ weight: w, y: val })
 
-            } else if (target.id.includes(velXId)) {
+            } else if (target.id.includes(velXId) && w.fixed === false ) {
                 system.setWeight({ weight: w, vx: val })
 
-            } else if (target.id.includes(velYId)) {
+            } else if (target.id.includes(velYId) && w.fixed === false ) {
                 system.setWeight({ weight: w, vy: val })
 
-            } else if (target.id.includes(massId)) {
+            } else if (target.id.includes(massId) && w.fixed === false) {
                 system.setWeight({ weight: w, mass: val })
 
             }
             //now redraw to reflect
             emitter.emit('orchestrator/redraw', { calledBy: 'panels/monitor/setterCardKeyup' })
         } 
+    })
+
+    setterCard.on('click', (ev) => {
+        const target = ev.target;
+        if ( target.id === 'fixMass') {
+            system.setWeight({weight : w, fixed : !w.fixed })
+            updateStylingForFixedMass()
+            $(':focus').blur() 
+            emitter.emit('orchestrator/redraw', { calledBy: 'panels/monitor/setterCardKeyup' })
+        }
     })
 
 
@@ -162,7 +190,7 @@ logic.buildMonitorDisplay = () => {
     const buildMonitorDisplayCard = (w) => {
         const velocityId = `vel_${w.id}`
         const positionId = `pos_${w.id}`
-        const headerId = `header_${w.id}`
+        const headerId = `headerDisplay_${w.id}`
 
         const velocityHtml = `Velocity : (${w.velocity.x.toFixed(2)}, ${w.velocity.y.toFixed(2)})`
         const positionHtml = `Position : (${w.position.x.toFixed(2)}, ${w.position.y.toFixed(2)})`
@@ -248,15 +276,11 @@ logic.init = () => {
     }
 
     $(state.monitorDisplayId).css('height', window.innerHeight / 2)
-
 }
 
 logic.getState = () => state
 logic.reset = () => { logic.init() };
 
-
-//for testing
-window.monitor = logic
 
 
 export { logic as default }

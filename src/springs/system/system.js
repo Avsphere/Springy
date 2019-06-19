@@ -121,7 +121,6 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
 logic.removeWeight = ({ position }) => {
     if (!position.x && position.x !== 0 || !position.y && position.y !== 0) { throw new Error('system addWeight needs canvas x and y') }
     const { dist, weight } = sysGraph.findNearest(position)
-    
     if (dist !== false || weight !== false) {
         console.log('removing weight')
         sysGraph.removeWeight(weight)
@@ -131,7 +130,7 @@ logic.removeWeight = ({ position }) => {
 
 
 //only settables and only location (outside of solver)... in need of a refactor
-logic.setWeight = ({ weight, x, y, vx, vy, mass, manuallyMoved }) => {
+logic.setWeight = ({ weight, x, y, vx, vy, mass, fixed }) => {
 
     if ( x || x === 0 ) {
         weight.position.x = x
@@ -151,6 +150,9 @@ logic.setWeight = ({ weight, x, y, vx, vy, mass, manuallyMoved }) => {
     }
     if ( mass || mass === 0 ) {
         weight.setMass(mass) //because this also changes the radius
+    }
+    if ( fixed === true || fixed === false ) {
+        weight.setFixed(fixed)
     }
 
     stateChanged('shift')

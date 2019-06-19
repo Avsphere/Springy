@@ -1,4 +1,6 @@
+const ID_LENGTH = 4
 
+const trimId = (id) => id.substr(0, 4)
 
 //where state is the parent springCanvas state
 const draw = ({state, spring, systemCenter }) => {
@@ -21,6 +23,14 @@ const draw = ({state, spring, systemCenter }) => {
 
     if (currentLength === state.length) {
         strokeStyle = 'black'
+    }
+
+    if ( displayFlags.showSpringIds ) {
+        ctx.fillText(trimId(spring.id), (drawAt.x0 + drawAt.x1) / 2, (drawAt.y0 + drawAt.y1) / 2 + 15)
+    }
+
+    if (displayFlags.showSpringDetails) {
+        ctx.fillText(spring.k, (drawAt.x0 + drawAt.x1) / 2, (drawAt.y0 + drawAt.y1) / 2 - 15)
     }
 
     let lineWidth_temp = ctx.lineWidth;

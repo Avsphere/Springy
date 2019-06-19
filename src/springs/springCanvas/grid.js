@@ -21,9 +21,9 @@ logic.draw = ({ springCanvasState, systemCenter }) => {
     ctx.arc(lineSpacing.x * state.lineCount/2, canvas.height / 2, 2, 0, Math.PI * 2, true)
     ctx.closePath();
     ctx.stroke();
-    ctx.font = `13px Arial`;
-    ctx.fillStyle = "#000000";
-    ctx.fillText(`(${systemCenter.x.toFixed(2)}, ${systemCenter.y.toFixed(2)})`, canvasCenter.x, canvasCenter.y - 10)
+    // ctx.font = `13px Arial`;
+    // ctx.fillStyle = "#000000";
+    // ctx.fillText(`(${systemCenter.x.toFixed(2)}, ${systemCenter.y.toFixed(2)})`, canvasCenter.x, canvasCenter.y - 10)
 
     ctx.strokeStyle = 'rgba(0, 0, 0, .3)';
     for ( let i = 1; i < state.lineCount; i++ ) {

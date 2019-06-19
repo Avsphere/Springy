@@ -51,6 +51,9 @@ const Weight = ({ position, mass, velocity, color, id }) => {
         mass: mass || 10,
         radius : 0, // set in the init block
         type: 'weight',
+        fixed : false, //sets mass to Infinity and more
+        fixedSize : 20,
+        preFixedMass : mass || 10
     }
     const logic = {}
 
@@ -66,6 +69,21 @@ const Weight = ({ position, mass, velocity, color, id }) => {
     logic.setMass = (m) => {
         state.mass = m;
         state.radius = getRadiusFromMass(m);
+    }
+
+    logic.setFixed = (b) => {
+        state.fixed = b;
+        if ( state.fixed === true ) {
+            state.preFixedMass = mass;
+            state.initialVelocity.x = 0;
+            state.initialVelocity.y = 0;
+            state.velocity.x = 0;
+            state.velocity.y = 0;
+            state.mass = Infinity
+        } else {
+            state.mass = state.preFixedMass
+        }
+
     }
 
 

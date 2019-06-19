@@ -33,11 +33,9 @@ let state; //allows for an easier reset, set in init.
 //whenever a checkbox is hit it changes that display flag
 
 
-const setHandles = () => {
-
-}
 
 const buildCheckBoxes = () => {
+    state.flagsContainer.html('')
     const boxHtml = (key, value) => {
         const checked = value === true ? 'checked' : ''
         return `<div class="form-check form-check-inline">
