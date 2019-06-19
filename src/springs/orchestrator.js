@@ -129,7 +129,6 @@ emitter.on('orchestrator/resetPanels', (d) => {
     resetPanels();
 })
 
-//few cases justify this emit
 emitter.on('orchestrator/redraw', (d) => {
     if (state.debugging && state.debug.redraw ) { console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy) }
     redraw();

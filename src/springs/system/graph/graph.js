@@ -26,8 +26,8 @@ if ( state.debug ) {
 }
 
 
-logic.addWeight = ({ position, mass, velocity }) => {
-    const weight = Weight({ position, mass, velocity })
+logic.addWeight = (args) => {
+    const weight = Weight({ ...args })
     state.adjList.set(weight, [])
     state.weights.push(weight);
     return weight

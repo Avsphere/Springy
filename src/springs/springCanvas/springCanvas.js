@@ -162,6 +162,10 @@ logic.init = () => {
 }
 
 logic.getState = () => state
+logic.getDimensions = () => ({
+    width : state.canvas.width,
+    height : state.canvas.height
+})
 logic.reset = () => {
     state = State();
     setCanvasDimensions();

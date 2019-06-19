@@ -33132,7 +33132,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./system/graph/graph */ "./src/springs/system/graph/graph.js");
-/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./emitter */ "./src/springs/emitter.js");
+/* harmony import */ var _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./springCanvas/springCanvas */ "./src/springs/springCanvas/springCanvas.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./emitter */ "./src/springs/emitter.js");
+
 
 
  //a top level module that aids in the user loading default systems
@@ -33141,40 +33143,18 @@ var state = {
   debug: true
 };
 var logic = {};
-var systems = []; // defaults.basic = {
-//     metadata : {
-//         offset : 200
-//     },
-//     build : function() {
-//         const metadata = this.metadata;
-//         const bigWeight = graph.addWeight({
-//             position: {
-//                 x: 100,
-//                 y: 200
-//             },
-//             velocity: {
-//                 x: 0,
-//                 y: 0
-//             },
-//             mass: 1000,
-//         })
-//         const smallWeight = graph.addWeight({
-//             position: {
-//                 x: 200,
-//                 y: 200
-//             },
-//             velocity: {
-//                 x: 20,
-//                 y: 0
-//             },
-//             mass: 10,
-//         })
-//         graph.addEdge(bigWeight, smallWeight)
-//         if (state.debug) {
-//             console.log('%c Default basic system loaded! ', 'color:orange')
-//         }
-//     }
-// }
+var systems = [];
+
+var roundToNearest = function roundToNearest(n) {
+  var roundingTo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+  var r = n % roundingTo; //if 286 then 86
+
+  if (r > roundingTo / 2) {
+    return roundingTo - r + n;
+  } else {
+    return n - r;
+  }
+};
 
 systems.push({
   metadata: {
@@ -33182,12 +33162,18 @@ systems.push({
     title: 'circleSystem'
   },
   build: function build() {
-    var offset = 500;
+    var _springCanvas$getDime = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime.width,
+        height = _springCanvas$getDime.height;
+
+    var offset = roundToNearest(width / 2);
+    var fixedBig = {
+      x: offset,
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
     var bigWeight = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-      position: {
-        x: offset,
-        y: offset
-      },
+      position: fixedBig,
       velocity: {
         x: 0,
         y: 0
@@ -33197,7 +33183,7 @@ systems.push({
     var lastMass;
 
     var smallMasses = function () {
-      var count = 20;
+      var count = 40;
       var size = 300;
 
       for (var i = 0; i < count; i++) {
@@ -33224,18 +33210,280 @@ systems.push({
     }();
   }
 });
+systems.push({
+  metadata: {
+    title: 'Horiztonal, fixed at both ends',
+    description: "A fixed weight at each end. Initial velocity : (20,0)",
+    initialVelocity: {
+      x: 20,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _this = this;
+
+    var _springCanvas$getDime2 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime2.width,
+        height = _springCanvas$getDime2.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width - 100),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition2,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 10;
+      var initialXVelocity = _this.metadata.initialVelocity.x;
+      var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x + massSpacing * i,
+            y: fixedPosition1.y
+          },
+          velocity: {
+            x: i == 1 ? initialXVelocity : 0,
+            y: 0
+          },
+          mass: 10
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        lastMass = littleMass;
+      }
+
+      _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, f2);
+    }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Horiztonal, fixed at right end',
+    description: "A fixed weight at each end. Initial velocity : (20,0)",
+    initialVelocity: {
+      x: 20,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _this2 = this;
+
+    var _springCanvas$getDime3 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime3.width,
+        height = _springCanvas$getDime3.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width - 100),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 10;
+      var initialXVelocity = _this2.metadata.initialVelocity.x;
+      var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x + massSpacing * i,
+            y: fixedPosition1.y
+          },
+          velocity: {
+            x: i == 1 ? initialXVelocity : 0,
+            y: 0
+          },
+          mass: 10
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        lastMass = littleMass;
+      }
+    }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Vertical, fixed at both ends',
+    description: "A fixed weight at each end. Initial velocity : (0,20)",
+    initialVelocity: {
+      x: 0,
+      y: 20
+    }
+  },
+  build: function build() {
+    var _this3 = this;
+
+    var _springCanvas$getDime4 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime4.width,
+        height = _springCanvas$getDime4.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest((height + 100) / 10)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height - 100)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition2,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 10;
+      var initialYVelocity = _this3.metadata.initialVelocity.y;
+      var massSpacing = (fixedPosition2.y - fixedPosition1.y) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x,
+            y: fixedPosition1.y + massSpacing * i
+          },
+          velocity: {
+            x: 0,
+            y: i == 1 ? initialYVelocity : 0
+          },
+          mass: 10
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        lastMass = littleMass;
+      }
+
+      _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, f2);
+    }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Vertical, fixed at top end',
+    description: "A fixed weight at each end. Initial velocity : (0,20)",
+    initialVelocity: {
+      x: 0,
+      y: 20
+    }
+  },
+  build: function build() {
+    var _this4 = this;
+
+    var _springCanvas$getDime5 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime5.width,
+        height = _springCanvas$getDime5.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest((height + 100) / 10)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height - 100)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 10;
+      var initialYVelocity = _this4.metadata.initialVelocity.y;
+      var massSpacing = (fixedPosition2.y - fixedPosition1.y) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x,
+            y: fixedPosition1.y + massSpacing * i
+          },
+          velocity: {
+            x: 0,
+            y: i == 1 ? initialYVelocity : 0
+          },
+          mass: 10
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        lastMass = littleMass;
+      }
+    }();
+  }
+});
 
 logic.load = function (systemToLoad) {
   // const systemToLoad = systems.find( ({ metadata })  => metadata.title === systemNameToLoad)
   if (systemToLoad) {
-    _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/reset', {
+    _emitter__WEBPACK_IMPORTED_MODULE_3__["default"].emit('orchestrator/reset', {
       calledBy: 'defaultSystems/load'
     });
     systemToLoad.build();
-    _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/redraw', {
+    _emitter__WEBPACK_IMPORTED_MODULE_3__["default"].emit('orchestrator/redraw', {
       calledBy: 'defaultSystems/load'
     });
-    _emitter__WEBPACK_IMPORTED_MODULE_2__["default"].emit('orchestrator/resetPanels', {
+    _emitter__WEBPACK_IMPORTED_MODULE_3__["default"].emit('orchestrator/resetPanels', {
       calledBy: 'defaultSystems/load'
     });
 
@@ -33515,8 +33763,7 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/resetPanels
   }
 
   resetPanels();
-}); //few cases justify this emit
-
+});
 _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/redraw', function (d) {
   if (state.debugging && state.debug.redraw) {
     console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy);
@@ -34378,9 +34625,10 @@ var draw = function draw(_ref2) {
       maxVelocity = _weight$systemData$me.maxVelocity,
       minVelocity = _weight$systemData$me.minVelocity,
       avgVelocity = _weight$systemData$me.avgVelocity;
+  var drawRadius = weight.fixed ? weight.fixedSize : weight.radius;
   ctx.strokeStyle = weight.color;
   ctx.beginPath();
-  ctx.arc(drawAt.x, drawAt.y, weight.radius, 0, Math.PI * 2, true);
+  ctx.arc(drawAt.x, drawAt.y, drawRadius, 0, Math.PI * 2, true);
   ctx.closePath();
   ctx.stroke();
   var fillOpacity = (Math.abs(weight.velocity.x) + Math.abs(weight.velocity.y)) / (maxVelocity.x + maxVelocity.y + 1);
@@ -34391,7 +34639,7 @@ var draw = function draw(_ref2) {
     var fontSize = 12;
     ctx.font = "".concat(fontSize, "px Arial");
     ctx.fillStyle = "#000000";
-    ctx.fillText(trimId(weight.id), drawAt.x - weight.radius / 2, drawAt.y - weight.radius * 1.1);
+    ctx.fillText(trimId(weight.id), drawAt.x - drawRadius / 2, drawAt.y - drawRadius * 1.1);
   }
 
   if (displayFlags.showWeightDetails && weight.fixed === false) {
@@ -34892,6 +35140,13 @@ logic.getState = function () {
   return state;
 };
 
+logic.getDimensions = function () {
+  return {
+    width: state.canvas.width,
+    height: state.canvas.height
+  };
+};
+
 logic.reset = function () {
   state = State();
   setCanvasDimensions();
@@ -34921,6 +35176,10 @@ function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread n
 function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
 
@@ -34960,15 +35219,8 @@ if (state.debug) {
   };
 }
 
-logic.addWeight = function (_ref2) {
-  var position = _ref2.position,
-      mass = _ref2.mass,
-      velocity = _ref2.velocity;
-  var weight = Object(_weight__WEBPACK_IMPORTED_MODULE_0__["default"])({
-    position: position,
-    mass: mass,
-    velocity: velocity
-  });
+logic.addWeight = function (args) {
+  var weight = Object(_weight__WEBPACK_IMPORTED_MODULE_0__["default"])(_objectSpread({}, args));
   state.adjList.set(weight, []);
   state.weights.push(weight);
   return weight;
@@ -34988,8 +35240,8 @@ logic.addEdge = function (w1, w2) {
   var w1Edges = state.adjList.get(w1);
   var w2Edges = state.adjList.get(w2);
 
-  if (w1Edges.find(function (_ref3) {
-    var weight = _ref3.weight;
+  if (w1Edges.find(function (_ref2) {
+    var weight = _ref2.weight;
     return weight.id === w2.id;
   })) {
     throw new Error('cannot multiple edges between nodes');
@@ -35011,9 +35263,9 @@ logic.addEdge = function (w1, w2) {
   return sharedSpring;
 };
 
-logic.removeEdge = function (_ref4) {
-  var w1 = _ref4.w1,
-      w2 = _ref4.w2;
+logic.removeEdge = function (_ref3) {
+  var w1 = _ref3.w1,
+      w2 = _ref3.w2;
 
   //you can remove an edge from its spring or by its connection points; but not both
   if (w1 && !w2 || w2 && !w1) {
@@ -35025,14 +35277,14 @@ logic.removeEdge = function (_ref4) {
   var w1Edges = state.adjList.get(w1);
   var w2Edges = state.adjList.get(w2); //w1 : [{weight, spring}, {weight, spring}]
 
-  var w1Edge = w1Edges.find(function (_ref5) {
-    var weight = _ref5.weight;
+  var w1Edge = w1Edges.find(function (_ref4) {
+    var weight = _ref4.weight;
     return weight.id === w2.id;
   });
   var w1IndexToRemove = w1Edges.indexOf(w1Edge);
   w1Edges.splice(w1IndexToRemove, 1);
-  var w2Edge = w2Edges.find(function (_ref6) {
-    var weight = _ref6.weight;
+  var w2Edge = w2Edges.find(function (_ref5) {
+    var weight = _ref5.weight;
     return weight.id === w1.id;
   });
   var w2IndexToRemove = w2Edges.indexOf(w2Edge);
@@ -35262,7 +35514,8 @@ var Weight = function Weight(_ref) {
       mass = _ref.mass,
       velocity = _ref.velocity,
       color = _ref.color,
-      id = _ref.id;
+      id = _ref.id,
+      initiallyFixed = _ref.initiallyFixed;
 
   if (!position) {
     throw new Error('Error creating mass, incorrect position args');
@@ -35348,7 +35601,12 @@ var Weight = function Weight(_ref) {
     } else {
       state.mass = state.preFixedMass;
     }
-  }; //radius is inherently a draw attribute, but others use it for things like mass placement, thus it is here for easy access
+  }; //INIT
+
+
+  if (initiallyFixed === true) {
+    logic.setFixed(true);
+  } //radius is inherently a draw attribute, but others use it for things like mass placement, thus it is here for easy access
 
 
   state.radius = state.mass < 5 ? 5 : state.mass > 100 ? 100 : state.mass;
@@ -35818,6 +36076,17 @@ var State = function State() {
   };
 };
 
+var roundToNearest = function roundToNearest(n) {
+  var roundingTo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+  var r = n % roundingTo; //if 286 then 86
+
+  if (r > roundingTo / 2) {
+    return roundingTo - r + n;
+  } else {
+    return n - r;
+  }
+};
+
 var logic = {};
 var state = State(); //note that system state can be refreshed for a new system, but emitting / associates exist at singleton level
 
@@ -35924,8 +36193,8 @@ logic.addWeight = function (_ref2) {
       weight = _sysGraph$findNearest.weight;
 
   var snappedPosition = {
-    x: position.x - position.x % state.snap,
-    y: position.y - position.y % state.snap
+    x: roundToNearest(position.x, 5),
+    y: roundToNearest(position.y, 5)
   };
   var newWeight = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
     position: snappedPosition,
@@ -36074,10 +36343,10 @@ logic.getBoundaryNodes = function () {
 logic.setSolver = function (_ref6) {
   var stepSize = _ref6.stepSize,
       maxTime = _ref6.maxTime;
-  console.log(stepSize, maxTime);
   state.solverConfig.stepSize = stepSize || state.solverConfig.stepSize;
   state.solverConfig.maxTime = maxTime || state.solverConfig.maxTime;
   state.solverConfig.frameCount = state.solverConfig.stepSize / state.solverConfig.maxTime;
+  stateChanged('structure'); //needs a resolve
 };
 
 logic.getState = function () {

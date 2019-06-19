@@ -33,10 +33,10 @@ const draw = ({state, weight, systemCenter }) => {
 
     const { maxVelocity, minVelocity, avgVelocity } = weight.systemData.metadata
 
-
+    const drawRadius = weight.fixed ? weight.fixedSize : weight.radius
     ctx.strokeStyle = weight.color;
     ctx.beginPath();
-    ctx.arc(drawAt.x, drawAt.y, weight.radius, 0, Math.PI * 2, true)
+    ctx.arc(drawAt.x, drawAt.y, drawRadius, 0, Math.PI * 2, true)
     ctx.closePath();
     ctx.stroke();
 
@@ -50,7 +50,7 @@ const draw = ({state, weight, systemCenter }) => {
         const fontSize = 12
         ctx.font = `${fontSize}px Arial`;
         ctx.fillStyle = "#000000";
-        ctx.fillText(trimId(weight.id), drawAt.x - weight.radius / 2, drawAt.y - weight.radius * 1.1)
+        ctx.fillText(trimId(weight.id), drawAt.x - drawRadius / 2, drawAt.y - drawRadius * 1.1)
     }
 
     if (displayFlags.showWeightDetails && weight.fixed === false ) {

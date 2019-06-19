@@ -29,6 +29,15 @@ const State = () => ({
     
 })
 
+const roundToNearest = (n, roundingTo = 100) => {
+    const r = n % roundingTo //if 286 then 86
+    if (r > roundingTo / 2) {
+        return roundingTo - r + n;
+    } else {
+        return n - r
+    }
+}
+
 const logic = {}
 let state = State();
 //note that system state can be refreshed for a new system, but emitting / associates exist at singleton level
@@ -102,11 +111,11 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     if ( !velocity ) { velocity = state.defaultValues.velocity }
     const { dist, weight } = sysGraph.findNearest(position)
     
-
     const snappedPosition = {
-        x: position.x - position.x % state.snap,
-        y: position.y - position.y % state.snap
+        x : roundToNearest(position.x, 5),
+        y : roundToNearest(position.y, 5)
     }
+
 
     const newWeight = sysGraph.addWeight({ position: snappedPosition, mass, velocity })
     if ( dist !== false || weight !== false ) {
@@ -227,10 +236,10 @@ logic.getBoundaryNodes = () => {
 
 
 logic.setSolver = ({ stepSize, maxTime }) => {
-    console.log(stepSize, maxTime)
     state.solverConfig.stepSize = stepSize || state.solverConfig.stepSize
     state.solverConfig.maxTime = maxTime || state.solverConfig.maxTime
     state.solverConfig.frameCount = state.solverConfig.stepSize / state.solverConfig.maxTime
+    stateChanged('structure') //needs a resolve
 }
 
 logic.getState = () => state //for debugging only

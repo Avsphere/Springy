@@ -18,7 +18,7 @@ const getRadiusFromMass = (m) => {
     }
 }
 
-const Weight = ({ position, mass, velocity, color, id }) => {
+const Weight = ({ position, mass, velocity, color, id, initiallyFixed }) => {
     if (!position) { throw new Error('Error creating mass, incorrect position args') }
     if (!velocity) { throw new Error('Error creating mass, incorrect velocity args') }
     const state = {
@@ -84,6 +84,13 @@ const Weight = ({ position, mass, velocity, color, id }) => {
             state.mass = state.preFixedMass
         }
 
+    }
+
+    //INIT
+
+
+    if (initiallyFixed === true) {
+        logic.setFixed(true)
     }
 
 
