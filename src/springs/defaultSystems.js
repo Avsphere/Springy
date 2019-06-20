@@ -127,7 +127,7 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Horiztonal, fixed at right end',
-        description: `A fixed weight at each end. Initial velocity : (30,0)`,
+        description: `A fixed weight at each end. Initial velocity : (60,0)`,
         initialVelocity: {
             x: 30,
             y: 0
@@ -181,10 +181,10 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Vertical, fixed at both ends',
-        description: `A fixed weight at each end. Initial velocity : (0,30)`,
+        description: `A fixed weight at each end. Initial velocity : (0,100). This also slows the system down to 1/5 normal speed. SPRING K = 2`,
         initialVelocity: {
             x: 0,
-            y: 30
+            y: 100
         }
     },
     build: function () {
@@ -229,12 +229,14 @@ systems.push({
                     velocity: { x: 0, y: i == 1 ? initialYVelocity : 0 },
                     mass: 10,
                 })
-                graph.addEdge(lastMass, littleMass)
+                graph.addEdge(lastMass, littleMass, 2)
                 lastMass = littleMass;
             }
-            graph.addEdge(lastMass, f2)
+            graph.addEdge(lastMass, f2, 2)
 
         })()
+        system.setSolver({ stepSize : 0.01, maxTime : 200 })
+
     }
 })
 
@@ -294,7 +296,7 @@ systems.push({
 
 systems.push({
     metadata: {
-        title: 'Cross Over Effect X',
+        title: 'Fixed Cross Over Effect X',
         description: ``,
         initialVelocity: {
             x: 0,
@@ -327,7 +329,7 @@ systems.push({
         })
 
         graph.addEdge(f1, f2)
-        system.setWeight({ weight: f2, x: f2.position.x + 105 })
+        system.setWeight({ weight: f2, x: f2.position.x + 200 })
 
 
     }
@@ -335,7 +337,7 @@ systems.push({
 
 systems.push({
     metadata: {
-        title: 'Cross Over Effect Y',
+        title: 'Fixed Cross Over Effect Y',
         description: ``,
         initialVelocity: {
             x: 0,
@@ -368,7 +370,7 @@ systems.push({
         })
 
         graph.addEdge(f1, f2)
-        system.setWeight({ weight: f2, y: f2.position.y + 105 })
+        system.setWeight({ weight: f2, y: f2.position.y + 200 })
 
 
     }

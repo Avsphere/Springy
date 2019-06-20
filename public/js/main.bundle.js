@@ -33285,7 +33285,7 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Horiztonal, fixed at right end',
-    description: "A fixed weight at each end. Initial velocity : (30,0)",
+    description: "A fixed weight at each end. Initial velocity : (60,0)",
     initialVelocity: {
       x: 30,
       y: 0
@@ -33345,10 +33345,10 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Vertical, fixed at both ends',
-    description: "A fixed weight at each end. Initial velocity : (0,30)",
+    description: "A fixed weight at each end. Initial velocity : (0,100). This also slows the system down to 1/5 normal speed. SPRING K = 2",
     initialVelocity: {
       x: 0,
-      y: 30
+      y: 100
     }
   },
   build: function build() {
@@ -33405,12 +33405,17 @@ systems.push({
           },
           mass: 10
         });
-        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass, 2);
         lastMass = littleMass;
       }
 
-      _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, f2);
+      _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, f2, 2);
     }();
+
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setSolver({
+      stepSize: 0.01,
+      maxTime: 200
+    });
   }
 });
 systems.push({
@@ -33475,7 +33480,7 @@ systems.push({
 });
 systems.push({
   metadata: {
-    title: 'Cross Over Effect X',
+    title: 'Fixed Cross Over Effect X',
     description: "",
     initialVelocity: {
       x: 0,
@@ -33516,13 +33521,13 @@ systems.push({
     _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
     _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
       weight: f2,
-      x: f2.position.x + 105
+      x: f2.position.x + 200
     });
   }
 });
 systems.push({
   metadata: {
-    title: 'Cross Over Effect Y',
+    title: 'Fixed Cross Over Effect Y',
     description: "",
     initialVelocity: {
       x: 0,
@@ -33563,7 +33568,7 @@ systems.push({
     _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
     _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
       weight: f2,
-      y: f2.position.y + 105
+      y: f2.position.y + 200
     });
   }
 });
@@ -34596,9 +34601,9 @@ var draw = function draw(_ref) {
   }
 
   var lineWidth_temp = ctx.lineWidth;
+  ctx.lineWidth = spring.k * 1.5;
   ctx.beginPath();
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = state.k; // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
+  ctx.strokeStyle = strokeStyle; // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
   // ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
 
   ctx.moveTo(drawAt.x0, drawAt.y0);
@@ -35768,7 +35773,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 var state = {
   maxTime: 200,
   stepSize: .05,
-  startingValue: 0
+  startingValue: 0,
+  mechanicalConstant: 10 //if the spring is less than this value acceleration starts to rapidly decrease
+
 };
 var logic = {};
 
@@ -35792,31 +35799,6 @@ var updateGraph = function updateGraph(u) {
   });
 };
 
-var getForceDirection = function getForceDirection(_ref) {
-  var w = _ref.w,
-      w2 = _ref.w2,
-      iHat = _ref.iHat,
-      jHat = _ref.jHat;
-  var dirScalar = {
-    x: 1,
-    y: 1
-  };
-
-  if (w.initialPosition.x < w2.initialPosition.x && iHat < 0) {
-    dirScalar.x = -1;
-  } else if (w.initialPosition.x > w2.initialPosition.x && iHat > 0) {
-    dirScalar.x = -1;
-  }
-
-  if (w.initialPosition.y < w2.initialPosition.y && jHat < 0) {
-    dirScalar.y = -1;
-  } else if (w.initialPosition.y > w2.initialPosition.y && jHat > 0) {
-    dirScalar.y = -1;
-  }
-
-  return dirScalar;
-};
-
 var buildSystem = function buildSystem() {
   var initialConditions = generateICVec();
 
@@ -35825,8 +35807,10 @@ var buildSystem = function buildSystem() {
     var r = []; // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
 
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].forEach(function (edgeList, w) {
-      var ax = [],
-          ay = []; //where each term is a force on the weight
+      var ddx = 0,
+          ddy = 0,
+          dx = w.velocity.x,
+          dy = w.velocity.y; //where each term is a force on the weight
 
       edgeList.forEach(function (e) {
         var w2 = e.weight;
@@ -35837,23 +35821,15 @@ var buildSystem = function buildSystem() {
         var iHat = (w2.position.x - w.position.x) / springLength; //if w is above w2, then it is being pulled down which is positive
 
         var jHat = (w2.position.y - w.position.y) / springLength;
-        var dir = getForceDirection({
-          w: w,
-          w2: w2,
-          iHat: iHat,
-          jHat: jHat
-        });
-        ax.push(spring.k * springStretch * iHat * dir.x / w.mass);
-        ay.push(spring.k * springStretch * jHat * dir.y / w.mass);
+        var wallReduction = 1;
+
+        if (springLength < state.mechanicalConstant) {
+          wallReduction = Math.pow(spring.k * 2, 1 + (state.mechanicalConstant - springLength));
+        }
+
+        ddx += spring.k * wallReduction * springStretch * iHat / w.mass;
+        ddy += spring.k * wallReduction * springStretch * jHat / w.mass;
       });
-      var dx = w.velocity.x,
-          dy = w.velocity.y;
-      var ddx = ax.reduce(function (acc, el) {
-        return acc + el;
-      }, 0);
-      var ddy = ay.reduce(function (acc, el) {
-        return acc + el;
-      }, 0);
       r.push(dx, ddx, dy, ddy);
     });
     return r;
@@ -35883,12 +35859,12 @@ var buildSystem_AttemptedOptimzation = function buildSystem_AttemptedOptimzation
 
   var solveFn = function solveFn(t, u) {
     // console.log('in solveFN')
-    indexMap.forEach(function (_ref2, w) {
-      var _ref3 = _slicedToArray(_ref2, 4),
-          dx = _ref3[0],
-          ddx = _ref3[1],
-          dy = _ref3[2],
-          ddy = _ref3[3];
+    indexMap.forEach(function (_ref, w) {
+      var _ref2 = _slicedToArray(_ref, 4),
+          dx = _ref2[0],
+          ddx = _ref2[1],
+          dy = _ref2[2],
+          ddy = _ref2[3];
 
       //where if w0 then dx = 0, ddx = 1, dy = 2, ddy = 3
       w.position.x = u[dx];
@@ -36071,9 +36047,9 @@ var setMetadata = function setMetadata() {
   });
 };
 
-logic.solveSystem = function (_ref4) {
-  var stepSize = _ref4.stepSize,
-      maxTime = _ref4.maxTime;
+logic.solveSystem = function (_ref3) {
+  var stepSize = _ref3.stepSize,
+      maxTime = _ref3.maxTime;
   state.maxTime = maxTime || state.maxTime; //setting like so bc there may be other ways to change in future
 
   state.stepSize = stepSize || state.stepSize;

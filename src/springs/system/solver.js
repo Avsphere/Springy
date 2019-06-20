@@ -9,6 +9,7 @@ const state = {
     maxTime: 200,
     stepSize: .05,
     startingValue: 0,
+    mechanicalConstant : 10 //if the spring is less than this value acceleration starts to rapidly decrease
 }
 
 const logic = {}
@@ -33,21 +34,6 @@ const updateGraph = (u) => {
     })
 }
 
-const getForceDirection = ({w, w2, iHat, jHat }) => {
-    const dirScalar = { x: 1, y: 1 }
-    if (w.initialPosition.x < w2.initialPosition.x && iHat < 0) {
-        dirScalar.x = -1
-    } else if (w.initialPosition.x > w2.initialPosition.x && iHat > 0) {
-        dirScalar.x = -1
-    }
-    if (w.initialPosition.y < w2.initialPosition.y && jHat < 0) {
-        dirScalar.y = -1
-    } else if (w.initialPosition.y > w2.initialPosition.y && jHat > 0) {
-        dirScalar.y = -1
-    }
-    return dirScalar;
-}
-
 
 const buildSystem = () => {
     let initialConditions = generateICVec();
@@ -55,7 +41,7 @@ const buildSystem = () => {
         updateGraph(u)
         const r = []; // the diff eqs, of ic vec morph ie [ dx0, d^2x0, dy0, d^2y0, ... ]
         graph.forEach((edgeList, w) => {
-            const ax = [], ay = []; //where each term is a force on the weight
+            let ddx = 0, ddy = 0, dx = w.velocity.x, dy = w.velocity.y; //where each term is a force on the weight
             edgeList.forEach( e => {
                 const w2 = e.weight;
                 const spring = e.spring;
@@ -65,15 +51,14 @@ const buildSystem = () => {
                 const iHat = (w2.position.x - w.position.x) / springLength   
                 //if w is above w2, then it is being pulled down which is positive
                 const jHat = (w2.position.y - w.position.y) / springLength
-
-                const dir = getForceDirection({w, w2, iHat, jHat })
-                ax.push((spring.k * springStretch * iHat * dir.x) / w.mass)
-                ay.push( (spring.k * springStretch * jHat * dir.y) / w.mass)
-
+                
+                let wallReduction = 1;
+                if (springLength < state.mechanicalConstant) {
+                    wallReduction = Math.pow(spring.k*2, 1 + (state.mechanicalConstant - springLength) )
+                }
+                ddx += (spring.k * wallReduction * springStretch * iHat) / w.mass
+                ddy += (spring.k * wallReduction * springStretch * jHat) / w.mass
             })
-            const dx = w.velocity.x, dy = w.velocity.y;
-            const ddx = ax.reduce((acc, el) => acc + el, 0)
-            const ddy = ay.reduce( (acc, el ) => acc + el, 0)
             r.push(dx, ddx, dy, ddy)
         })
         return r;
