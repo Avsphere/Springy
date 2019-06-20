@@ -33,6 +33,21 @@ const updateGraph = (u) => {
     })
 }
 
+const getForceDirection = ({w, w2, iHat, jHat }) => {
+    const dirScalar = { x: 1, y: 1 }
+    if (w.initialPosition.x < w2.initialPosition.x && iHat < 0) {
+        dirScalar.x = -1
+    } else if (w.initialPosition.x > w2.initialPosition.x && iHat > 0) {
+        dirScalar.x = -1
+    }
+    if (w.initialPosition.y < w2.initialPosition.y && jHat < 0) {
+        dirScalar.y = -1
+    } else if (w.initialPosition.y > w2.initialPosition.y && jHat > 0) {
+        dirScalar.y = -1
+    }
+    return dirScalar;
+}
+
 
 const buildSystem = () => {
     let initialConditions = generateICVec();
@@ -46,13 +61,14 @@ const buildSystem = () => {
                 const spring = e.spring;
                 const springLength = spring.getLength();
                 const springStretch = springLength - spring.restingLength;
-
                 //if w is to the left of w2, then it is being pulled right which is positive
-                const iHat = (w2.position.x - w.position.x) / springLength
+                const iHat = (w2.position.x - w.position.x) / springLength   
                 //if w is above w2, then it is being pulled down which is positive
                 const jHat = (w2.position.y - w.position.y) / springLength
-                ax.push( (spring.k * springStretch * iHat) / w.mass)
-                ay.push( (spring.k * springStretch * jHat) / w.mass)
+
+                const dir = getForceDirection({w, w2, iHat, jHat })
+                ax.push((spring.k * springStretch * iHat * dir.x) / w.mass)
+                ay.push( (spring.k * springStretch * jHat * dir.y) / w.mass)
 
             })
             const dx = w.velocity.x, dy = w.velocity.y;

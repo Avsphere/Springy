@@ -3,8 +3,8 @@ import sysGraph from './graph/graph'
 import solver from './solver' 
 import emitter from '../emitter' 
 
-const DEF_STEP = .05
-const DEF_MAXT = 200
+const DEF_STEP = .08
+const DEF_MAXT = 300
 
 const State = () => ({
     currentFrame : 0,
@@ -26,7 +26,9 @@ const State = () => ({
         velocity : { x : 0, y : 0 } //switch to injected config when time
     },
     snap : 5, //this means it rounds the x and y to the nearest 5 when spawning a weight
-    
+    debug : {
+        solver : true
+    }    
 })
 
 const roundToNearest = (n, roundingTo = 100) => {
@@ -82,6 +84,9 @@ const solve = (clearFrames=true) => {
         state.currentFrame = 0;
     }
     solver.solveSystem(state.solverConfig)
+    if (state.debug.solver) {
+        console.log('%c System solve completed!', 'color:green')
+    }
 }
 
 

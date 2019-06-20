@@ -33183,7 +33183,7 @@ systems.push({
     var lastMass;
 
     var smallMasses = function () {
-      var count = 40;
+      var count = 20;
       var size = 300;
 
       for (var i = 0; i < count; i++) {
@@ -33207,15 +33207,16 @@ systems.push({
 
         lastMass = m;
       }
-    }();
+    }(); // system.setSolver({ stepSize : 0.1, maxTime : 1000 })
+
   }
 });
 systems.push({
   metadata: {
     title: 'Horiztonal, fixed at both ends',
-    description: "A fixed weight at each end. Initial velocity : (20,0)",
+    description: "A fixed weight at each end. Initial velocity : (30,0)",
     initialVelocity: {
-      x: 20,
+      x: 30,
       y: 0
     }
   },
@@ -33284,9 +33285,9 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Horiztonal, fixed at right end',
-    description: "A fixed weight at each end. Initial velocity : (20,0)",
+    description: "A fixed weight at each end. Initial velocity : (30,0)",
     initialVelocity: {
-      x: 20,
+      x: 30,
       y: 0
     }
   },
@@ -33344,10 +33345,10 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Vertical, fixed at both ends',
-    description: "A fixed weight at each end. Initial velocity : (0,20)",
+    description: "A fixed weight at each end. Initial velocity : (0,30)",
     initialVelocity: {
       x: 0,
-      y: 20
+      y: 30
     }
   },
   build: function build() {
@@ -33415,10 +33416,10 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Vertical, fixed at top end',
-    description: "A fixed weight at each end. Initial velocity : (0,20)",
+    description: "A fixed weight at each end. Initial velocity : (0,30)",
     initialVelocity: {
       x: 0,
-      y: 20
+      y: 30
     }
   },
   build: function build() {
@@ -33470,6 +33471,100 @@ systems.push({
         lastMass = littleMass;
       }
     }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Cross Over Effect X',
+    description: "",
+    initialVelocity: {
+      x: 0,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _springCanvas$getDime6 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime6.width,
+        height = _springCanvas$getDime6.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var fixedPosition2 = {
+      x: fixedPosition1.x + 100,
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 10
+    });
+    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition2,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 10
+    });
+    _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+      weight: f2,
+      x: f2.position.x + 105
+    });
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Cross Over Effect Y',
+    description: "",
+    initialVelocity: {
+      x: 0,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _springCanvas$getDime7 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime7.width,
+        height = _springCanvas$getDime7.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 10 + 100)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width / 2),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: fixedPosition1.y + 100
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 10
+    });
+    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition2,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 10
+    });
+    _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+      weight: f2,
+      y: f2.position.y + 105
+    });
   }
 });
 
@@ -35697,6 +35792,31 @@ var updateGraph = function updateGraph(u) {
   });
 };
 
+var getForceDirection = function getForceDirection(_ref) {
+  var w = _ref.w,
+      w2 = _ref.w2,
+      iHat = _ref.iHat,
+      jHat = _ref.jHat;
+  var dirScalar = {
+    x: 1,
+    y: 1
+  };
+
+  if (w.initialPosition.x < w2.initialPosition.x && iHat < 0) {
+    dirScalar.x = -1;
+  } else if (w.initialPosition.x > w2.initialPosition.x && iHat > 0) {
+    dirScalar.x = -1;
+  }
+
+  if (w.initialPosition.y < w2.initialPosition.y && jHat < 0) {
+    dirScalar.y = -1;
+  } else if (w.initialPosition.y > w2.initialPosition.y && jHat > 0) {
+    dirScalar.y = -1;
+  }
+
+  return dirScalar;
+};
+
 var buildSystem = function buildSystem() {
   var initialConditions = generateICVec();
 
@@ -35717,8 +35837,14 @@ var buildSystem = function buildSystem() {
         var iHat = (w2.position.x - w.position.x) / springLength; //if w is above w2, then it is being pulled down which is positive
 
         var jHat = (w2.position.y - w.position.y) / springLength;
-        ax.push(spring.k * springStretch * iHat / w.mass);
-        ay.push(spring.k * springStretch * jHat / w.mass);
+        var dir = getForceDirection({
+          w: w,
+          w2: w2,
+          iHat: iHat,
+          jHat: jHat
+        });
+        ax.push(spring.k * springStretch * iHat * dir.x / w.mass);
+        ay.push(spring.k * springStretch * jHat * dir.y / w.mass);
       });
       var dx = w.velocity.x,
           dy = w.velocity.y;
@@ -35757,12 +35883,12 @@ var buildSystem_AttemptedOptimzation = function buildSystem_AttemptedOptimzation
 
   var solveFn = function solveFn(t, u) {
     // console.log('in solveFN')
-    indexMap.forEach(function (_ref, w) {
-      var _ref2 = _slicedToArray(_ref, 4),
-          dx = _ref2[0],
-          ddx = _ref2[1],
-          dy = _ref2[2],
-          ddy = _ref2[3];
+    indexMap.forEach(function (_ref2, w) {
+      var _ref3 = _slicedToArray(_ref2, 4),
+          dx = _ref3[0],
+          ddx = _ref3[1],
+          dy = _ref3[2],
+          ddy = _ref3[3];
 
       //where if w0 then dx = 0, ddx = 1, dy = 2, ddy = 3
       w.position.x = u[dx];
@@ -35945,9 +36071,9 @@ var setMetadata = function setMetadata() {
   });
 };
 
-logic.solveSystem = function (_ref3) {
-  var stepSize = _ref3.stepSize,
-      maxTime = _ref3.maxTime;
+logic.solveSystem = function (_ref4) {
+  var stepSize = _ref4.stepSize,
+      maxTime = _ref4.maxTime;
   state.maxTime = maxTime || state.maxTime; //setting like so bc there may be other ways to change in future
 
   state.stepSize = stepSize || state.stepSize;
@@ -36041,8 +36167,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-var DEF_STEP = .05;
-var DEF_MAXT = 200;
+var DEF_STEP = .08;
+var DEF_MAXT = 300;
 
 var State = function State() {
   return {
@@ -36071,8 +36197,11 @@ var State = function State() {
 
       }
     },
-    snap: 5 //this means it rounds the x and y to the nearest 5 when spawning a weight
-
+    snap: 5,
+    //this means it rounds the x and y to the nearest 5 when spawning a weight
+    debug: {
+      solver: true
+    }
   };
 };
 
@@ -36138,6 +36267,10 @@ var solve = function solve() {
   }
 
   _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem(state.solverConfig);
+
+  if (state.debug.solver) {
+    console.log('%c System solve completed!', 'color:green');
+  }
 }; //update and solve are only solve callers
 
 

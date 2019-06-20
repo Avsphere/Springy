@@ -44,7 +44,7 @@ systems.push({
         })
         let lastMass;
         const smallMasses = (() => {
-            const count = 40
+            const count = 20
             const size = 300;
             for (let i = 0; i < count; i++) {
                 const sign = Math.random() > .5 ? 1 : -1
@@ -60,15 +60,16 @@ systems.push({
                 lastMass = m;
             }
         })()
+        // system.setSolver({ stepSize : 0.1, maxTime : 1000 })
     }
 })
 
 systems.push({
     metadata: {
         title: 'Horiztonal, fixed at both ends',
-        description: `A fixed weight at each end. Initial velocity : (20,0)`,
+        description: `A fixed weight at each end. Initial velocity : (30,0)`,
         initialVelocity : {
-            x : 20,
+            x : 30,
             y : 0
         }
     },
@@ -126,9 +127,9 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Horiztonal, fixed at right end',
-        description: `A fixed weight at each end. Initial velocity : (20,0)`,
+        description: `A fixed weight at each end. Initial velocity : (30,0)`,
         initialVelocity: {
-            x: 20,
+            x: 30,
             y: 0
         }
     },
@@ -180,10 +181,10 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Vertical, fixed at both ends',
-        description: `A fixed weight at each end. Initial velocity : (0,20)`,
+        description: `A fixed weight at each end. Initial velocity : (0,30)`,
         initialVelocity: {
             x: 0,
-            y: 20
+            y: 30
         }
     },
     build: function () {
@@ -241,10 +242,10 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Vertical, fixed at top end',
-        description: `A fixed weight at each end. Initial velocity : (0,20)`,
+        description: `A fixed weight at each end. Initial velocity : (0,30)`,
         initialVelocity: {
             x: 0,
-            y: 20
+            y: 30
         }
     },
     build: function () {
@@ -288,6 +289,88 @@ systems.push({
             }
 
         })()
+    }
+})
+
+systems.push({
+    metadata: {
+        title: 'Cross Over Effect X',
+        description: ``,
+        initialVelocity: {
+            x: 0,
+            y: 0
+        }
+    },
+    build: function () {
+        const { width, height } = springCanvas.getDimensions();
+
+        const fixedPosition1 = {
+            x: roundToNearest((width + 100) / 10), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const fixedPosition2 = {
+            x: fixedPosition1.x + 100, //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const f1 = graph.addWeight({
+            position: fixedPosition1,
+            velocity: { x: 0, y: 0 },
+            mass: 10,
+        })
+
+        const f2 = graph.addWeight({
+            position: fixedPosition2,
+            velocity: { x: 0, y: 0 },
+            mass: 10,
+        })
+
+        graph.addEdge(f1, f2)
+        system.setWeight({ weight: f2, x: f2.position.x + 105 })
+
+
+    }
+})
+
+systems.push({
+    metadata: {
+        title: 'Cross Over Effect Y',
+        description: ``,
+        initialVelocity: {
+            x: 0,
+            y: 0
+        }
+    },
+    build: function () {
+        const { width, height } = springCanvas.getDimensions();
+
+        const fixedPosition1 = {
+            x: roundToNearest(width/2), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height/10+100)
+        }
+
+        const fixedPosition2 = {
+            x: roundToNearest(width / 2), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: fixedPosition1.y + 100
+        }
+
+        const f1 = graph.addWeight({
+            position: fixedPosition1,
+            velocity: { x: 0, y: 0 },
+            mass: 10,
+        })
+
+        const f2 = graph.addWeight({
+            position: fixedPosition2,
+            velocity: { x: 0, y: 0 },
+            mass: 10,
+        })
+
+        graph.addEdge(f1, f2)
+        system.setWeight({ weight: f2, y: f2.position.y + 105 })
+
+
     }
 })
 
