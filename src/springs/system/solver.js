@@ -54,7 +54,7 @@ const buildSystem = () => {
                 
                 let wallReduction = 1;
                 if (springLength < state.mechanicalConstant) {
-                    wallReduction = Math.pow(spring.k*2, 1 + (state.mechanicalConstant - springLength) )
+                    wallReduction = Math.pow(10,10)
                 }
                 ddx += (spring.k * wallReduction * springStretch * iHat) / w.mass
                 ddy += (spring.k * wallReduction * springStretch * jHat) / w.mass
