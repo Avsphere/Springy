@@ -20,7 +20,7 @@ body {
 }
 
 #springCanvas {
-  border : 1px solid green;
+  /* border : 1px solid green; */
   /* margin-top: 2%; */
   /* cursor : url('./circleCursor.png'), auto; */
 }

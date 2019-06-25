@@ -30,7 +30,7 @@ systems.push({
     },
     build : function() {
         const { width, height } = springCanvas.getDimensions();
-        const offset = roundToNearest(width / 2);
+        const offset = roundToNearest(width / 5);
 
         const fixedBig = {
             x: offset, //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
@@ -49,7 +49,7 @@ systems.push({
             for (let i = 0; i < count; i++) {
                 const sign = Math.random() > .5 ? 1 : -1
                 const m = graph.addWeight({
-                    position: { x: offset + size * Math.cos(i), y: offset + size * Math.sin(i) },
+                    position: { x: offset + size * Math.cos(i), y: fixedBig.y + size * Math.sin(i) },
                     velocity: { x: sign * Math.random() * 50, y: sign * Math.random() * 50 },
                     mass: 1,
                 })
