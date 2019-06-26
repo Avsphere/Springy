@@ -3,8 +3,9 @@ import emitter from '../../emitter.js'
 
 const totalColors = [
     'rgb(182, 41, 41, 1.0)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 
-    'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)',
-    'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'
+    'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(187, 88, 187,1.0)',
+    'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)',
+    'rgba(6, 82, 21,1.0)', 'rgba(87, 88, 237,1.0)'
 ]
 
 const randomColor = () => totalColors[Math.floor(Math.random() * totalColors.length)]
@@ -44,7 +45,7 @@ const Weight = ({ position, mass, velocity, color, id, initiallyFixed }) => {
         systemData : {
             frames : [], //this holds it position and velocity at each step
             metadata : {
-                maxVelocity : { x : 0, y : 0 }, //this is set in the solver.
+                maxVelocity : { x : 0, y : 0 }, //this is set in the solver and is THIS weights max / min.
                 minVelocity : { x : 0, y : 0 }, //this is set in the solver.
             }
         }, 

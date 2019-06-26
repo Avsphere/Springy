@@ -1,5 +1,6 @@
 import system from '../system/system'
 import emitter from '../emitter'
+import { draw as drawMousePosition } from './drawMousePosition'
 
 let state = {} //set in init, this is exactly the springCanvas state
 
@@ -25,7 +26,7 @@ const handlerState = {
         leftClick : false
     },
     dragHandler: {}, //set when the weight is being dragged
-    useRelative : false
+    useRelative : true
 }
 
 const getMousePosition = (ev) => ({
@@ -39,12 +40,13 @@ const getRelativeMousePosition = (ev) => {
 
     return {
         exact : { x : x, y : y },
-        relative: { x: x + state.transforms.shift.x, y: y + state.transforms.shift.y }
+        relative: { x: x - state.transforms.shift.x, y: y + state.transforms.shift.y }
     }
 }
 
 
 const removeDragHandler = () => {
+    // console.warn('removed drag handler')
     state.canvas.removeEventListener('mousemove', handlerState.dragHandler)
 }
 
@@ -71,8 +73,6 @@ const handleLeftClick = (ev) => {
 
     emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
 
-
-    //if there is a nearby weight then i select it;
 
     const { weightDist, weight } = system.findNearest({ mousePosition : mousePosition })
     if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius ) {
@@ -147,6 +147,16 @@ const handleIncrement = (ev, incrementAmount) => {
 const handleMouseMove = (ev) => {
     if ( state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0 ) {
         state.lastMousePosition = getRelativeMousePosition(ev);
+        const inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10
+        const inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10
+        //ha... not that is is "invisible"
+        if (inVisibleX && inVisibleY) {
+            emitter.emit('orchestrator/redraw', 
+            { 
+                calledBy: 'springCanvas/listenAndHandle/drawMousePosition',
+                condition: 'isNotAnimating' 
+            })
+        }
     }
 }
 

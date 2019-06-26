@@ -34,16 +34,15 @@ const State = () => Object.assign({
         showWeightDetails: true,
         showSpringDetails: false,
         showGrid: false,
-        // lockY: true,
-        showShift: false,
-        showSystemCenter : false,
+        showSystemCenter : true,
     },
     transforms : {
         shift : { x : 0, y : 0 },
         scale : 0
     },
     camera : {
-        useCamera : true,
+        useCamera : false,
+        screenBuffer : 50, //50 pixel away from edge of screen
         offTheScreen : true, //basic shift things over to keep them on screen approach
         // smoothing : 
     },
@@ -73,50 +72,48 @@ logic.resize = () => {
 
 
 const updateShift = () => {
-    if (state.camera.offTheScreen === true) {
-        //furthers left, right, ...
-        const { minX, maxX, maxY, minY } = system.getBoundaryNodes();
-        const { shift } = state.transforms
-        //adjusts for shift
-        const relativePos = {
-            minX: minX.position.x + shift.x,
-            maxX: maxX.position.x + shift.x,
-            minY : minY.position.y + shift.y,
-            maxY : maxY.position.y + shift.y
+    try {
+        if (state.camera.offTheScreen === true) {
+            //furthers left, right, ...`
+            const { minX, maxX, maxY, minY } = system.getBoundaryNodes();
+            const { shift } = state.transforms //shift.x refers to how far everything is moved in x direction
+            const isOffRight = maxX.position.x + state.camera.screenBuffer > state.canvas.width
+            const isOffLeft = minX.position.x - state.camera.screenBuffer < 0
+            if (isOffRight) {
+                shift.x = state.canvas.width - (maxX.position.x + state.camera.screenBuffer);
+            } else if (isOffLeft) {
+                shift.x = -1*minX.position.x + state.camera.screenBuffer
+            }
+
+            const isOffTop = minY.position.y - state.camera.screenBuffer < 0;
+            if ( isOffTop ) {
+                shift.y = -1 * minY.position.y + state.camera.screenBuffer
+            }
         }
-        const offScreen = {
-            // left: relativePos.minX.position.x < 0 ? relativePos.minX .position.x: 0, //i.e if minX is -100 then it is off the screen by 100px
-            right: relativePos.maxX > state.canvas.width ? relativePos.maxX - state.canvas.width : 0, //ie if the weight is x = 1000 and width = 500 then it is off the screen by 500 
-            // up: relativePos.minY.position < 0 ? relativePos.minY.position : 0,
-            // down: relativePos.maxY.position > state.canvas.height ? relativePos.maxY.position : 0
-        }
-        if (offScreen.right > 0) {
-            //meaning that the farthest weight is some pixels off the screen
-            //then we need to shift everything left such that it is on the screen
-            state.transforms.shift.x = -1 * offScreen.right;
-            console.log('uh oh somethings off the right side by ', offScreen.right)
+    } catch (err) {
+        if (err.message !== 'boundary nodes needs a graph size of > 1' ) {
+            console.error(err);
         }
     }
+
 }
 /* draws the grid / weights*/
 
-logic.draw = () => {
+logic.draw = (isAnimating) => {
     const { springs, weights } = system.getObjs()
     const sysCenter = system.getCenter()
 
-    if ( state.camera.useCamera ) {
-        // updateShift();
+    if (state.camera.useCamera && isAnimating ) {
+        updateShift();
     }
     
     if ( state.displayFlags.showGrid === true ) {
         grid.draw({ springCanvasState: state, systemCenter: sysCenter })
     }
-    if ( state.displayFlags.showShift === true ) {
-        drawShift({ springCanvasState: state })
-    } else if ( state.displayFlags.showSystemCenter === true ) {
+    if ( state.displayFlags.showSystemCenter === true ) {
         drawSystemCenter({ springCanvasState: state, systemCenter: sysCenter })
     }
-    if ( state.displayFlags.cursorPosition && state.drawOverlays ) {
+    if ( state.displayFlags.cursorPosition ) {
         const inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10
         const inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10
         //ha... not that is is "invisible"
@@ -173,6 +170,13 @@ logic.hide = () => {
     state.inFocus = false;
     $(state.canvas).css('display', 'none')
 }
+
+
+window.setShift = (x=0,y=0) => {
+    state.transforms.shift.x = x
+    state.transforms.shift.y = y
+}
+
 
 logic.getState = () => state
 logic.getDimensions = () => ({

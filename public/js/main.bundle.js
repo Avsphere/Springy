@@ -33639,12 +33639,14 @@ var state = {
   debug: {
     redraw: false //bc some events are annoying  
 
-  }
+  },
+  focusedCanvas: _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"] //the canvas being drawn, defaults to spring canvas
+
 };
 var logic = {};
 
 var getDrawableComponents = function getDrawableComponents() {
-  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"]];
+  return [_springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"], _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"]];
 };
 
 var getPanels = function getPanels() {
@@ -33662,8 +33664,10 @@ var animate = function animate() {
 
   getDrawableComponents().forEach(function (d) {
     d.clear();
-    d.draw();
-  });
+    d.draw(state.isAnimating);
+  }); // state.focusedCanvas.clear()
+  // state.focusedCanvas.draw(state.isAnimating);
+
   state.animationFrame = window.requestAnimationFrame(animate);
 };
 
@@ -33697,7 +33701,7 @@ var redraw = function redraw() {
 
   getDrawableComponents().forEach(function (d) {
     d.clear();
-    d.draw();
+    d.draw(state.isAnimating);
   });
 };
 
@@ -33744,9 +33748,11 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/toggleCanva
   if (msg.springCanvas === true) {
     _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].hide();
     _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].show();
-  } else if (d.plotCanvas === true) {
+    state.focusedCanvas = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"];
+  } else if (msg.plotCanvas === true) {
     _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].show();
     _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].hide();
+    state.focusedCanvas = _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"];
   }
 });
 _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/stopAnimation', function (d) {
@@ -33797,7 +33803,11 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/redraw', fu
     console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy);
   }
 
-  redraw();
+  if (d.condition === 'isNotAnimating' && state.isAnimating === false) {
+    redraw();
+  } else if (!d.condition) {
+    redraw();
+  }
 });
 _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/resize', function (d) {
   if (state.debugging) {
@@ -34286,28 +34296,6 @@ logic.reset = function () {
 
 /***/ }),
 
-/***/ "./src/springs/plotCanvas/handlers.js":
-/*!********************************************!*\
-  !*** ./src/springs/plotCanvas/handlers.js ***!
-  \********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-
-
-/***/ }),
-
-/***/ "./src/springs/plotCanvas/listeners.js":
-/*!*********************************************!*\
-  !*** ./src/springs/plotCanvas/listeners.js ***!
-  \*********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-
-
-/***/ }),
-
 /***/ "./src/springs/plotCanvas/plotCanvas.js":
 /*!**********************************************!*\
   !*** ./src/springs/plotCanvas/plotCanvas.js ***!
@@ -34318,16 +34306,15 @@ logic.reset = function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
-/* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./handlers */ "./src/springs/plotCanvas/handlers.js");
-/* harmony import */ var _handlers__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_handlers__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./listeners */ "./src/springs/plotCanvas/listeners.js");
-/* harmony import */ var _listeners__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_listeners__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
+/* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
 
 
 
 var State = function State() {
   return Object.assign({
-    canvas: {
+    componentName: 'springCanvas',
+    canvasSettings: {
       initialWidth: 0,
       //set in main
       initialHeight: 0,
@@ -34335,53 +34322,172 @@ var State = function State() {
       id: 'plotCanvas' //domId
 
     },
-    activeHandlers: {
-      //specifically temp handlers
-      drag: false //false or the handler
-
+    canvas: document.getElementById('plotCanvas'),
+    ctx: document.getElementById('plotCanvas').getContext('2d'),
+    debug: true,
+    debugOptions: {
+      logCursor: false
     },
-    controlFlags: {
-      showPlot: true,
-      cursorStats: false,
-      showWeightIds: false,
-      showSpringIds: false,
-      showWeightDetails: true,
-      showSpringDetails: true,
-      showGrid: false,
-      lockY: true
-    }
+    lastMousePosition: {
+      exact: {
+        x: 0,
+        y: 0
+      },
+      relative: {
+        x: 0,
+        y: 0
+      }
+    },
+    canvasScalarDimensions: {
+      width: .95,
+      height: .88
+    },
+    velocityCache: {
+      min: {
+        x: Infinity,
+        y: Infinity
+      },
+      max: {
+        x: -Infinity,
+        y: -Infinity
+      }
+    },
+    velocityRange: {
+      x: 0,
+      y: 0
+    },
+    drawOverlays: true,
+    inFocus: false,
+    //this is set to false when the plotter canvas is open
+    step: 0
   });
 };
 
 var logic = {};
-var state; //allows for an easier reset.
+var state; //allows for an easier reset, set in init.
 
-logic.getMousePosition = function (ev) {
-  return {
-    x: ev.clientX - canvas.getBoundingClientRect().left,
-    y: ev.clientY - canvas.getBoundingClientRect().top
+var setCanvasDimensions = function setCanvasDimensions() {
+  var canvasContainer = $('#canvasContainer');
+  state.canvas.width = canvasContainer.innerWidth() * state.canvasScalarDimensions.width; // state.canvas.height = canvasContainer.innerHeight() * .95
+
+  state.canvas.height = window.innerHeight * state.canvasScalarDimensions.height;
+};
+
+var updateVelocityCache = function updateVelocityCache() {
+  var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
+      weights = _system$getObjs.weights;
+
+  var plottableWeights = weights.filter(function (w) {
+    return !w.fixed;
+  });
+  plottableWeights.forEach(function (w) {
+    if (w.systemData.metadata.maxVelocity.x > state.velocityCache.max.x) {
+      state.velocityCache.max.x = w.systemData.metadata.maxVelocity.x;
+    }
+
+    if (w.systemData.metadata.maxVelocity.y > state.velocityCache.max.y) {
+      state.velocityCache.max.y = w.systemData.metadata.maxVelocity.y;
+    }
+
+    if (w.systemData.metadata.minVelocity.x < state.velocityCache.max.x) {
+      state.velocityCache.min.x = w.systemData.metadata.minVelocity.x;
+    }
+
+    if (w.systemData.metadata.minVelocity.y < state.velocityCache.max.y) {
+      state.velocityCache.min.y = w.systemData.metadata.minVelocity.y;
+    }
+  });
+  state.velocityRange = {
+    x: Math.abs(state.velocityCache.min.x - state.velocityCache.max.x),
+    y: Math.abs(state.velocityCache.min.y - state.velocityCache.max.y)
+  };
+  state.vScalar = {
+    x: (state.canvas.height / 2 - 100) / state.velocityRange.x,
+    y: (state.canvas.height / 2 - 100) / state.velocityRange.y
   };
 };
 
-logic.clearCanvas = function (_ref) {
-  var x = _ref.x,
-      y = _ref.y,
-      x1 = _ref.x1,
-      y1 = _ref.y1;
-  ctx.clearRect(x || 0, y || 0, x1 || canvas.width, y1 || canvas.height);
-};
+var handleSystemChange = function handleSystemChange(_ref) {
+  var changeType = _ref.changeType;
 
-var setCanvasDimensions = function setCanvasDimensions() {
-  var canvasContainerWidth = $('#canvasContainer').innerWidth();
-  state.canvas.width = canvasContainerWidth * .95;
-  state.canvas.height = window.innerHeight * .95;
+  if (changeType === 'shift' || changeType === 'structure') {
+    logic.clear('forceClear');
+  }
+
+  if (changeType === 'solve') {
+    updateVelocityCache();
+  }
+}; //I want to keep interface the same so I don't have to change orchestrator on per basis
+//but this will only clear the rectangle if the step is greater than the width
+
+
+logic.clear = function (clearType) {
+  if (state.step > state.canvas.width || clearType === 'forceClear') {
+    state.step = 0;
+    state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+  }
 };
 
 logic.resize = function () {
   setCanvasDimensions();
 };
 
+var updateOpacity = function updateOpacity(rgb, opacity) {
+  var aux = rgb.split(',').splice(0, 3);
+  aux.push("".concat(opacity, ")"));
+  return aux.join(',');
+};
+
+logic.draw = function (isAnimating) {
+  if (!isAnimating) {
+    return true;
+  }
+
+  var _system$getObjs2 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
+      weights = _system$getObjs2.weights;
+
+  var plottableWeights = weights.filter(function (w) {
+    return !w.fixed;
+  });
+  var ctx = state.ctx;
+  var drawAt = {
+    x: state.step % state.canvas.width
+  };
+  var topHalf = state.canvas.height * .25;
+  var bottomHalf = state.canvas.height * .7;
+  plottableWeights.forEach(function (w) {
+    // console.log('here')
+    var radius = Math.log2(w.mass) * .5 + 1; // const radius = 2 * (w.mass / 10)
+
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(drawAt.x, topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+
+    ctx.closePath();
+    ctx.strokeStyle = updateOpacity(w.color, .35);
+    ctx.stroke(); //bottom half
+
+    ctx.beginPath();
+    ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+
+    ctx.closePath();
+    ctx.strokeStyle = updateOpacity(w.color, .35);
+    ctx.stroke();
+  });
+  state.step++;
+};
+
+logic.init = function () {
+  state = State();
+  setCanvasDimensions();
+  state.canvas.style.cursor = 'crosshair';
+  var systemSubscription = 'plotterCanvas';
+  _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].subscribeToOnChange(systemSubscription);
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].on(systemSubscription, handleSystemChange);
+};
+
 logic.show = function () {
+  console.log('showing plot canvas');
   state.inFocus = true;
   $(state.canvas).css('display', 'inline');
 };
@@ -34391,8 +34497,25 @@ logic.hide = function () {
   $(state.canvas).css('display', 'none');
 };
 
-logic.init = function () {
+logic.setOverlays = function () {
+  var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+  return state.drawOverlays = b;
+};
+
+logic.getState = function () {
+  return state;
+};
+
+logic.getDimensions = function () {
+  return {
+    width: state.canvas.width,
+    height: state.canvas.height
+  };
+};
+
+logic.reset = function () {
   state = State();
+  setCanvasDimensions();
 };
 
 
@@ -34425,7 +34548,8 @@ var draw = function draw(_ref) {
       ctx = springCanvasState.ctx,
       canvas = springCanvasState.canvas; //recall that lastMousePosition is set in listenAndHandle
 
-  var exact = lastMousePosition.exact; //needs to be drawn at true center + shift
+  var exact = lastMousePosition.exact,
+      relative = lastMousePosition.relative; //needs to be drawn at true center + shift
 
   var canvasCenter = {
     x: canvas.width / 2,
@@ -34433,10 +34557,6 @@ var draw = function draw(_ref) {
   };
   ctx.font = "11px Arial";
   ctx.fillStyle = "#000000";
-  var relative = {
-    x: systemCenter.x - (canvasCenter.x - exact.x),
-    y: systemCenter.y - (canvasCenter.y - exact.y)
-  };
   ctx.fillText("(".concat(relative.x.toFixed(2), ", ").concat(relative.y.toFixed(2), ")"), exact.x - 25, exact.y - 10);
 };
 
@@ -34721,7 +34841,8 @@ logic.draw = function (_ref) {
       systemCenter = _ref.systemCenter;
   var displayFlags = springCanvasState.displayFlags,
       ctx = springCanvasState.ctx,
-      canvas = springCanvasState.canvas;
+      canvas = springCanvasState.canvas,
+      transforms = springCanvasState.transforms;
   var canvasCenter = {
     x: canvas.width / 2,
     y: canvas.height / 2
@@ -34730,15 +34851,21 @@ logic.draw = function (_ref) {
     x: canvas.width / state.lineCount,
     y: canvas.height / state.lineCount
   };
+  var shift = transforms.shift;
   ctx.lineWidth = state.axis.width;
-  ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
-  ctx.beginPath();
-  ctx.arc(lineSpacing.x * state.lineCount / 2, canvas.height / 2, 2, 0, Math.PI * 2, true);
-  ctx.closePath();
-  ctx.stroke(); // ctx.font = `13px Arial`;
-  // ctx.fillStyle = "#000000";
-  // ctx.fillText(`(${systemCenter.x.toFixed(2)}, ${systemCenter.y.toFixed(2)})`, canvasCenter.x, canvasCenter.y - 10)
+  ctx.strokeStyle = 'rgba(0, 0, 0, 1)'; // ctx.beginPath();
+  // ctx.arc(lineSpacing.x * state.lineCount/2, canvas.height / 2, 2, 0, Math.PI * 2, true)
+  // ctx.closePath();
+  // ctx.stroke();
 
+  ctx.font = "13px Arial";
+  ctx.fillStyle = "#000000";
+  var minRelativeX = (0 - shift.x).toFixed(1);
+  var drawAt = {
+    x: 0,
+    y: canvasCenter.y - 10
+  };
+  ctx.fillText("[".concat(minRelativeX, ", ").concat(drawAt.y, "]"), drawAt.x, drawAt.y);
   ctx.strokeStyle = 'rgba(0, 0, 0, .3)';
 
   for (var i = 1; i < state.lineCount; i++) {
@@ -34769,11 +34896,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return initListenAndHandle; });
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+/* harmony import */ var _drawMousePosition__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./drawMousePosition */ "./src/springs/springCanvas/drawMousePosition.js");
 var _handlerState;
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -34800,7 +34929,7 @@ var handlerState = (_handlerState = {
 }, _defineProperty(_handlerState, "clickBuffer", 15), _defineProperty(_handlerState, "debug", {
   dragHandler: true,
   leftClick: false
-}), _defineProperty(_handlerState, "dragHandler", {}), _defineProperty(_handlerState, "useRelative", false), _handlerState);
+}), _defineProperty(_handlerState, "dragHandler", {}), _defineProperty(_handlerState, "useRelative", true), _handlerState);
 
 var getMousePosition = function getMousePosition(ev) {
   return {
@@ -34820,13 +34949,14 @@ var getRelativeMousePosition = function getRelativeMousePosition(ev) {
       y: y
     },
     relative: {
-      x: x + state.transforms.shift.x,
+      x: x - state.transforms.shift.x,
       y: y + state.transforms.shift.y
     }
   };
 };
 
 var removeDragHandler = function removeDragHandler() {
+  // console.warn('removed drag handler')
   state.canvas.removeEventListener('mousemove', handlerState.dragHandler);
 };
 
@@ -34863,7 +34993,7 @@ var handleLeftClick = function handleLeftClick(ev) {
   var mousePosition = handlerState.useRelative ? relative : exact;
   _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
     calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
-  }); //if there is a nearby weight then i select it;
+  });
 
   var _system$findNearest = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearest({
     mousePosition: mousePosition
@@ -34975,6 +35105,15 @@ var handleIncrement = function handleIncrement(ev, incrementAmount) {
 var handleMouseMove = function handleMouseMove(ev) {
   if (state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0) {
     state.lastMousePosition = getRelativeMousePosition(ev);
+    var inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10;
+    var inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10; //ha... not that is is "invisible"
+
+    if (inVisibleX && inVisibleY) {
+      _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
+        calledBy: 'springCanvas/listenAndHandle/drawMousePosition',
+        condition: 'isNotAnimating'
+      });
+    }
   }
 }; //these are all of the spring canvas listeners and their associated handlers
 
@@ -35081,9 +35220,7 @@ var State = function State() {
       showWeightDetails: true,
       showSpringDetails: false,
       showGrid: false,
-      // lockY: true,
-      showShift: false,
-      showSystemCenter: false
+      showSystemCenter: true
     },
     transforms: {
       shift: {
@@ -35093,7 +35230,9 @@ var State = function State() {
       scale: 0
     },
     camera: {
-      useCamera: true,
+      useCamera: false,
+      screenBuffer: 50,
+      //50 pixel away from edge of screen
       offTheScreen: true //basic shift things over to keep them on screen approach
       // smoothing : 
 
@@ -35129,49 +35268,50 @@ logic.resize = function () {
 };
 
 var updateShift = function updateShift() {
-  if (state.camera.offTheScreen === true) {
-    //furthers left, right, ...
-    var _system$getBoundaryNo = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getBoundaryNodes(),
-        minX = _system$getBoundaryNo.minX,
-        maxX = _system$getBoundaryNo.maxX,
-        maxY = _system$getBoundaryNo.maxY,
-        minY = _system$getBoundaryNo.minY;
+  try {
+    if (state.camera.offTheScreen === true) {
+      //furthers left, right, ...`
+      var _system$getBoundaryNo = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getBoundaryNodes(),
+          minX = _system$getBoundaryNo.minX,
+          maxX = _system$getBoundaryNo.maxX,
+          maxY = _system$getBoundaryNo.maxY,
+          minY = _system$getBoundaryNo.minY;
 
-    var shift = state.transforms.shift; //adjusts for shift
+      var shift = state.transforms.shift; //shift.x refers to how far everything is moved in x direction
 
-    var relativePos = {
-      minX: minX.position.x + shift.x,
-      maxX: maxX.position.x + shift.x,
-      minY: minY.position.y + shift.y,
-      maxY: maxY.position.y + shift.y
-    };
-    var offScreen = {
-      // left: relativePos.minX.position.x < 0 ? relativePos.minX .position.x: 0, //i.e if minX is -100 then it is off the screen by 100px
-      right: relativePos.maxX > state.canvas.width ? relativePos.maxX - state.canvas.width : 0 //ie if the weight is x = 1000 and width = 500 then it is off the screen by 500 
-      // up: relativePos.minY.position < 0 ? relativePos.minY.position : 0,
-      // down: relativePos.maxY.position > state.canvas.height ? relativePos.maxY.position : 0
+      var isOffRight = maxX.position.x + state.camera.screenBuffer > state.canvas.width;
+      var isOffLeft = minX.position.x - state.camera.screenBuffer < 0;
 
-    };
+      if (isOffRight) {
+        shift.x = state.canvas.width - (maxX.position.x + state.camera.screenBuffer);
+      } else if (isOffLeft) {
+        shift.x = -1 * minX.position.x + state.camera.screenBuffer;
+      }
 
-    if (offScreen.right > 0) {
-      //meaning that the farthest weight is some pixels off the screen
-      //then we need to shift everything left such that it is on the screen
-      state.transforms.shift.x = -1 * offScreen.right;
-      console.log('uh oh somethings off the right side by ', offScreen.right);
+      var isOffTop = minY.position.y - state.camera.screenBuffer < 0;
+
+      if (isOffTop) {
+        shift.y = -1 * minY.position.y + state.camera.screenBuffer;
+      }
+    }
+  } catch (err) {
+    if (err.message !== 'boundary nodes needs a graph size of > 1') {
+      console.error(err);
     }
   }
 };
 /* draws the grid / weights*/
 
 
-logic.draw = function () {
+logic.draw = function (isAnimating) {
   var _system$getObjs = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getObjs(),
       springs = _system$getObjs.springs,
       weights = _system$getObjs.weights;
 
   var sysCenter = _system_system__WEBPACK_IMPORTED_MODULE_1__["default"].getCenter();
 
-  if (state.camera.useCamera) {// updateShift();
+  if (state.camera.useCamera && isAnimating) {
+    updateShift();
   }
 
   if (state.displayFlags.showGrid === true) {
@@ -35181,18 +35321,14 @@ logic.draw = function () {
     });
   }
 
-  if (state.displayFlags.showShift === true) {
-    Object(_drawShift__WEBPACK_IMPORTED_MODULE_5__["draw"])({
-      springCanvasState: state
-    });
-  } else if (state.displayFlags.showSystemCenter === true) {
+  if (state.displayFlags.showSystemCenter === true) {
     Object(_drawSystemCenter__WEBPACK_IMPORTED_MODULE_6__["draw"])({
       springCanvasState: state,
       systemCenter: sysCenter
     });
   }
 
-  if (state.displayFlags.cursorPosition && state.drawOverlays) {
+  if (state.displayFlags.cursorPosition) {
     var inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10;
     var inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10; //ha... not that is is "invisible"
 
@@ -35256,6 +35392,13 @@ logic.show = function () {
 logic.hide = function () {
   state.inFocus = false;
   $(state.canvas).css('display', 'none');
+};
+
+window.setShift = function () {
+  var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+  var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  state.transforms.shift.x = x;
+  state.transforms.shift.y = y;
 };
 
 logic.getState = function () {
@@ -35668,7 +35811,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../emitter.js */ "./src/springs/emitter.js");
 
 
-var totalColors = ['rgb(182, 41, 41, 1.0)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(87, 88, 187,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)'];
+var totalColors = ['rgb(182, 41, 41, 1.0)', 'rgba(18, 203, 196,1.0)', 'rgba(6, 82, 221,1.0)', 'rgba(237, 76, 103,1.0)', 'rgba(217, 128, 250,1.0)', 'rgba(181, 52, 113,1.0)', 'rgba(187, 88, 187,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(238, 90, 36,1.0)', 'rgba(0, 148, 50,1.0)', 'rgba(27, 20, 100,1.0)', 'rgba(6, 82, 21,1.0)', 'rgba(87, 88, 237,1.0)'];
 
 var randomColor = function randomColor() {
   return totalColors[Math.floor(Math.random() * totalColors.length)];
@@ -35728,7 +35871,7 @@ var Weight = function Weight(_ref) {
           x: 0,
           y: 0
         },
-        //this is set in the solver.
+        //this is set in the solver and is THIS weights max / min.
         minVelocity: {
           x: 0,
           y: 0
@@ -36219,7 +36362,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var DEF_STEP = .08;
-var DEF_MAXT = 300;
+var DEF_MAXT = 500;
 
 var State = function State() {
   return {
@@ -36301,8 +36444,10 @@ var checkForSolve = function checkForSolve() {
     solve();
   }
 
-  if (state.currentFrame === state.solverConfig.frameCount) {
-    stateChanged(); //in this case the change is self invoked...
+  if (state.currentFrame === state.solverConfig.frameCount - 1) {// //I need to stop and replay animation so nothing changes in between
+    // emitter.emit('orchestrator/stopAnimation', { calledBy: 'system/addingFrames' })
+    // stateChanged() //in this case the change is self invoked...
+    // solve(false)
   }
 };
 
@@ -36315,6 +36460,15 @@ var solve = function solve() {
       return w.systemData.frames = [];
     });
     state.currentFrame = 0;
+  } else {
+    //in this case I am continuing on their last frame so have to reset initials
+    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
+      var _w$systemData$frames = w.systemData.frames[w.systemData.frames.length - 1],
+          position = _w$systemData$frames.position,
+          velocity = _w$systemData$frames.velocity;
+      w.initialPosition = position;
+      w.initialVelocity = velocity;
+    });
   }
 
   _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem(state.solverConfig);
@@ -36322,6 +36476,8 @@ var solve = function solve() {
   if (state.debug.solver) {
     console.log('%c System solve completed!', 'color:green');
   }
+
+  emitChange('solve'); //onnly used in plot canvas to save time updating metadata
 }; //frameSetter out of place only because currentFrame is supposed to be isolated here and don't want to slow down loop with a call to get it
 //update and solve are only solve callers
 
@@ -36528,7 +36684,7 @@ logic.getBoundaryNodes = function () {
   var weights = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights();
 
   if (weights.length === 0) {
-    throw new Error('boundary nodes needs a graph size of > 1');
+    throw new Error('boundary nodes needs a graph size of > 1'); //this error is being consumed in spring canvas
   }
 
   var boundaries = {
@@ -37027,8 +37183,9 @@ var logic = {}; //any interaction with orchestrator is done by event emitting. T
 window.addEventListener('keyup', function (ev) {
   var isSpaceKey = ev.keyCode == 32;
   ev.preventDefault(); //don't want to toggle when typing
+  //ev.target.nodeName !== 'INPUT'
 
-  if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
+  if (isSpaceKey) {
     _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {
       calledBy: 'view.js/keyup'
     });
@@ -37053,22 +37210,18 @@ window.addEventListener('contextmenu', function (ev) {
   ev.preventDefault();
 });
 jquery__WEBPACK_IMPORTED_MODULE_2___default()('#toggleSpringCanvas').on('click', function (ev) {
-  if (document.getElementById('toggleSpringCanvas').checked) {
-    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
-      calledBy: 'view.js/toggleSpringCanvas',
-      springCanvas: true,
-      plotCanvas: false
-    });
-  }
+  _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
+    calledBy: 'view.js/toggleSpringCanvas',
+    springCanvas: true,
+    plotCanvas: false
+  });
 });
 jquery__WEBPACK_IMPORTED_MODULE_2___default()('#togglePlotCanvas').on('click', function (ev) {
-  if (document.getElementById('togglePlotCanvas').checked) {
-    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
-      calledBy: 'view.js/togglePlotCanvas',
-      springCanvas: false,
-      plotCanvas: true
-    });
-  }
+  _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
+    calledBy: 'view.js/togglePlotCanvas',
+    springCanvas: false,
+    plotCanvas: true
+  });
 });
 jquery__WEBPACK_IMPORTED_MODULE_2___default()('#toggleAnimation').on('click', function (ev) {
   _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {

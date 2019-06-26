@@ -4,7 +4,7 @@ import solver from './solver'
 import emitter from '../emitter' 
 
 const DEF_STEP = .08
-const DEF_MAXT = 300
+const DEF_MAXT = 500
 
 const State = () => ({
     currentFrame : 0,
@@ -70,8 +70,11 @@ const checkForSolve = () => {
     if ( state.flags.needsSolve === true ) {
         solve();
     }
-    if (state.currentFrame === state.solverConfig.frameCount ) {
-        stateChanged() //in this case the change is self invoked...
+    if (state.currentFrame === state.solverConfig.frameCount -1 ) {
+        // //I need to stop and replay animation so nothing changes in between
+        // emitter.emit('orchestrator/stopAnimation', { calledBy: 'system/addingFrames' })
+        // stateChanged() //in this case the change is self invoked...
+        // solve(false)
     }
 }
 
@@ -82,11 +85,20 @@ const solve = (clearFrames=true) => {
     if (clearFrames) {
         sysGraph.getWeights().forEach(w => w.systemData.frames = [] )
         state.currentFrame = 0;
+    } else {
+        //in this case I am continuing on their last frame so have to reset initials
+        sysGraph.getWeights().forEach(w => {
+            const { position, velocity } = w.systemData.frames[w.systemData.frames.length-1]
+            w.initialPosition = position
+            w.initialVelocity = velocity
+        })
+
     }
     solver.solveSystem(state.solverConfig)
     if (state.debug.solver) {
         console.log('%c System solve completed!', 'color:green')
     }
+    emitChange('solve') //onnly used in plot canvas to save time updating metadata
 }
 
 
@@ -240,7 +252,7 @@ logic.getCenter = (forceCalc) => {
 logic.getBoundaryNodes = () => {
     const weights = sysGraph.getWeights()
     if (weights.length === 0 ) { 
-        throw new Error('boundary nodes needs a graph size of > 1')
+        throw new Error('boundary nodes needs a graph size of > 1') //this error is being consumed in spring canvas
     }
     const boundaries = {
         minX: weights[0],

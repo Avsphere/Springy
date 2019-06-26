@@ -15,7 +15,8 @@ window.addEventListener('keyup', (ev) => {
     ev.preventDefault();
     
     //don't want to toggle when typing
-    if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
+    //ev.target.nodeName !== 'INPUT'
+    if (isSpaceKey) {
         emitter.emit('orchestrator/toggleAnimate', { calledBy: 'view.js/keyup' })
     }
 
@@ -38,23 +39,19 @@ window.addEventListener('contextmenu', (ev) => {
 })
 
 $('#toggleSpringCanvas').on('click', (ev) => {
-    if (document.getElementById('toggleSpringCanvas').checked ) {
-        emitter.emit('orchestrator/toggleCanvas', {
-            calledBy: 'view.js/toggleSpringCanvas', 
-            springCanvas: true, 
-            plotCanvas : false, 
-        })
-    }
+    emitter.emit('orchestrator/toggleCanvas', {
+        calledBy: 'view.js/toggleSpringCanvas',
+        springCanvas: true,
+        plotCanvas: false,
+    })
 })
 
 $('#togglePlotCanvas').on('click', (ev) => {
-    if (document.getElementById('togglePlotCanvas').checked) {
-        emitter.emit('orchestrator/toggleCanvas', {
-            calledBy: 'view.js/togglePlotCanvas',
-            springCanvas: false,
-            plotCanvas: true,
-        })
-    }
+    emitter.emit('orchestrator/toggleCanvas', {
+        calledBy: 'view.js/togglePlotCanvas',
+        springCanvas: false,
+        plotCanvas: true,
+    })
 })
 
 $('#toggleAnimation').on('click', (ev) => {

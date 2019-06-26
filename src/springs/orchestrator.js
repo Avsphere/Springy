@@ -11,13 +11,14 @@ const state = {
     debugging : true,
     debug : { 
         redraw : false //bc some events are annoying  
-    }
+    },
+    focusedCanvas: springCanvas //the canvas being drawn, defaults to spring canvas
 }
 
 const logic = {}
 
 const getDrawableComponents = () => {
-    return [ springCanvas ]
+    return [springCanvas, plotCanvas ]
 }
 
 const getPanels = () => {
@@ -30,10 +31,12 @@ const resetPanels = () => {
 
 const animate = () => {
     system.step(); //increments frame by 1
-    getDrawableComponents().forEach( d => {
-        d.clear(); 
-        d.draw();
+    getDrawableComponents().forEach(d => {
+        d.clear();
+        d.draw(state.isAnimating)
     })
+    // state.focusedCanvas.clear()
+    // state.focusedCanvas.draw(state.isAnimating);
     state.animationFrame = window.requestAnimationFrame(animate)
 }
 
@@ -65,7 +68,7 @@ const redraw = () => {
     }
     getDrawableComponents().forEach(d => {
         d.clear();
-        d.draw();
+        d.draw(state.isAnimating);
     })
 }
 const resize = () => {
@@ -105,9 +108,11 @@ emitter.on('orchestrator/toggleCanvas', (msg) => {
     if (msg.springCanvas === true ) {
         plotCanvas.hide()
         springCanvas.show();
-    } else if (d.plotCanvas === true ) {
+        state.focusedCanvas = springCanvas
+    } else if (msg.plotCanvas === true ) {
         plotCanvas.show()
         springCanvas.hide();
+        state.focusedCanvas = plotCanvas
     }
 
 })
@@ -147,7 +152,11 @@ emitter.on('orchestrator/resetPanels', (d) => {
 
 emitter.on('orchestrator/redraw', (d) => {
     if (state.debugging && state.debug.redraw ) { console.log('%c orchestrator redraw event called by ', 'color:green', d.calledBy) }
-    redraw();
+    if (d.condition === 'isNotAnimating' && state.isAnimating === false) {
+        redraw();
+    } else if ( !d.condition ) {
+        redraw();
+    }
 })
 
 emitter.on('orchestrator/resize', (d) => {
