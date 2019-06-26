@@ -101,32 +101,33 @@ const updateOpacity = (rgb, opacity) => {
 logic.draw = (isAnimating) => {
     if ( !isAnimating ) { return true; }
     const { weights } = system.getObjs()
-    const plottableWeights = weights.filter(w => !w.fixed)
     const ctx = state.ctx
     const drawAt = {
         x: state.step % state.canvas.width,
     }
     const topHalf = state.canvas.height*.25
     const bottomHalf = state.canvas.height*.7
-    plottableWeights.forEach( w => {
-        // console.log('here')
-        let radius = Math.log2(w.mass)*.5 + 1;
-        // const radius = 2 * (w.mass / 10)
-        ctx.lineWidth = 1;
-        ctx.beginPath()
-        ctx.arc(drawAt.x, topHalf - w.velocity.x*state.vScalar.x, radius, 0, Math.PI * 2, true)
-        // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
-        ctx.closePath();
-        ctx.strokeStyle = updateOpacity(w.color, .35)
-        ctx.stroke();
+    weights.forEach( w => {
+        if ( w.fixed === false ) {
+            // console.log('here')
+            let radius = Math.log2(w.mass) * .5 + 1;
+            // const radius = 2 * (w.mass / 10)
+            ctx.lineWidth = 1;
+            ctx.beginPath()
+            ctx.arc(drawAt.x, topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true)
+            // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+            ctx.closePath();
+            ctx.strokeStyle = updateOpacity(w.color, .35)
+            ctx.stroke();
 
-        //bottom half
-        ctx.beginPath()
-        ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true)
-        // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
-        ctx.closePath();
-        ctx.strokeStyle = updateOpacity(w.color, .35)
-        ctx.stroke();
+            //bottom half
+            ctx.beginPath()
+            ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true)
+            // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+            ctx.closePath();
+            ctx.stroke();
+        }
+
 
     })
     state.step++;

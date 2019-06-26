@@ -2,6 +2,8 @@ import shortid from 'shortid';
 import emitter from '../../emitter'
 import helpers from '../helpers'
 
+let staticIdTracker = 0;
+const genid = () => `s-${staticIdTracker++}`
 
 const Spring = ({ k, lengthAtRest, weights, id }) => {
     if ( !weights || weights.length !== 2 ) { throw new Error('spring is missing weights')}
@@ -13,7 +15,7 @@ const Spring = ({ k, lengthAtRest, weights, id }) => {
         weights: weights, //[w1, w2] order should not matter
         color: 'black',
         type: 'spring',
-        id: id || shortid.generate(),
+        id: id || genid(),
         lastCalculatedLength : {
             w0 : { x : -1, y : -1 },
             w1 : { x : -1, y : -1 }  

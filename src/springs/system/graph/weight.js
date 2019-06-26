@@ -19,6 +19,9 @@ const getRadiusFromMass = (m) => {
     }
 }
 
+let staticIdTracker = 0;
+const genid = () => `m-${staticIdTracker++}`
+
 const Weight = ({ position, mass, velocity, color, id, initiallyFixed }) => {
     if (!position) { throw new Error('Error creating mass, incorrect position args') }
     if (!velocity) { throw new Error('Error creating mass, incorrect velocity args') }
@@ -39,7 +42,7 @@ const Weight = ({ position, mass, velocity, color, id, initiallyFixed }) => {
             x : velocity.x,
             y : velocity.y
         },
-        id: id || shortid.generate(),
+        id: id || genid(),
         color: color || randomColor(),
         //This makes drawing in isolation easier and faster, it was a pain when pieces existed in system but not the weight
         systemData : {

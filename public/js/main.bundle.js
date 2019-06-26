@@ -33823,9 +33823,10 @@ logic.init = function () {
   _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].init();
   _panels_monitor__WEBPACK_IMPORTED_MODULE_3__["default"].init();
   _panels_control__WEBPACK_IMPORTED_MODULE_4__["default"].init();
-  _panels_defaults__WEBPACK_IMPORTED_MODULE_5__["default"].init(); // defaults.load('basic')
-  // redraw();
-  // toggleAnimate();
+  _panels_defaults__WEBPACK_IMPORTED_MODULE_5__["default"].init();
+  setTimeout(function () {
+    _defaultSystems__WEBPACK_IMPORTED_MODULE_7__["default"].load(_defaultSystems__WEBPACK_IMPORTED_MODULE_7__["default"].getSystems()[0]);
+  }, 1000); //load it after page has smoothed
 };
 
 
@@ -34012,8 +34013,8 @@ var buildDefaultSystemCard = function buildDefaultSystemCard(system) {
 };
 
 var buildPanel = function buildPanel() {
-  var titleHtml = "<h2> Click the default system to load it! </h2>";
-  state.defaultsWrapper.html(titleHtml);
+  // const titleHtml = `<h2> Click the default system to load it! </h2>`
+  state.defaultsWrapper.html('');
   var systems = _defaultSystems__WEBPACK_IMPORTED_MODULE_4__["default"].getSystems();
   systems.forEach(buildDefaultSystemCard);
 };
@@ -34446,33 +34447,31 @@ logic.draw = function (isAnimating) {
   var _system$getObjs2 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
       weights = _system$getObjs2.weights;
 
-  var plottableWeights = weights.filter(function (w) {
-    return !w.fixed;
-  });
   var ctx = state.ctx;
   var drawAt = {
     x: state.step % state.canvas.width
   };
   var topHalf = state.canvas.height * .25;
   var bottomHalf = state.canvas.height * .7;
-  plottableWeights.forEach(function (w) {
-    // console.log('here')
-    var radius = Math.log2(w.mass) * .5 + 1; // const radius = 2 * (w.mass / 10)
+  weights.forEach(function (w) {
+    if (w.fixed === false) {
+      // console.log('here')
+      var radius = Math.log2(w.mass) * .5 + 1; // const radius = 2 * (w.mass / 10)
 
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(drawAt.x, topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(drawAt.x, topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
 
-    ctx.closePath();
-    ctx.strokeStyle = updateOpacity(w.color, .35);
-    ctx.stroke(); //bottom half
+      ctx.closePath();
+      ctx.strokeStyle = updateOpacity(w.color, .35);
+      ctx.stroke(); //bottom half
 
-    ctx.beginPath();
-    ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+      ctx.beginPath();
+      ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
 
-    ctx.closePath();
-    ctx.strokeStyle = updateOpacity(w.color, .35);
-    ctx.stroke();
+      ctx.closePath();
+      ctx.stroke();
+    }
   });
   state.step++;
 };
@@ -34920,7 +34919,7 @@ var handlerState = (_handlerState = {
     k: 1
   },
   mouseMove: {
-    throttle: 5,
+    throttle: 0,
     //only captures every x mouseMove calls
     calls: 0 //is incremented by 1 each call
 
@@ -35103,7 +35102,7 @@ var handleIncrement = function handleIncrement(ev, incrementAmount) {
 
 
 var handleMouseMove = function handleMouseMove(ev) {
-  if (state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0) {
+  if (state.displayFlags.cursorPosition) {
     state.lastMousePosition = getRelativeMousePosition(ev);
     var inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10;
     var inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10; //ha... not that is is "invisible"
@@ -35736,6 +35735,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+var staticIdTracker = 0;
+
+var genid = function genid() {
+  return "s-".concat(staticIdTracker++);
+};
 
 var Spring = function Spring(_ref) {
   var k = _ref.k,
@@ -35756,7 +35760,7 @@ var Spring = function Spring(_ref) {
     //[w1, w2] order should not matter
     color: 'black',
     type: 'spring',
-    id: id || shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
+    id: id || genid(),
     lastCalculatedLength: {
       w0: {
         x: -1,
@@ -35827,6 +35831,12 @@ var getRadiusFromMass = function getRadiusFromMass(m) {
   }
 };
 
+var staticIdTracker = 0;
+
+var genid = function genid() {
+  return "m-".concat(staticIdTracker++);
+};
+
 var Weight = function Weight(_ref) {
   var position = _ref.position,
       mass = _ref.mass,
@@ -35860,7 +35870,7 @@ var Weight = function Weight(_ref) {
       x: velocity.x,
       y: velocity.y
     },
-    id: id || shortid__WEBPACK_IMPORTED_MODULE_0___default.a.generate(),
+    id: id || genid(),
     color: color || randomColor(),
     //This makes drawing in isolation easier and faster, it was a pain when pieces existed in system but not the weight
     systemData: {
@@ -36460,15 +36470,12 @@ var solve = function solve() {
       return w.systemData.frames = [];
     });
     state.currentFrame = 0;
-  } else {
-    //in this case I am continuing on their last frame so have to reset initials
-    _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
-      var _w$systemData$frames = w.systemData.frames[w.systemData.frames.length - 1],
-          position = _w$systemData$frames.position,
-          velocity = _w$systemData$frames.velocity;
-      w.initialPosition = position;
-      w.initialVelocity = velocity;
-    });
+  } else {//in this case I am continuing on their last frame so have to reset initials
+    // sysGraph.getWeights().forEach(w => {
+    //     const { position, velocity } = w.systemData.frames[w.systemData.frames.length-1]
+    //     w.initialPosition = position
+    //     w.initialVelocity = velocity
+    // })
   }
 
   _solver__WEBPACK_IMPORTED_MODULE_2__["default"].solveSystem(state.solverConfig);

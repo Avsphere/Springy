@@ -87,11 +87,11 @@ const solve = (clearFrames=true) => {
         state.currentFrame = 0;
     } else {
         //in this case I am continuing on their last frame so have to reset initials
-        sysGraph.getWeights().forEach(w => {
-            const { position, velocity } = w.systemData.frames[w.systemData.frames.length-1]
-            w.initialPosition = position
-            w.initialVelocity = velocity
-        })
+        // sysGraph.getWeights().forEach(w => {
+        //     const { position, velocity } = w.systemData.frames[w.systemData.frames.length-1]
+        //     w.initialPosition = position
+        //     w.initialVelocity = velocity
+        // })
 
     }
     solver.solveSystem(state.solverConfig)

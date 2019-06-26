@@ -5,7 +5,7 @@ import monitorPanel from './panels/monitor'
 import controlPanel from './panels/control'
 import defaultPanel from './panels/defaults'
 import emitter from './emitter.js'
-import defaults from './defaultSystems'
+import defaultSystems from './defaultSystems'
 const state = {
     isAnimating : false,
     debugging : true,
@@ -172,9 +172,9 @@ logic.init = () => {
     monitorPanel.init();
     controlPanel.init();
     defaultPanel.init();
-    // defaults.load('basic')
-    // redraw();
-    // toggleAnimate();
+    setTimeout( () => {
+        defaultSystems.load( defaultSystems.getSystems()[0] )
+    }, 1000) //load it after page has smoothed
 }
 
 

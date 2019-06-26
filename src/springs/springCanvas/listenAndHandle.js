@@ -6,27 +6,27 @@ let state = {} //set in init, this is exactly the springCanvas state
 
 //this keeps track of user actions / associated values
 const handlerState = {
-    mouseWheel : 0,
+    mouseWheel: 0,
     //set to their defaults then changed by handlers
-    weight : {
-        mass : 10,
-        velocity : 0
+    weight: {
+        mass: 10,
+        velocity: 0
     },
-    spring : {
-        k : 1
+    spring: {
+        k: 1
     },
-    mouseMove : {
-        throttle : 5, //only captures every x mouseMove calls
-        calls : 0 //is incremented by 1 each call
+    mouseMove: {
+        throttle: 0, //only captures every x mouseMove calls
+        calls: 0 //is incremented by 1 each call
     },
     clickBuffer: 5, //x px away + whatever for easier selecting
-    clickBuffer : 15, //x px away + whatever to prevent spawning massess too close
-    debug : {
-        dragHandler : true,
-        leftClick : false
+    clickBuffer: 15, //x px away + whatever to prevent spawning massess too close
+    debug: {
+        dragHandler: true,
+        leftClick: false
     },
     dragHandler: {}, //set when the weight is being dragged
-    useRelative : true
+    useRelative: true
 }
 
 const getMousePosition = (ev) => ({
@@ -39,7 +39,7 @@ const getRelativeMousePosition = (ev) => {
     const { x, y } = getMousePosition(ev);
 
     return {
-        exact : { x : x, y : y },
+        exact: { x: x, y: y },
         relative: { x: x - state.transforms.shift.x, y: y + state.transforms.shift.y }
     }
 }
@@ -56,10 +56,10 @@ const initDragHandler = (weight) => (ev) => {
 
     const inXBounds = exact.x > 10 && exact.x < state.canvas.width - 10
     const inYBounds = exact.y > 10 && exact.y < state.canvas.height - 10
-    if ( !inXBounds || !inYBounds ) {
+    if (!inXBounds || !inYBounds) {
         removeDragHandler();
     } else {
-        system.set({ weight, ...mousePosition, manuallyMoved : true })
+        system.set({ weight, ...mousePosition, manuallyMoved: true })
         emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/dragHandler' })
     }
 }
@@ -71,21 +71,21 @@ const handleLeftClick = (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
     const mousePosition = handlerState.useRelative ? relative : exact
 
-    emitter.emit('orchestrator/stopAnimation', { calledBy : 'springCanvas/listenAndHandle/handleLeftClick'})
+    emitter.emit('orchestrator/stopAnimation', { calledBy: 'springCanvas/listenAndHandle/handleLeftClick' })
 
 
-    const { weightDist, weight } = system.findNearest({ mousePosition : mousePosition })
-    if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius ) {
+    const { weightDist, weight } = system.findNearest({ mousePosition: mousePosition })
+    if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius) {
         handlerState.dragHandler = initDragHandler(weight)
-        
+
         emitter.once('springCanvas/listenAndHandle/stopDragHandler', (d) => {
-            if (handlerState.debug.dragHandler ) {
+            if (handlerState.debug.dragHandler) {
                 console.log('%c dragHandler emit caught. calledBy (should be only orchestrator) ', d.calledBy)
             }
             removeDragHandler()
         })
 
-        state.canvas.addEventListener('mousemove', handlerState.dragHandler )
+        state.canvas.addEventListener('mousemove', handlerState.dragHandler)
     } else {
         const weightConfig = {
             mass: handlerState.weight.mass,
@@ -113,7 +113,7 @@ const handleRightClick = (ev) => {
     const { exact, relative } = getRelativeMousePosition(ev);
     const mousePosition = handlerState.useRelative ? relative : exact;
     emitter.emit('orchestrator/stopAnimation', { calledBy: 'springCanvas/listenAndHandle/handleRightClick' })
-    
+
     const { weightDist, weight, spring, springDist } = system.findNearest({ mousePosition: mousePosition })
     if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius) {
         system.removeWeight(weight)
@@ -131,31 +131,31 @@ const handleIncrement = (ev, incrementAmount) => {
     const mousePosition = handlerState.useRelative ? state.lastMousePosition.relative : state.lastMousePosition.exact;
     emitter.emit('orchestrator/stopAnimation', { calledBy: 'springCanvas/listenAndHandle/handleIncrement' })
     const { weightDist, weight, spring, springDist } = system.findNearest({ mousePosition: mousePosition })
-    
-    
+
+
     if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius && weight.mass > 1) {
-        system.set({weight, mass : weight.mass + incrementAmount})
-    } 
-    
+        system.set({ weight, mass: weight.mass + incrementAmount })
+    }
+
     else if (spring !== false && springDist < handlerState.clickBuffer + spring.k * spring.displayScalar && spring.k > .1) {
-        system.set({ spring, k: spring.k + incrementAmount/2 })
+        system.set({ spring, k: spring.k + incrementAmount / 2 })
     }
     emitter.emit('orchestrator/redraw', { calledBy: 'springCanvas/listenAndHandle/handleIncrement' })
 }
 
 //This sets the mouseMove state value which is used in the springCanvas draw loop
 const handleMouseMove = (ev) => {
-    if ( state.displayFlags.cursorPosition && handlerState.mouseMove.calls++ % handlerState.mouseMove.throttle == 0 ) {
+    if (state.displayFlags.cursorPosition) {
         state.lastMousePosition = getRelativeMousePosition(ev);
         const inVisibleX = state.lastMousePosition.exact.x > 10 && state.lastMousePosition.exact.x < state.canvas.width - 10
         const inVisibleY = state.lastMousePosition.exact.y > 10 && state.lastMousePosition.exact.y < state.canvas.height - 10
         //ha... not that is is "invisible"
         if (inVisibleX && inVisibleY) {
-            emitter.emit('orchestrator/redraw', 
-            { 
-                calledBy: 'springCanvas/listenAndHandle/drawMousePosition',
-                condition: 'isNotAnimating' 
-            })
+            emitter.emit('orchestrator/redraw',
+                {
+                    calledBy: 'springCanvas/listenAndHandle/drawMousePosition',
+                    condition: 'isNotAnimating'
+                })
         }
     }
 }
@@ -175,14 +175,14 @@ const initListenAndHandle = (springCanvasState) => {
         } else {
             handleLeftClick(ev);
         }
-        $(':focus').blur() 
+        $(':focus').blur()
 
     })
 
     window.addEventListener('keyup', (ev) => {
         //while this is on window incase focus is off, it only works if the canvas is being shown
-        if ( state.inFocus ) {
-            if ( ev.key === '+' || ev.key === '=' ) {
+        if (state.inFocus) {
+            if (ev.key === '+' || ev.key === '=') {
                 handleIncrement(ev, 1);
             } else if (ev.key === '-' || ev.key === '_') {
                 handleIncrement(ev, -1);
@@ -199,8 +199,8 @@ const initListenAndHandle = (springCanvasState) => {
     state.canvas.addEventListener('mouseup', handleMouseUp)
 
     state.canvas.addEventListener('mousemove', handleMouseMove) //very important, this store previous mouse positions for different events
-     
-    
+
+
 }
 
 

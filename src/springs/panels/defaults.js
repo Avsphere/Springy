@@ -50,8 +50,8 @@ const buildDefaultSystemCard = (system) => {
 
 
 const buildPanel = () => {
-    const titleHtml = `<h2> Click the default system to load it! </h2>`
-    state.defaultsWrapper.html(titleHtml)
+    // const titleHtml = `<h2> Click the default system to load it! </h2>`
+    state.defaultsWrapper.html('')
     const systems = defaultSystems.getSystems()
     systems.forEach(buildDefaultSystemCard)
 }
