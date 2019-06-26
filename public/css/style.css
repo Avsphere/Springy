@@ -10,7 +10,12 @@ body {
   overflow-y: scroll;
 
 }
-
+#toggleSpringCanvas:focus {
+  box-shadow: none;
+}
+#togglePlotCanvas:focus {
+  box-shadow: none;
+}
 #monitorSetter {
   margin-top: 5%; 
 }

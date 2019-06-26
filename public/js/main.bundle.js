@@ -33158,15 +33158,15 @@ var roundToNearest = function roundToNearest(n) {
 
 systems.push({
   metadata: {
-    description: 'Will change your life.',
-    title: 'circleSystem'
+    description: 'Single heavy mass surrounded in a circular pattern of smaller masses each with a random velocity. Will change your life.',
+    title: 'Spring Monster'
   },
   build: function build() {
     var _springCanvas$getDime = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
         width = _springCanvas$getDime.width,
         height = _springCanvas$getDime.height;
 
-    var offset = roundToNearest(width / 5);
+    var offset = roundToNearest(width / 2);
     var fixedBig = {
       x: offset,
       //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
@@ -33478,100 +33478,6 @@ systems.push({
     }();
   }
 });
-systems.push({
-  metadata: {
-    title: 'Fixed Cross Over Effect X',
-    description: "",
-    initialVelocity: {
-      x: 0,
-      y: 0
-    }
-  },
-  build: function build() {
-    var _springCanvas$getDime6 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
-        width = _springCanvas$getDime6.width,
-        height = _springCanvas$getDime6.height;
-
-    var fixedPosition1 = {
-      x: roundToNearest((width + 100) / 10),
-      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-      y: roundToNearest(height / 2)
-    };
-    var fixedPosition2 = {
-      x: fixedPosition1.x + 100,
-      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-      y: roundToNearest(height / 2)
-    };
-    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-      position: fixedPosition1,
-      velocity: {
-        x: 0,
-        y: 0
-      },
-      mass: 10
-    });
-    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-      position: fixedPosition2,
-      velocity: {
-        x: 0,
-        y: 0
-      },
-      mass: 10
-    });
-    _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
-    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
-      weight: f2,
-      x: f2.position.x + 200
-    });
-  }
-});
-systems.push({
-  metadata: {
-    title: 'Fixed Cross Over Effect Y',
-    description: "",
-    initialVelocity: {
-      x: 0,
-      y: 0
-    }
-  },
-  build: function build() {
-    var _springCanvas$getDime7 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
-        width = _springCanvas$getDime7.width,
-        height = _springCanvas$getDime7.height;
-
-    var fixedPosition1 = {
-      x: roundToNearest(width / 2),
-      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-      y: roundToNearest(height / 10 + 100)
-    };
-    var fixedPosition2 = {
-      x: roundToNearest(width / 2),
-      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-      y: fixedPosition1.y + 100
-    };
-    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-      position: fixedPosition1,
-      velocity: {
-        x: 0,
-        y: 0
-      },
-      mass: 10
-    });
-    var f2 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
-      position: fixedPosition2,
-      velocity: {
-        x: 0,
-        y: 0
-      },
-      mass: 10
-    });
-    _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(f1, f2);
-    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
-      weight: f2,
-      y: f2.position.y + 200
-    });
-  }
-});
 
 logic.load = function (systemToLoad) {
   // const systemToLoad = systems.find( ({ metadata })  => metadata.title === systemNameToLoad)
@@ -33830,6 +33736,19 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/toggleAnima
 
   toggleAnimate();
 });
+_emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/toggleCanvas', function (msg) {
+  if (state.debugging) {
+    console.log('%c orchestrator toggleCanvas event called by ', 'color:green', msg.calledBy);
+  }
+
+  if (msg.springCanvas === true) {
+    _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].hide();
+    _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].show();
+  } else if (d.plotCanvas === true) {
+    _plotCanvas_plotCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].show();
+    _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_1__["default"].hide();
+  }
+});
 _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/stopAnimation', function (d) {
   if (state.debugging) {
     console.log('%c orchestrator stopAnimation event called by ', 'color:green', d.calledBy);
@@ -33856,6 +33775,15 @@ _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/reset', fun
   reset(); //should also rebuild panels
 
   resetPanels();
+});
+_emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/frameReset', function (d) {
+  if (state.debugging) {
+    console.log('%c orchestrator frameReset event called by ', 'color:green', d.calledBy);
+  }
+
+  _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].update({
+    frameIndex: 0
+  });
 });
 _emitter_js__WEBPACK_IMPORTED_MODULE_6__["default"].on('orchestrator/resetPanels', function (d) {
   if (state.debugging) {
@@ -34218,27 +34146,27 @@ var buildSetter = function buildSetter(w) {
       });
 
       if (target.id.includes(posXId)) {
-        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
           weight: w,
           x: val
         });
       } else if (target.id.includes(posYId)) {
-        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
           weight: w,
           y: val
         });
       } else if (target.id.includes(velXId) && w.fixed === false) {
-        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
           weight: w,
           vx: val
         });
       } else if (target.id.includes(velYId) && w.fixed === false) {
-        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
           weight: w,
           vy: val
         });
       } else if (target.id.includes(massId) && w.fixed === false) {
-        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+        _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
           weight: w,
           mass: val
         });
@@ -34254,7 +34182,7 @@ var buildSetter = function buildSetter(w) {
     var target = ev.target;
 
     if (target.id === 'fixMass') {
-      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight({
+      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
         weight: w,
         fixed: !w.fixed
       });
@@ -34313,7 +34241,7 @@ logic.buildMonitorDisplay = function () {
     weights.forEach(function (w) {
       var $velocity = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#vel_".concat(w.id));
       var $position = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#pos_".concat(w.id));
-      var $header = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#header_".concat(w.id));
+      var $header = jquery__WEBPACK_IMPORTED_MODULE_3___default()("#headerDisplay_".concat(w.id));
       var velocityHtml = "Velocity : (".concat(w.velocity.x.toFixed(2), ", ").concat(w.velocity.y.toFixed(2), ")");
       var positionHtml = "Position : (".concat(w.position.x.toFixed(2), ", ").concat(w.position.y.toFixed(2), ")");
       var headerHtml = "<span> Id : ".concat(trimId(w.id), " <span style=\"float:right\"> Mass : ").concat(w.mass.toFixed(2), "</span> </span>");
@@ -34451,6 +34379,16 @@ var setCanvasDimensions = function setCanvasDimensions() {
 
 logic.resize = function () {
   setCanvasDimensions();
+};
+
+logic.show = function () {
+  state.inFocus = true;
+  $(state.canvas).css('display', 'inline');
+};
+
+logic.hide = function () {
+  state.inFocus = false;
+  $(state.canvas).css('display', 'none');
 };
 
 logic.init = function () {
@@ -34592,6 +34530,8 @@ var draw = function draw(_ref) {
     strokeStyle = 'black';
   }
 
+  ctx.font = "12px Arial";
+
   if (displayFlags.showSpringIds) {
     ctx.fillText(trimId(spring.id), (drawAt.x0 + drawAt.x1) / 2, (drawAt.y0 + drawAt.y1) / 2 + 15);
   }
@@ -34601,7 +34541,7 @@ var draw = function draw(_ref) {
   }
 
   var lineWidth_temp = ctx.lineWidth;
-  ctx.lineWidth = spring.k * 1.5;
+  ctx.lineWidth = spring.k * spring.displayScalar;
   ctx.beginPath();
   ctx.strokeStyle = strokeStyle; // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
   // ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
@@ -34829,6 +34769,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return initListenAndHandle; });
 /* harmony import */ var _system_system__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../system/system */ "./src/springs/system/system.js");
 /* harmony import */ var _emitter__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../emitter */ "./src/springs/emitter.js");
+var _handlerState;
+
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -34838,7 +34780,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 var state = {}; //set in init, this is exactly the springCanvas state
 //this keeps track of user actions / associated values
 
-var handlerState = {
+var handlerState = (_handlerState = {
   mouseWheel: 0,
   //set to their defaults then changed by handlers
   weight: {
@@ -34854,18 +34796,11 @@ var handlerState = {
     calls: 0 //is incremented by 1 each call
 
   },
-  clickBuffer: 5,
-  //x px away + whatever for easier selecting
-  spawnBuffer: 15,
-  //x px away + whatever to prevent spawning massess too close
-  debug: {
-    dragHandler: true,
-    leftClick: false
-  },
-  dragHandler: {},
-  //set when the weight is being dragged
-  useRelative: false
-};
+  clickBuffer: 5
+}, _defineProperty(_handlerState, "clickBuffer", 15), _defineProperty(_handlerState, "debug", {
+  dragHandler: true,
+  leftClick: false
+}), _defineProperty(_handlerState, "dragHandler", {}), _defineProperty(_handlerState, "useRelative", false), _handlerState);
 
 var getMousePosition = function getMousePosition(ev) {
   return {
@@ -34908,7 +34843,7 @@ var initDragHandler = function initDragHandler(weight) {
     if (!inXBounds || !inYBounds) {
       removeDragHandler();
     } else {
-      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].setWeight(_objectSpread({
+      _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set(_objectSpread({
         weight: weight
       }, mousePosition, {
         manuallyMoved: true
@@ -34930,13 +34865,13 @@ var handleLeftClick = function handleLeftClick(ev) {
     calledBy: 'springCanvas/listenAndHandle/handleLeftClick'
   }); //if there is a nearby weight then i select it;
 
-  var _system$findNearestWe = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearestWeight({
+  var _system$findNearest = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearest({
     mousePosition: mousePosition
   }),
-      dist = _system$findNearestWe.dist,
-      weight = _system$findNearestWe.weight;
+      weightDist = _system$findNearest.weightDist,
+      weight = _system$findNearest.weight;
 
-  if (dist !== false && weight !== false && dist < handlerState.spawnBuffer + weight.radius) {
+  if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius) {
     handlerState.dragHandler = initDragHandler(weight);
     _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].once('springCanvas/listenAndHandle/stopDragHandler', function (d) {
       if (handlerState.debug.dragHandler) {
@@ -34972,10 +34907,68 @@ var handleLeftClick = function handleLeftClick(ev) {
   }
 };
 
-var handleRightClick = function handleRightClick(ev) {};
+var handleRightClick = function handleRightClick(ev) {
+  var _getRelativeMousePosi3 = getRelativeMousePosition(ev),
+      exact = _getRelativeMousePosi3.exact,
+      relative = _getRelativeMousePosi3.relative;
+
+  var mousePosition = handlerState.useRelative ? relative : exact;
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
+    calledBy: 'springCanvas/listenAndHandle/handleRightClick'
+  });
+
+  var _system$findNearest2 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearest({
+    mousePosition: mousePosition
+  }),
+      weightDist = _system$findNearest2.weightDist,
+      weight = _system$findNearest2.weight,
+      spring = _system$findNearest2.spring,
+      springDist = _system$findNearest2.springDist;
+
+  if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius) {
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].removeWeight(weight);
+  } else if (spring !== false && springDist < handlerState.clickBuffer + spring.k * spring.displayScalar) {
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].removeSpring(spring);
+  }
+
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
+    calledBy: 'springCanvas/listenAndHandle/handleRightClick'
+  });
+};
 
 var handleMouseUp = function handleMouseUp(ev) {
   removeDragHandler(); //always test for a remove
+};
+
+var handleIncrement = function handleIncrement(ev, incrementAmount) {
+  var mousePosition = handlerState.useRelative ? state.lastMousePosition.relative : state.lastMousePosition.exact;
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/stopAnimation', {
+    calledBy: 'springCanvas/listenAndHandle/handleIncrement'
+  });
+
+  var _system$findNearest3 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].findNearest({
+    mousePosition: mousePosition
+  }),
+      weightDist = _system$findNearest3.weightDist,
+      weight = _system$findNearest3.weight,
+      spring = _system$findNearest3.spring,
+      springDist = _system$findNearest3.springDist;
+
+  if (weight !== false && weightDist < handlerState.clickBuffer + weight.radius && weight.mass > 1) {
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
+      weight: weight,
+      mass: weight.mass + incrementAmount
+    });
+  } else if (spring !== false && springDist < handlerState.clickBuffer + spring.k * spring.displayScalar && spring.k > .1) {
+    _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].set({
+      spring: spring,
+      k: spring.k + incrementAmount / 2
+    });
+  }
+
+  _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/redraw', {
+    calledBy: 'springCanvas/listenAndHandle/handleIncrement'
+  });
 }; //This sets the mouseMove state value which is used in the springCanvas draw loop
 
 
@@ -34988,7 +34981,6 @@ var handleMouseMove = function handleMouseMove(ev) {
 
 var initListenAndHandle = function initListenAndHandle(springCanvasState) {
   state = springCanvasState; //as this is a direct child only here for beauty
-  // canvas.addEventListener('keyup', handleKeyup)
 
   state.canvas.addEventListener('mousedown', function (ev) {
     ev.preventDefault();
@@ -34999,9 +34991,26 @@ var initListenAndHandle = function initListenAndHandle(springCanvasState) {
     } else {
       handleLeftClick(ev);
     }
+
+    $(':focus').blur();
+  });
+  window.addEventListener('keyup', function (ev) {
+    //while this is on window incase focus is off, it only works if the canvas is being shown
+    if (state.inFocus) {
+      if (ev.key === '+' || ev.key === '=') {
+        handleIncrement(ev, 1);
+      } else if (ev.key === '-' || ev.key === '_') {
+        handleIncrement(ev, -1);
+      }
+    }
+  });
+  state.canvas.addEventListener('wheel', function (ev) {
+    ev.preventDefault();
+    var scalar = ev.deltaY < 0 ? 1 : -1;
+    handleIncrement(ev, scalar);
   });
   state.canvas.addEventListener('mouseup', handleMouseUp);
-  state.canvas.addEventListener('mousemove', handleMouseMove);
+  state.canvas.addEventListener('mousemove', handleMouseMove); //very important, this store previous mouse positions for different events
 };
 
 
@@ -35074,7 +35083,7 @@ var State = function State() {
       showGrid: false,
       // lockY: true,
       showShift: false,
-      showSystemCenter: true
+      showSystemCenter: false
     },
     transforms: {
       shift: {
@@ -35089,8 +35098,11 @@ var State = function State() {
       // smoothing : 
 
     },
-    drawOverlays: false //when this is false things like mouse cursor Position will not be drawn 
-
+    drawOverlays: false,
+    //when this is false things like mouse cursor Position will not be drawn 
+    inFocus: true,
+    //this is set to false when the plotter canvas is open
+    componentName: 'springCanvas'
   });
 };
 
@@ -35234,6 +35246,16 @@ logic.init = function () {
   setCanvasDimensions();
   Object(_listenAndHandle__WEBPACK_IMPORTED_MODULE_0__["default"])(state);
   state.canvas.style.cursor = 'crosshair';
+};
+
+logic.show = function () {
+  state.inFocus = true;
+  $(state.canvas).css('display', 'inline');
+};
+
+logic.hide = function () {
+  state.inFocus = false;
+  $(state.canvas).css('display', 'none');
 };
 
 logic.getState = function () {
@@ -35406,6 +35428,13 @@ var reconnect = function reconnect() {
         newFriends = [];
       }
     });
+
+    if (newFriends.length === 1) {
+      var notSameWeight = state.weights.find(function (w) {
+        return w.id != newFriends[0];
+      });
+      logic.addEdge(newFriends[0], notSameWeight);
+    }
   }
 };
 
@@ -35433,10 +35462,20 @@ logic.removeWeight = function (weightToRemove) {
   }
 };
 
+logic.removeSpring = function (springToRemove) {
+  logic.removeEdge({
+    w1: springToRemove.weights[0],
+    w2: springToRemove.weights[1]
+  });
+}; //finds nearest spring and mass
+
+
 logic.findNearest = function (positionVec) {
   var nearest = {
-    dist: Infinity,
-    weight: {}
+    weightDist: Infinity,
+    springDist: Infinity,
+    weight: false,
+    spring: false
   };
 
   if (state.adjList.size === 0) {
@@ -35444,18 +35483,52 @@ logic.findNearest = function (positionVec) {
       console.log('findNearest cannot find when size is 0, returning falsey');
     }
 
-    return {
-      dist: false,
-      weight: false
-    };
+    return nearest;
   }
 
   state.adjList.forEach(function (edgeList, weight) {
     var dist = _helpers__WEBPACK_IMPORTED_MODULE_2__["default"].eucDistance(weight.position, positionVec);
 
-    if (dist < nearest.dist) {
-      nearest.dist = dist;
+    if (dist < nearest.weightDist) {
+      nearest.weightDist = dist;
       nearest.weight = weight;
+    }
+  }); //looking for the nearest spring
+
+  state.springs.forEach(function (s) {
+    var w0 = s.weights[0].position.x < s.weights[1].position.x ? s.weights[0] : s.weights[1];
+    var w1 = s.weights[0] === w0 ? s.weights[1] : s.weights[0];
+    var maxY = Math.max.apply(Math, _toConsumableArray(s.weights.map(function (w) {
+      return w.position.y;
+    })));
+    var minY = Math.min.apply(Math, _toConsumableArray(s.weights.map(function (w) {
+      return w.position.y;
+    })));
+    var slope = (w1.position.y - w0.position.y) / (w1.position.x - w0.position.x);
+
+    var itsYAtX = function itsYAtX(x) {
+      return slope * (x - w1.position.x) + w1.position.y;
+    };
+
+    var itsXAtY = function itsXAtY(y) {
+      return (y - w1.position.y) / slope + w1.position.x;
+    };
+
+    var a = positionVec.x - itsXAtY(positionVec.y); //x length of tri
+
+    var b = positionVec.y - itsYAtX(positionVec.x); //y length of tri
+
+    var dist = Math.sqrt(a * a * b * b / (a * a + b * b)); //dual pyth.
+
+    var boundBuffer = 20;
+    var isInBounds = positionVec.x + boundBuffer > w0.position.x && //click is to the right of leftmost spring
+    positionVec.x - boundBuffer < w1.position.x && //click is to left of right most spring
+    positionVec.y - boundBuffer < maxY && //click was lower than highest
+    positionVec.y + boundBuffer > minY;
+
+    if (dist < nearest.springDist && isInBounds) {
+      nearest.springDist = dist;
+      nearest.spring = s;
     }
   });
   return nearest;
@@ -35554,7 +35627,9 @@ var Spring = function Spring(_ref) {
     display: {
       id: false,
       k: false
-    }
+    },
+    displayScalar: 1 //multiples k by this when drawing width
+
   };
   var logic = {};
 
@@ -36247,21 +36322,27 @@ var solve = function solve() {
   if (state.debug.solver) {
     console.log('%c System solve completed!', 'color:green');
   }
-}; //update and solve are only solve callers
+}; //frameSetter out of place only because currentFrame is supposed to be isolated here and don't want to slow down loop with a call to get it
+//update and solve are only solve callers
 
 
 logic.update = function (_ref) {
   var frameIndex = _ref.frameIndex;
   checkForSolve();
 
-  if (!frameIndex) {
-    frameIndex = state.currentFrame;
+  if (!frameIndex && frameIndex !== 0) {
+    throw new Error('update requires frameIndex');
   }
 
+  state.currentFrame = frameIndex;
   _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].getWeights().forEach(function (w) {
     return w.update(state.currentFrame);
   });
   stateChanged();
+  _emitter__WEBPACK_IMPORTED_MODULE_3__["default"].emit('orchestrator/redraw', {
+    calledBy: 'system/update'
+  });
+  document.getElementById('frameSetter').value = state.currentFrame;
 }; //update and solve are only solve callers
 
 
@@ -36272,8 +36353,19 @@ logic.step = function () {
     return w.update(state.currentFrame);
   });
   stateChanged();
-}; //position is true position, passer should account for relativity
+  document.getElementById('frameSetter').value = state.currentFrame;
+};
 
+document.getElementById('frameSetter').addEventListener('keyup', function (ev) {
+  var target = ev.target;
+  var val = Number.parseFloat(target.value);
+
+  if (!isNaN(val) && val >= 0 && val < state.solverConfig.frameCount) {
+    logic.update({
+      frameIndex: val
+    });
+  }
+}); //position is true position, passer should account for relativity
 
 logic.addWeight = function (_ref2) {
   var mass = _ref2.mass,
@@ -36298,7 +36390,7 @@ logic.addWeight = function (_ref2) {
   }
 
   var _sysGraph$findNearest = _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(position),
-      dist = _sysGraph$findNearest.dist,
+      weightDist = _sysGraph$findNearest.weightDist,
       weight = _sysGraph$findNearest.weight;
 
   var snappedPosition = {
@@ -36311,7 +36403,7 @@ logic.addWeight = function (_ref2) {
     velocity: velocity
   });
 
-  if (dist !== false || weight !== false) {
+  if (weight !== false) {
     //in this case I auto connect edges
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(weight, newWeight, springK);
   }
@@ -36333,49 +36425,63 @@ logic.removeWeight = function (_ref3) {
       weight = _sysGraph$findNearest2.weight;
 
   if (dist !== false || weight !== false) {
-    console.log('removing weight');
     _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].removeWeight(weight);
   }
 
   stateChanged('structure');
+};
+
+logic.removeSpring = function (springToRemove) {
+  _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].removeSpring(springToRemove);
+  stateChanged('structure');
 }; //only settables and only location (outside of solver)... in need of a refactor
 
 
-logic.setWeight = function (_ref4) {
+logic.set = function (_ref4) {
   var weight = _ref4.weight,
       x = _ref4.x,
       y = _ref4.y,
       vx = _ref4.vx,
       vy = _ref4.vy,
       mass = _ref4.mass,
-      fixed = _ref4.fixed;
+      fixed = _ref4.fixed,
+      spring = _ref4.spring,
+      k = _ref4.k;
 
-  if (x || x === 0) {
-    weight.position.x = x;
-    weight.initialPosition.x = x;
+  if (weight) {
+    if (x || x === 0) {
+      weight.position.x = x;
+      weight.initialPosition.x = x;
+    }
+
+    if (y || y === 0) {
+      weight.position.y = y;
+      weight.initialPosition.y = y;
+    }
+
+    if (vx || vx === 0) {
+      weight.velocity.x = vx;
+      weight.initialVelocity.x = vx;
+    }
+
+    if (vy || vy === 0) {
+      weight.velocity.y = vy;
+      weight.initialVelocity.y = vy;
+    }
+
+    if (mass || mass === 0) {
+      weight.setMass(mass); //because this also changes the radius
+    }
+
+    if (fixed === true || fixed === false) {
+      weight.setFixed(fixed);
+    }
   }
 
-  if (y || y === 0) {
-    weight.position.y = y;
-    weight.initialPosition.y = y;
-  }
-
-  if (vx || vx === 0) {
-    weight.velocity.x = vx;
-    weight.initialVelocity.x = vx;
-  }
-
-  if (vy || vy === 0) {
-    weight.velocity.y = vy;
-    weight.initialVelocity.y = vy;
-  }
-
-  if (mass || mass === 0) {
-    weight.setMass(mass); //because this also changes the radius
-  }
-
-  if (fixed === true || fixed === false) {
-    weight.setFixed(fixed);
+  if (spring) {
+    if (k || k === 0) {
+      spring.k = k;
+    }
   }
 
   stateChanged('shift');
@@ -36387,9 +36493,8 @@ logic.reset = function () {
   stateChanged('structure');
 };
 
-logic.findNearestWeight = function (_ref5) {
+logic.findNearest = function (_ref5) {
   var mousePosition = _ref5.mousePosition;
-  // console.log('in find nearest', relativeMousePosition)
   return _graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].findNearest(mousePosition);
 };
 
@@ -36909,6 +37014,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return logic; });
 /* harmony import */ var _orchestrator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./orchestrator */ "./src/springs/orchestrator.js");
 /* harmony import */ var _emitter_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./emitter.js */ "./src/springs/emitter.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
+
 
 
 var state = {
@@ -36917,17 +37025,17 @@ var state = {
 var logic = {}; //any interaction with orchestrator is done by event emitting. This is because nearly all components require knowledge of the animating.
 
 window.addEventListener('keyup', function (ev) {
-  var isSpaceKey = ev.keyCode == 32; //don't want to toggle when typing
+  var isSpaceKey = ev.keyCode == 32;
+  ev.preventDefault(); //don't want to toggle when typing
 
   if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
-    ev.preventDefault();
     _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {
       calledBy: 'view.js/keyup'
     });
   }
 
   if (ev.key === 'r' || ev.key === 'R') {
-    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/reset', {
+    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/frameReset', {
       calledBy: 'view.js/keyup'
     });
   }
@@ -36943,7 +37051,34 @@ window.addEventListener('contextmenu', function (ev) {
   }
 
   ev.preventDefault();
-  return true;
+});
+jquery__WEBPACK_IMPORTED_MODULE_2___default()('#toggleSpringCanvas').on('click', function (ev) {
+  if (document.getElementById('toggleSpringCanvas').checked) {
+    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
+      calledBy: 'view.js/toggleSpringCanvas',
+      springCanvas: true,
+      plotCanvas: false
+    });
+  }
+});
+jquery__WEBPACK_IMPORTED_MODULE_2___default()('#togglePlotCanvas').on('click', function (ev) {
+  if (document.getElementById('togglePlotCanvas').checked) {
+    _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleCanvas', {
+      calledBy: 'view.js/togglePlotCanvas',
+      springCanvas: false,
+      plotCanvas: true
+    });
+  }
+});
+jquery__WEBPACK_IMPORTED_MODULE_2___default()('#toggleAnimation').on('click', function (ev) {
+  _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/toggleAnimate', {
+    calledBy: 'view.js/keyup'
+  });
+});
+jquery__WEBPACK_IMPORTED_MODULE_2___default()('#resetSystem').on('click', function (ev) {
+  _emitter_js__WEBPACK_IMPORTED_MODULE_1__["default"].emit('orchestrator/reset', {
+    calledBy: 'view.js/keyup'
+  });
 });
 
 logic.init = function () {

@@ -36,7 +36,7 @@ const State = () => Object.assign({
         showGrid: false,
         // lockY: true,
         showShift: false,
-        showSystemCenter : true,
+        showSystemCenter : false,
     },
     transforms : {
         shift : { x : 0, y : 0 },
@@ -48,7 +48,8 @@ const State = () => Object.assign({
         // smoothing : 
     },
     drawOverlays: false, //when this is false things like mouse cursor Position will not be drawn 
-
+    inFocus : true, //this is set to false when the plotter canvas is open
+    componentName : 'springCanvas'
 })
 
 const logic = {}
@@ -98,9 +99,11 @@ const updateShift = () => {
     }
 }
 /* draws the grid / weights*/
+
 logic.draw = () => {
     const { springs, weights } = system.getObjs()
     const sysCenter = system.getCenter()
+
     if ( state.camera.useCamera ) {
         // updateShift();
     }
@@ -159,6 +162,16 @@ logic.init = () => {
     setCanvasDimensions();
     initListenAndHandle(state);
     state.canvas.style.cursor = 'crosshair'
+}
+
+logic.show = () => {
+    state.inFocus = true;
+    $(state.canvas).css('display', 'inline')
+}
+
+logic.hide = () => {
+    state.inFocus = false;
+    $(state.canvas).css('display', 'none')
 }
 
 logic.getState = () => state

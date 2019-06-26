@@ -1,5 +1,6 @@
 import orchestrator from './orchestrator'
 import emitter from './emitter.js'
+import $ from 'jquery';
 
 const state = {
     debug : true
@@ -11,16 +12,18 @@ const logic = {}
 
 window.addEventListener('keyup', (ev) => {
     const isSpaceKey = ev.keyCode == 32;
+    ev.preventDefault();
     
     //don't want to toggle when typing
     if (isSpaceKey && ev.target.nodeName !== 'INPUT') {
-        ev.preventDefault();
         emitter.emit('orchestrator/toggleAnimate', { calledBy: 'view.js/keyup' })
     }
 
     if (ev.key === 'r' || ev.key === 'R') {
-        emitter.emit('orchestrator/reset', { calledBy : 'view.js/keyup'})
+        emitter.emit('orchestrator/frameReset', { calledBy : 'view.js/keyup'})
     }
+
+
 })
 
 window.addEventListener('resize', () => {
@@ -32,7 +35,34 @@ window.addEventListener('contextmenu', (ev) => {
         console.log('supressing context menu')
     }
     ev.preventDefault();
-    return true
+})
+
+$('#toggleSpringCanvas').on('click', (ev) => {
+    if (document.getElementById('toggleSpringCanvas').checked ) {
+        emitter.emit('orchestrator/toggleCanvas', {
+            calledBy: 'view.js/toggleSpringCanvas', 
+            springCanvas: true, 
+            plotCanvas : false, 
+        })
+    }
+})
+
+$('#togglePlotCanvas').on('click', (ev) => {
+    if (document.getElementById('togglePlotCanvas').checked) {
+        emitter.emit('orchestrator/toggleCanvas', {
+            calledBy: 'view.js/togglePlotCanvas',
+            springCanvas: false,
+            plotCanvas: true,
+        })
+    }
+})
+
+$('#toggleAnimation').on('click', (ev) => {
+    emitter.emit('orchestrator/toggleAnimate', { calledBy: 'view.js/keyup' })
+})
+
+$('#resetSystem').on('click', (ev) => {
+    emitter.emit('orchestrator/reset', { calledBy: 'view.js/keyup' })
 })
 
 logic.init = () => {

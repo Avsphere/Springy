@@ -21,7 +21,8 @@ const Spring = ({ k, lengthAtRest, weights, id }) => {
         display : {
             id : false,
             k : false
-        }
+        },
+        displayScalar : 1 //multiples k by this when drawing width
     }
 
 

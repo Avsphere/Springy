@@ -90,6 +90,10 @@ const reconnect = () => {
                 newFriends = []
             }
         })
+        if ( newFriends.length === 1 ) {
+            const notSameWeight = state.weights.find( w => w.id != newFriends[0] )
+            logic.addEdge(newFriends[0], notSameWeight)
+        }
     }
 }
 
@@ -113,19 +117,52 @@ logic.removeWeight = (weightToRemove) => {
     }
 }
 
+logic.removeSpring = (springToRemove) => {
+
+    logic.removeEdge({ w1: springToRemove.weights[0], w2: springToRemove.weights[1]})
+}
+
+//finds nearest spring and mass
 logic.findNearest = (positionVec) => {
-    const nearest = { dist : Infinity, weight : {} }
+    const nearest = { weightDist : Infinity, springDist : Infinity, weight : false, spring : false }
+
     if (state.adjList.size === 0 ) { 
         if ( state.debug ) {
             console.log('findNearest cannot find when size is 0, returning falsey')
         }
-        return { dist : false, weight : false } 
+        return nearest
     }
-    
     state.adjList.forEach((edgeList, weight) => {
         const dist = helpers.eucDistance(weight.position, positionVec);
-        if ( dist < nearest.dist ) { nearest.dist = dist; nearest.weight = weight; }
+        if (dist < nearest.weightDist) { nearest.weightDist = dist; nearest.weight = weight; }
     })
+
+    //looking for the nearest spring
+    state.springs.forEach(s => {
+        const w0 = s.weights[0].position.x < s.weights[1].position.x ? s.weights[0] : s.weights[1]
+        const w1 = s.weights[0] === w0 ? s.weights[1] : s.weights[0]
+        const maxY = Math.max(...s.weights.map(w => w.position.y))
+        const minY = Math.min(...s.weights.map(w => w.position.y))
+
+        const slope = (w1.position.y - w0.position.y) / (w1.position.x - w0.position.x)
+        const itsYAtX = (x) => slope * (x - w1.position.x) + w1.position.y
+        const itsXAtY = (y) => ((y - w1.position.y) / slope) + w1.position.x
+
+        const a = positionVec.x - itsXAtY(positionVec.y) //x length of tri
+        const b = positionVec.y - itsYAtX(positionVec.x) //y length of tri
+        const dist = Math.sqrt(a * a * b * b / (a * a + b * b)) //dual pyth.
+        const boundBuffer = 20
+        const isInBounds = positionVec.x + boundBuffer > w0.position.x &&  //click is to the right of leftmost spring
+            positionVec.x - boundBuffer < w1.position.x && //click is to left of right most spring
+            positionVec.y - boundBuffer < maxY && //click was lower than highest
+            positionVec.y + boundBuffer > minY
+        if (dist < nearest.springDist && isInBounds) {
+            nearest.springDist = dist;
+            nearest.spring = s;
+        }
+    })
+    
+
     return nearest;
 } 
 

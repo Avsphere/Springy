@@ -28,8 +28,6 @@ const resetPanels = () => {
     getPanels().forEach( p => p.reset() )
 }
 
-
-
 const animate = () => {
     system.step(); //increments frame by 1
     getDrawableComponents().forEach( d => {
@@ -102,6 +100,18 @@ emitter.on('orchestrator/toggleAnimate', (d) => {
     toggleAnimate()
 })
 
+emitter.on('orchestrator/toggleCanvas', (msg) => {
+    if (state.debugging) { console.log('%c orchestrator toggleCanvas event called by ', 'color:green', msg.calledBy) }
+    if (msg.springCanvas === true ) {
+        plotCanvas.hide()
+        springCanvas.show();
+    } else if (d.plotCanvas === true ) {
+        plotCanvas.show()
+        springCanvas.hide();
+    }
+
+})
+
 emitter.on('orchestrator/stopAnimation', (d) => {
     if (state.debugging) { console.log('%c orchestrator stopAnimation event called by ', 'color:green', d.calledBy) }
     if (state.isAnimating) {
@@ -123,6 +133,12 @@ emitter.on('orchestrator/reset', (d) => {
     //should also rebuild panels
     resetPanels();
 })
+
+emitter.on('orchestrator/frameReset', (d) => {
+    if (state.debugging) { console.log('%c orchestrator frameReset event called by ', 'color:green', d.calledBy) }
+    system.update({ frameIndex : 0 })
+})
+
 
 emitter.on('orchestrator/resetPanels', (d) => {
     if (state.debugging) { console.log('%c orchestrator reset event called by ', 'color:green', d.calledBy) }

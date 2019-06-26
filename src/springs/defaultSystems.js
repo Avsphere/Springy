@@ -25,12 +25,12 @@ const roundToNearest = (n, roundingTo=100) => {
 
 systems.push({
     metadata : {
-        description : 'Will change your life.',
-        title : 'circleSystem'
+        description: 'Single heavy mass surrounded in a circular pattern of smaller masses each with a random velocity. Will change your life.',
+        title : 'Spring Monster'
     },
     build : function() {
         const { width, height } = springCanvas.getDimensions();
-        const offset = roundToNearest(width / 5);
+        const offset = roundToNearest(width / 2);
 
         const fixedBig = {
             x: offset, //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
@@ -291,88 +291,6 @@ systems.push({
             }
 
         })()
-    }
-})
-
-systems.push({
-    metadata: {
-        title: 'Fixed Cross Over Effect X',
-        description: ``,
-        initialVelocity: {
-            x: 0,
-            y: 0
-        }
-    },
-    build: function () {
-        const { width, height } = springCanvas.getDimensions();
-
-        const fixedPosition1 = {
-            x: roundToNearest((width + 100) / 10), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-            y: roundToNearest(height / 2)
-        }
-
-        const fixedPosition2 = {
-            x: fixedPosition1.x + 100, //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-            y: roundToNearest(height / 2)
-        }
-
-        const f1 = graph.addWeight({
-            position: fixedPosition1,
-            velocity: { x: 0, y: 0 },
-            mass: 10,
-        })
-
-        const f2 = graph.addWeight({
-            position: fixedPosition2,
-            velocity: { x: 0, y: 0 },
-            mass: 10,
-        })
-
-        graph.addEdge(f1, f2)
-        system.setWeight({ weight: f2, x: f2.position.x + 200 })
-
-
-    }
-})
-
-systems.push({
-    metadata: {
-        title: 'Fixed Cross Over Effect Y',
-        description: ``,
-        initialVelocity: {
-            x: 0,
-            y: 0
-        }
-    },
-    build: function () {
-        const { width, height } = springCanvas.getDimensions();
-
-        const fixedPosition1 = {
-            x: roundToNearest(width/2), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-            y: roundToNearest(height/10+100)
-        }
-
-        const fixedPosition2 = {
-            x: roundToNearest(width / 2), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
-            y: fixedPosition1.y + 100
-        }
-
-        const f1 = graph.addWeight({
-            position: fixedPosition1,
-            velocity: { x: 0, y: 0 },
-            mass: 10,
-        })
-
-        const f2 = graph.addWeight({
-            position: fixedPosition2,
-            velocity: { x: 0, y: 0 },
-            mass: 10,
-        })
-
-        graph.addEdge(f1, f2)
-        system.setWeight({ weight: f2, y: f2.position.y + 200 })
-
-
     }
 })
 

@@ -43,8 +43,22 @@ const setCanvasDimensions = () => {
 logic.resize = () => {
     setCanvasDimensions();
 }
+
+
+logic.show = () => {
+    state.inFocus = true;
+    $(state.canvas).css('display', 'inline')
+}
+
+logic.hide = () => {
+    state.inFocus = false;
+    $(state.canvas).css('display', 'none')
+}
+
+
 logic.init = () => {
     state = State();
 }
+
 
 export { logic as default }

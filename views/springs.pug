@@ -28,9 +28,28 @@ block content
                 #monitorSprings
                 #monitorSetter 
       .col-9#canvasInterface
-        .toggler(style="width:100%")
-          //- h1 Very important things
+        .row
+          .col-sm-3
+            .toggler
+              .btn-group.btn-group-toggle(data-toggle='buttons')
+                label#toggleSpringCanvas.btn.btn-primary.active
+                  input(type='radio', name='options', autocomplete='off', checked='')
+                  |  Design Canvas
+                label#togglePlotCanvas.btn.btn-primary
+                  input(type='radio', name='options', autocomplete='off')
+                  |  Plotter
+          .col-sm-3
+            .input-group.input-group.mb-3
+              .input-group-prepend
+                span#inputGroup-sizing.input-group-text Frame
+              input.form-control#frameSetter(type='text', aria-label='Small', aria-describedby='inputGroup-sizing-sm' value="0")
+          .col-sm-3
+            input#toggleAnimation.btn.btn-primary(type='button', value='Toggle Animation')
+          .col-sm-3
+            input#resetSystem.btn.btn-primary(type='button', value='Reset System')
+
+
         #canvasContainer
           canvas#plotCanvas( style="display:none;" )
-          canvas#springCanvas
+          canvas#springCanvas( tabindex=1 )
       

@@ -149,19 +149,19 @@ const buildSetter = (w) => {
         if (!isNaN(val)) {
             emitter.emit('orchestrator/stopAnimation', { calledBy: 'panels/monitor/setterCardKeyup' })
             if ( target.id.includes(posXId) ) {
-                system.setWeight({ weight: w, x: val })
+                system.set({ weight: w, x: val })
 
             } else if (target.id.includes(posYId) ) {
-                system.setWeight({ weight: w, y: val })
+                system.set({ weight: w, y: val })
 
             } else if (target.id.includes(velXId) && w.fixed === false ) {
-                system.setWeight({ weight: w, vx: val })
+                system.set({ weight: w, vx: val })
 
             } else if (target.id.includes(velYId) && w.fixed === false ) {
-                system.setWeight({ weight: w, vy: val })
+                system.set({ weight: w, vy: val })
 
             } else if (target.id.includes(massId) && w.fixed === false) {
-                system.setWeight({ weight: w, mass: val })
+                system.set({ weight: w, mass: val })
 
             }
             //now redraw to reflect
@@ -172,7 +172,7 @@ const buildSetter = (w) => {
     setterCard.on('click', (ev) => {
         const target = ev.target;
         if ( target.id === 'fixMass') {
-            system.setWeight({weight : w, fixed : !w.fixed })
+            system.set({weight : w, fixed : !w.fixed })
             updateStylingForFixedMass()
             $(':focus').blur() 
             emitter.emit('orchestrator/redraw', { calledBy: 'panels/monitor/setterCardKeyup' })
@@ -236,11 +236,10 @@ logic.buildMonitorDisplay = () => {
         weights.forEach(w => {
             const $velocity = $(`#vel_${w.id}`)
             const $position = $(`#pos_${w.id}`)
-            const $header = $(`#header_${w.id}`)
+            const $header = $(`#headerDisplay_${w.id}`)
             const velocityHtml = `Velocity : (${w.velocity.x.toFixed(2)}, ${w.velocity.y.toFixed(2)})`
             const positionHtml = `Position : (${w.position.x.toFixed(2)}, ${w.position.y.toFixed(2)})`
             const headerHtml = `<span> Id : ${trimId(w.id)} <span style="float:right"> Mass : ${w.mass.toFixed(2)}</span> </span>`
-
             $position.html(positionHtml)
             $velocity.html(velocityHtml)
             $header.html(headerHtml)

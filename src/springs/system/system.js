@@ -90,12 +90,20 @@ const solve = (clearFrames=true) => {
 }
 
 
+//frameSetter out of place only because currentFrame is supposed to be isolated here and don't want to slow down loop with a call to get it
 //update and solve are only solve callers
+
 logic.update = ({ frameIndex }) => {
     checkForSolve();
-    if ( !frameIndex ) { frameIndex = state.currentFrame }
+    if ( !frameIndex && frameIndex !== 0 ) {
+        throw new Error('update requires frameIndex')
+    }
+    state.currentFrame = frameIndex
     sysGraph.getWeights().forEach(w => w.update(state.currentFrame))
     stateChanged();
+    emitter.emit('orchestrator/redraw', { calledBy: 'system/update' })
+    document.getElementById('frameSetter').value = state.currentFrame
+
 }
 
 //update and solve are only solve callers
@@ -104,7 +112,17 @@ logic.step = () => {
     state.currentFrame++;
     sysGraph.getWeights().forEach( w => w.update(state.currentFrame) )
     stateChanged();
+
+    document.getElementById('frameSetter').value = state.currentFrame
 }
+
+document.getElementById('frameSetter').addEventListener('keyup', (ev) => {
+    const target = ev.target;
+    const val = Number.parseFloat(target.value)
+    if (!isNaN(val) && val >= 0 && val < state.solverConfig.frameCount) {
+        logic.update({frameIndex : val})
+    }
+})
 
 
 //position is true position, passer should account for relativity
@@ -114,7 +132,7 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
     if (!mass) { mass = state.defaultValues.weightMass }
     if ( !springK ) { springK = state.defaultValues.springK }
     if ( !velocity ) { velocity = state.defaultValues.velocity }
-    const { dist, weight } = sysGraph.findNearest(position)
+    const { weightDist, weight } = sysGraph.findNearest(position)
     
     const snappedPosition = {
         x : roundToNearest(position.x, 5),
@@ -123,7 +141,7 @@ logic.addWeight = ({ mass, position, springK, velocity }) => {
 
 
     const newWeight = sysGraph.addWeight({ position: snappedPosition, mass, velocity })
-    if ( dist !== false || weight !== false ) {
+    if ( weight !== false ) {
         //in this case I auto connect edges
         sysGraph.addEdge(weight, newWeight, springK)
     }
@@ -136,37 +154,48 @@ logic.removeWeight = ({ position }) => {
     if (!position.x && position.x !== 0 || !position.y && position.y !== 0) { throw new Error('system addWeight needs canvas x and y') }
     const { dist, weight } = sysGraph.findNearest(position)
     if (dist !== false || weight !== false) {
-        console.log('removing weight')
         sysGraph.removeWeight(weight)
     }
     stateChanged('structure')
 }
 
+logic.removeSpring = (springToRemove) => {
+    sysGraph.removeSpring(springToRemove)
+    stateChanged('structure')
+}
+
 
 //only settables and only location (outside of solver)... in need of a refactor
-logic.setWeight = ({ weight, x, y, vx, vy, mass, fixed }) => {
+logic.set = ({ weight, x, y, vx, vy, mass, fixed, spring, k }) => {
+    if ( weight ) {
+        if (x || x === 0) {
+            weight.position.x = x
+            weight.initialPosition.x = x
+        }
+        if (y || y === 0) {
+            weight.position.y = y
+            weight.initialPosition.y = y
+        }
+        if (vx || vx === 0) {
+            weight.velocity.x = vx
+            weight.initialVelocity.x = vx
+        }
+        if (vy || vy === 0) {
+            weight.velocity.y = vy
+            weight.initialVelocity.y = vy
+        }
+        if (mass || mass === 0) {
+            weight.setMass(mass) //because this also changes the radius
+        }
+        if (fixed === true || fixed === false) {
+            weight.setFixed(fixed)
+        }
+    }
 
-    if ( x || x === 0 ) {
-        weight.position.x = x
-        weight.initialPosition.x = x
-    }
-    if ( y || y === 0 ) {
-        weight.position.y = y
-        weight.initialPosition.y = y
-    }
-    if ( vx || vx === 0 ) {
-        weight.velocity.x = vx
-        weight.initialVelocity.x = vx
-    }
-    if ( vy || vy === 0 ) {
-        weight.velocity.y = vy
-        weight.initialVelocity.y = vy
-    }
-    if ( mass || mass === 0 ) {
-        weight.setMass(mass) //because this also changes the radius
-    }
-    if ( fixed === true || fixed === false ) {
-        weight.setFixed(fixed)
+    if ( spring ) {
+        if ( k || k === 0 ) {
+            spring.k = k;
+        }
     }
 
     stateChanged('shift')
@@ -180,10 +209,7 @@ logic.reset = () => {
     stateChanged('structure')
 }
 
-logic.findNearestWeight = ({ mousePosition }) => {
-    // console.log('in find nearest', relativeMousePosition)
-    return sysGraph.findNearest(mousePosition)
-}
+logic.findNearest = ({ mousePosition }) => sysGraph.findNearest(mousePosition)
 
 
 logic.subscribeToOnChange = (eventName) => {
