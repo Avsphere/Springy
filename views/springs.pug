@@ -7,9 +7,10 @@ block content
         .userInterface(style="margin-top:3%")
           nav
             #nav-tab.nav.nav-tabs(role='tablist')
-              a#nav-controls-tab.nav-item.nav-link(data-toggle='tab', href='#nav-controls', role='tab') Controls
+              a#nav-controls-tab.nav-item.nav-link(data-toggle='tab', href='#nav-controls', role='tab') Control
               a#nav-defaults-tab.nav-item.nav-link(data-toggle='tab', href='#nav-defaults', role='tab' ) Examples
               a#nav-monitor-tab.nav-item.nav-link.active.show(data-toggle='tab', href='#nav-monitor', role='tab') Monitor
+              a#nav-tutorial-tab.nav-item.nav-link(data-toggle='tab', href='#nav-tutorial', role='tab') Tutorial
           #nav-tabContent.tab-content
             #nav-controls.tab-pane.fade(role='tabpanel')
               #controlsWrapper
@@ -26,6 +27,19 @@ block content
                 #monitorDisplay
                 #monitorSprings
                 #monitorSetter 
+            #nav-tutorial.tab-pane.fade(role='tabpanel')
+              .tutorialContainer.container
+                h3(style="text-align:center; margin-top:3%;") How this works
+                .container#tutorialKeys(style="margin-top:6%;")
+                ul.list-group.list-group-flush
+                  li.list-group-item Press spacebar to toggle animation
+                  li.list-group-item Press r to reset frames to 0
+                  li.list-group-item On obj hover, use the mouse wheel or +/- to increase spring k or mass
+                  li.list-group-item Click an item in the monitor tab to manually set its values
+                  li.list-group-item Control the animation speed in the control tab
+                  li.list-group-item Toggle display options in the control tab
+                  li.list-group-item View the velocity with respect to time in the "Plotter" tab
+
       .col-9#canvasInterface
         .row
           .col-sm-3

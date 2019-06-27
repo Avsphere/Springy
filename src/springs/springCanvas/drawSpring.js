@@ -37,10 +37,8 @@ const draw = ({state, spring, systemCenter }) => {
 
     let lineWidth_temp = ctx.lineWidth;
     ctx.lineWidth = spring.k*spring.displayScalar;
-    ctx.beginPath();
     ctx.strokeStyle = strokeStyle;
-    // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
-    // ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
+    ctx.beginPath();
     ctx.moveTo(drawAt.x0, drawAt.y0);
     ctx.lineTo(drawAt.x1, drawAt.y1);
     ctx.stroke();

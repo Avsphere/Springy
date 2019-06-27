@@ -34187,7 +34187,18 @@ var State = function State() {
     drawOverlays: true,
     inFocus: false,
     //this is set to false when the plotter canvas is open
-    step: 0
+    step: -1,
+    //-1 before init
+    vScalar: {
+      x: 0,
+      y: 0
+    },
+    //scales the velocity to take up more of the available space
+    //top half is 0 to .5 with the midline at .25
+    topHalf: 0,
+    //set in init / resize 
+    bottomHalf: 0 //divides up the canvas into available space for plotting x / y velocity wrt t
+
   });
 };
 
@@ -34196,9 +34207,45 @@ var state; //allows for an easier reset, set in init.
 
 var setCanvasDimensions = function setCanvasDimensions() {
   var canvasContainer = $('#canvasContainer');
-  state.canvas.width = canvasContainer.innerWidth() * state.canvasScalarDimensions.width; // state.canvas.height = canvasContainer.innerHeight() * .95
-
+  state.canvas.width = canvasContainer.innerWidth() * state.canvasScalarDimensions.width;
   state.canvas.height = window.innerHeight * state.canvasScalarDimensions.height;
+};
+
+var handleMouseMove = function handleMouseMove(ev) {
+  if (state.inFocus) {
+    var ctx = state.ctx;
+    var mousePosition = {
+      x: ev.clientX - state.canvas.getBoundingClientRect().left,
+      y: ev.clientY - state.canvas.getBoundingClientRect().top
+    };
+    var drawMouseAt = {
+      x: state.canvas.width - 100,
+      y: 50
+    };
+    var mouseBox = {
+      x0: state.canvas.width - 150,
+      x1: state.canvas.width,
+      y0: 0,
+      y1: 50
+    };
+    state.ctx.clearRect(mouseBox.x0, mouseBox.y0, mouseBox.x1, mouseBox.y1);
+
+    if (mousePosition.y < state.topHalf * 2) {
+      var distAwayFromMidline = -(mousePosition.y - state.topHalf);
+      var approxVx = distAwayFromMidline / state.vScalar.x;
+      ctx.font = "17px Arial";
+      ctx.fillStyle = "#000000";
+      ctx.fillText("~V.x = ".concat(approxVx.toFixed(3)), mouseBox.x0, mouseBox.y1 / 2);
+    } else {
+      var _distAwayFromMidline = -(mousePosition.y - state.bottomHalf);
+
+      var _approxVx = _distAwayFromMidline / state.vScalar.y;
+
+      ctx.font = "17px Arial";
+      ctx.fillStyle = "#000000";
+      ctx.fillText("~V.y = ".concat(_approxVx.toFixed(3)), mouseBox.x0, mouseBox.y1 / 2);
+    }
+  }
 };
 
 var updateVelocityCache = function updateVelocityCache() {
@@ -34227,12 +34274,36 @@ var updateVelocityCache = function updateVelocityCache() {
   });
   state.velocityRange = {
     x: Math.abs(state.velocityCache.min.x - state.velocityCache.max.x),
-    y: Math.abs(state.velocityCache.min.y - state.velocityCache.max.y)
+    y: Math.abs(state.velocityCache.min.y - state.velocityCache.max.y) //scale velocity to take up maximum space, dividing by 3 will SOMETIMES allow outside
+
   };
   state.vScalar = {
-    x: (state.canvas.height / 2 - 100) / state.velocityRange.x,
-    y: (state.canvas.height / 2 - 100) / state.velocityRange.y
+    x: (state.canvas.height * state.canvasScalarDimensions.height / 3 - 10) / state.velocityRange.x,
+    y: (state.canvas.height * state.canvasScalarDimensions.height / 3 - 10) / state.velocityRange.y
   };
+};
+
+var drawLabels = function drawLabels() {
+  var ctx = state.ctx;
+  ctx.lineWidth = 1;
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "#000000";
+  ctx.fillText('X Velocity', state.canvas.width / 2 - state.canvas.width / 15, 20);
+  ctx.fillText('Y Velocity', state.canvas.width / 2 - state.canvas.width / 15, state.canvas.height - 10);
+  ctx.strokeStyle = 'rgba(0, 0, 0, .3)';
+  ctx.beginPath();
+  ctx.moveTo(0, state.topHalf);
+  ctx.lineTo(state.canvas.width, state.topHalf);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, state.bottomHalf);
+  ctx.lineTo(state.canvas.width, state.bottomHalf);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0, 0, 0, .1)';
+  ctx.beginPath();
+  ctx.moveTo(0, state.topHalf * 2);
+  ctx.lineTo(state.canvas.width, state.topHalf * 2);
+  ctx.stroke();
 };
 
 var handleSystemChange = function handleSystemChange(_ref) {
@@ -34253,11 +34324,15 @@ logic.clear = function (clearType) {
   if (state.step > state.canvas.width || clearType === 'forceClear') {
     state.step = 0;
     state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+    drawLabels();
   }
 };
 
 logic.resize = function () {
   setCanvasDimensions();
+  state.topHalf = state.canvas.height * state.canvasScalarDimensions.height * .25; //0 to .5 with the midline at .25
+
+  state.bottomHalf = state.canvas.height * state.canvasScalarDimensions.height * .75; //..5 to 1 with the midline at .75
 };
 
 var updateOpacity = function updateOpacity(rgb, opacity) {
@@ -34271,6 +34346,10 @@ logic.draw = function (isAnimating) {
     return true;
   }
 
+  if (state.step === -1) {
+    logic.clear('forceClear');
+  }
+
   var _system$getObjs2 = _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].getObjs(),
       weights = _system$getObjs2.weights;
 
@@ -34278,8 +34357,6 @@ logic.draw = function (isAnimating) {
   var drawAt = {
     x: state.step % state.canvas.width
   };
-  var topHalf = state.canvas.height * .25;
-  var bottomHalf = state.canvas.height * .7;
   weights.forEach(function (w) {
     if (w.fixed === false) {
       // console.log('here')
@@ -34287,14 +34364,14 @@ logic.draw = function (isAnimating) {
 
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(drawAt.x, topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+      ctx.arc(drawAt.x, state.topHalf - w.velocity.x * state.vScalar.x, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
 
       ctx.closePath();
       ctx.strokeStyle = updateOpacity(w.color, .35);
       ctx.stroke(); //bottom half
 
       ctx.beginPath();
-      ctx.arc(drawAt.x, bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
+      ctx.arc(drawAt.x, state.bottomHalf - w.velocity.y * state.vScalar.y, radius, 0, Math.PI * 2, true); // ctx.arc(200, 200, 20, 0, Math.PI * 2, true)
 
       ctx.closePath();
       ctx.stroke();
@@ -34310,6 +34387,9 @@ logic.init = function () {
   var systemSubscription = 'plotterCanvas';
   _system_system__WEBPACK_IMPORTED_MODULE_0__["default"].subscribeToOnChange(systemSubscription);
   _emitter__WEBPACK_IMPORTED_MODULE_1__["default"].on(systemSubscription, handleSystemChange);
+  state.topHalf = state.canvas.height * .25;
+  state.bottomHalf = state.canvas.height * .75;
+  state.canvas.addEventListener('mousemove', handleMouseMove);
 };
 
 logic.show = function () {
@@ -34488,10 +34568,8 @@ var draw = function draw(_ref) {
 
   var lineWidth_temp = ctx.lineWidth;
   ctx.lineWidth = spring.k * spring.displayScalar;
+  ctx.strokeStyle = strokeStyle;
   ctx.beginPath();
-  ctx.strokeStyle = strokeStyle; // ctx.moveTo(spring.weights[0].position.x + shift.x, spring.weights[0].position.y + shift.y);
-  // ctx.lineTo(spring.weights[1].position.x + shift.x, spring.weights[1].position.y + shift.y);
-
   ctx.moveTo(drawAt.x0, drawAt.y0);
   ctx.lineTo(drawAt.x1, drawAt.y1);
   ctx.stroke();
@@ -34612,7 +34690,8 @@ var draw = function draw(_ref2) {
       minVelocity = _weight$systemData$me.minVelocity,
       avgVelocity = _weight$systemData$me.avgVelocity;
   var drawRadius = weight.fixed ? weight.fixedSize : weight.radius;
-  ctx.strokeStyle = weight.color;
+  ctx.strokeStyle = weight.color; // console.log(ctx.strokeStyle)
+
   ctx.beginPath();
   ctx.arc(drawAt.x, drawAt.y, drawRadius, 0, Math.PI * 2, true);
   ctx.closePath();

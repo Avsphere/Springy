@@ -8,6 +8,8 @@ const updateOpacity = (rgb, opacity) => {
     return aux.join(',')
 }
 
+
+
 let hasInitialized = false
 let canvasCenter;
 
@@ -35,6 +37,7 @@ const draw = ({state, weight, systemCenter }) => {
 
     const drawRadius = weight.fixed ? weight.fixedSize : weight.radius
     ctx.strokeStyle = weight.color;
+    // console.log(ctx.strokeStyle)
     ctx.beginPath();
     ctx.arc(drawAt.x, drawAt.y, drawRadius, 0, Math.PI * 2, true)
     ctx.closePath();
