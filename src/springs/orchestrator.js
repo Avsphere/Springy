@@ -8,7 +8,7 @@ import emitter from './emitter.js'
 import defaultSystems from './defaultSystems'
 const state = {
     isAnimating : false,
-    debugging : true,
+    debugging : false,
     debug : { 
         redraw : false //bc some events are annoying  
     },

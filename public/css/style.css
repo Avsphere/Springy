@@ -1,10 +1,12 @@
-
+/* if you are looking at this file dont worry, I hate it too and am soon leveling up my css */
 body {
   margin: 0px;
   /* overflow: hidden; */
   font-family: Sans-Serif;
 }
-
+#defaultsWrapper {
+  overflow-y: scroll;
+}
 /* height is set in js... need to levelup my css html; */
 #monitorDisplay {
   overflow-y: scroll;
@@ -88,17 +90,4 @@ body {
   width : 100%;
   overflow-y: hidden;
   margin-top : 3%;
-  /* set later */
-  /* padding-right : 0px; */
 }
-
-/* .stylishScroll::-webkit-scrollbar-thumb {
-  overflow-y: hidden;
-  border-radius: 10px;
-  background-image: -webkit-gradient(linear,
-      left bottom,
-      left top,
-      color-stop(0.44, rgb(122, 153, 217)),
-      color-stop(0.72, rgb(73, 125, 189)),
-      color-stop(0.86, rgb(28, 58, 148)));
-} */

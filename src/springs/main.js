@@ -11,7 +11,6 @@ const logic = {}
 //establishes globals
 
 logic.init = async() => {
-    console.log('in the main init')
     const { pathname } = urlParse(window.location.href)
     const page = pathname.split('/').pop().toLocaleLowerCase()
     // $('#canvasContainer').height = window.innerHeight * .85

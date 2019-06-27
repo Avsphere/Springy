@@ -63,9 +63,10 @@ const buildPanel = () => {
 
 
 logic.init = () => {
-    console.log('init default panel')
     state = State();
     buildPanel();
+    state.defaultsWrapper.css('height', window.innerHeight / 2)
+
 }
 
 logic.getState = () => state
