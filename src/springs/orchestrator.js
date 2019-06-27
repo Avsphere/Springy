@@ -172,9 +172,9 @@ logic.init = () => {
     monitorPanel.init();
     controlPanel.init();
     defaultPanel.init();
-    setTimeout( () => {
-        defaultSystems.load( defaultSystems.getSystems()[0] )
-    }, 1000) //load it after page has smoothed
+    // setTimeout( () => {
+    //     defaultSystems.load( defaultSystems.getSystems()[0] )
+    // }, 1000)
 }
 
 

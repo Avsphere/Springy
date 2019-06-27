@@ -35,13 +35,13 @@ const State = () => Object.assign({
         showSpringDetails: false,
         showGrid: false,
         showSystemCenter : true,
+        useCamera : false
     },
     transforms : {
         shift : { x : 0, y : 0 },
         scale : 0
     },
     camera : {
-        useCamera : false,
         screenBuffer : 50, //50 pixel away from edge of screen
         offTheScreen : true, //basic shift things over to keep them on screen approach
         // smoothing : 
@@ -103,7 +103,7 @@ logic.draw = (isAnimating) => {
     const { springs, weights } = system.getObjs()
     const sysCenter = system.getCenter()
 
-    if (state.camera.useCamera && isAnimating ) {
+    if (state.displayFlags.useCamera && isAnimating ) {
         updateShift();
     }
     

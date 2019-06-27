@@ -126,10 +126,10 @@ systems.push({
 
 systems.push({
     metadata: {
-        title: 'Horiztonal, fixed at right end',
+        title: 'Horiztonal, fixed at left end',
         description: `A fixed weight at each end. Initial velocity : (60,0)`,
         initialVelocity: {
-            x: 30,
+            x: 60,
             y: 0
         }
     },
