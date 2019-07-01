@@ -33213,10 +33213,10 @@ systems.push({
 });
 systems.push({
   metadata: {
-    title: 'Horiztonal, fixed at both ends',
-    description: "A fixed weight at each end. Initial velocity : (30,0)",
+    title: 'Both Ends Free',
+    description: "No fixed weight. 25 weights total of masss 5. Spring k = 5 Left side mass travels with velocity (40,0)",
     initialVelocity: {
-      x: 30,
+      x: 40,
       y: 0
     }
   },
@@ -33226,6 +33226,61 @@ systems.push({
     var _springCanvas$getDime2 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
         width = _springCanvas$getDime2.width,
         height = _springCanvas$getDime2.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: this.metadata.initialVelocity.x,
+        y: 0
+      },
+      mass: 5
+    });
+
+    var createMassChain = function () {
+      var massCount = 25;
+      var initialXVelocity = _this.metadata.initialVelocity.x;
+      var massSpacing = (width - fixedPosition1.x) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x + massSpacing * i,
+            y: fixedPosition1.y
+          },
+          velocity: {
+            x: 0,
+            y: 0
+          },
+          mass: 5
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass, 5);
+        lastMass = littleMass;
+      }
+    }(); // system.setSolver({ stepSize: 0.03, maxTime: 600 })
+
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Horiztonal, fixed at both ends',
+    description: "A fixed weight at each end. Initial velocity : (30,0)",
+    initialVelocity: {
+      x: 30,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _this2 = this;
+
+    var _springCanvas$getDime3 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime3.width,
+        height = _springCanvas$getDime3.height;
 
     var fixedPosition1 = {
       x: roundToNearest((width + 100) / 10),
@@ -33258,7 +33313,7 @@ systems.push({
 
     var createMassChain = function () {
       var massCount = 10;
-      var initialXVelocity = _this.metadata.initialVelocity.x;
+      var initialXVelocity = _this2.metadata.initialVelocity.x;
       var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
       var lastMass = f1;
 
@@ -33285,18 +33340,18 @@ systems.push({
 systems.push({
   metadata: {
     title: 'Horiztonal, fixed at left end',
-    description: "A fixed weight at each end. Initial velocity : (60,0)",
+    description: "A fixed weight at each end. 16 weights Initial velocity : (-40,0). Spring K = 5",
     initialVelocity: {
-      x: 60,
+      x: -40,
       y: 0
     }
   },
   build: function build() {
-    var _this2 = this;
+    var _this3 = this;
 
-    var _springCanvas$getDime3 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
-        width = _springCanvas$getDime3.width,
-        height = _springCanvas$getDime3.height;
+    var _springCanvas$getDime4 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime4.width,
+        height = _springCanvas$getDime4.height;
 
     var fixedPosition1 = {
       x: roundToNearest((width + 100) / 10),
@@ -33319,8 +33374,8 @@ systems.push({
     });
 
     var createMassChain = function () {
-      var massCount = 10;
-      var initialXVelocity = _this2.metadata.initialVelocity.x;
+      var massCount = 16;
+      var initialXVelocity = _this3.metadata.initialVelocity.x;
       var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
       var lastMass = f1;
 
@@ -33331,15 +33386,136 @@ systems.push({
             y: fixedPosition1.y
           },
           velocity: {
-            x: i == 1 ? initialXVelocity : 0,
+            x: i == massCount ? initialXVelocity : 0,
             y: 0
           },
           mass: 10
         });
-        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass);
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass, 5);
         lastMass = littleMass;
       }
     }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Horiztonal, fixed at left end',
+    description: "A fixed weight at each end. 16 weights Initial velocity : (-80,0). Spring K = 10",
+    initialVelocity: {
+      x: -80,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _this4 = this;
+
+    var _springCanvas$getDime5 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime5.width,
+        height = _springCanvas$getDime5.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width - 100),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 16;
+      var initialXVelocity = _this4.metadata.initialVelocity.x;
+      var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x + massSpacing * i,
+            y: fixedPosition1.y
+          },
+          velocity: {
+            x: i == massCount ? initialXVelocity : 0,
+            y: 0
+          },
+          mass: 10
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass, 10);
+        lastMass = littleMass;
+      }
+    }();
+  }
+});
+systems.push({
+  metadata: {
+    title: 'Horiztonal, fixed at left end',
+    description: "A fixed weight at each end. 30 weights of mass 1 Initial velocity : (-40,0). Spring K = 2",
+    initialVelocity: {
+      x: -40,
+      y: 0
+    }
+  },
+  build: function build() {
+    var _this5 = this;
+
+    var _springCanvas$getDime6 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime6.width,
+        height = _springCanvas$getDime6.height;
+
+    var fixedPosition1 = {
+      x: roundToNearest((width + 100) / 10),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var fixedPosition2 = {
+      x: roundToNearest(width - 100),
+      //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+      y: roundToNearest(height / 2)
+    };
+    var f1 = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+      position: fixedPosition1,
+      velocity: {
+        x: 0,
+        y: 0
+      },
+      mass: 1,
+      initiallyFixed: true
+    });
+
+    var createMassChain = function () {
+      var massCount = 30;
+      var initialXVelocity = _this5.metadata.initialVelocity.x;
+      var massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+      var lastMass = f1;
+
+      for (var i = 1; i <= massCount; i++) {
+        var littleMass = _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addWeight({
+          position: {
+            x: fixedPosition1.x + massSpacing * i,
+            y: fixedPosition1.y
+          },
+          velocity: {
+            x: i == massCount ? initialXVelocity : 0,
+            y: 0
+          },
+          mass: 1
+        });
+        _system_graph_graph__WEBPACK_IMPORTED_MODULE_1__["default"].addEdge(lastMass, littleMass, 2);
+        lastMass = littleMass;
+      }
+    }(); // system.setSolver({ stepSize: 0.03, maxTime: 600 })
+
   }
 });
 systems.push({
@@ -33352,11 +33528,11 @@ systems.push({
     }
   },
   build: function build() {
-    var _this3 = this;
+    var _this6 = this;
 
-    var _springCanvas$getDime4 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
-        width = _springCanvas$getDime4.width,
-        height = _springCanvas$getDime4.height;
+    var _springCanvas$getDime7 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime7.width,
+        height = _springCanvas$getDime7.height;
 
     var fixedPosition1 = {
       x: roundToNearest(width / 2),
@@ -33389,7 +33565,7 @@ systems.push({
 
     var createMassChain = function () {
       var massCount = 10;
-      var initialYVelocity = _this3.metadata.initialVelocity.y;
+      var initialYVelocity = _this6.metadata.initialVelocity.y;
       var massSpacing = (fixedPosition2.y - fixedPosition1.y) / (massCount + 1);
       var lastMass = f1;
 
@@ -33428,11 +33604,11 @@ systems.push({
     }
   },
   build: function build() {
-    var _this4 = this;
+    var _this7 = this;
 
-    var _springCanvas$getDime5 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
-        width = _springCanvas$getDime5.width,
-        height = _springCanvas$getDime5.height;
+    var _springCanvas$getDime8 = _springCanvas_springCanvas__WEBPACK_IMPORTED_MODULE_2__["default"].getDimensions(),
+        width = _springCanvas$getDime8.width,
+        height = _springCanvas$getDime8.height;
 
     var fixedPosition1 = {
       x: roundToNearest(width / 2),
@@ -33456,7 +33632,7 @@ systems.push({
 
     var createMassChain = function () {
       var massCount = 10;
-      var initialYVelocity = _this4.metadata.initialVelocity.y;
+      var initialYVelocity = _this7.metadata.initialVelocity.y;
       var massSpacing = (fixedPosition2.y - fixedPosition1.y) / (massCount + 1);
       var lastMass = f1;
 
@@ -36129,7 +36305,7 @@ var buildSystem = function buildSystem() {
         var wallReduction = 1;
 
         if (springLength < state.mechanicalConstant) {
-          wallReduction = Math.pow(10, 10);
+          wallReduction = Math.pow(10, 4);
         }
 
         ddx += spring.k * wallReduction * springStretch * iHat / w.mass;
@@ -37333,8 +37509,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! E:\Dev\greg\springy\node_modules\@babel\polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! E:\Dev\greg\springy\src\main.js */"./src/main.js");
+__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
 
 
 /***/ })

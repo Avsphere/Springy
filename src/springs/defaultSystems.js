@@ -66,6 +66,57 @@ systems.push({
 
 systems.push({
     metadata: {
+        title: 'Both Ends Free',
+        description: `No fixed weight. 25 weights total of masss 5. Spring k = 5 Left side mass travels with velocity (40,0)`,
+        initialVelocity: {
+            x: 40,
+            y: 0
+        }
+    },
+    build: function () {
+        const { width, height } = springCanvas.getDimensions();
+
+        const fixedPosition1 = {
+            x: roundToNearest((width + 100) / 10), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+
+        const f1 = graph.addWeight({
+            position: fixedPosition1,
+            velocity: { x: this.metadata.initialVelocity.x, y: 0 },
+            mass: 5,
+        })
+
+
+
+        const createMassChain = (() => {
+            const massCount = 25;
+            const initialXVelocity = this.metadata.initialVelocity.x;
+            const massSpacing = (width - fixedPosition1.x) / (massCount + 1);
+            let lastMass = f1;
+
+            for (let i = 1; i <= massCount; i++) {
+                const littleMass = graph.addWeight({
+                    position: {
+                        x: fixedPosition1.x + massSpacing * i,
+                        y: fixedPosition1.y
+                    },
+                    velocity: { x: 0, y: 0 },
+                    mass: 5,
+                })
+                graph.addEdge(lastMass, littleMass, 5)
+                lastMass = littleMass;
+            }
+
+        })()
+        // system.setSolver({ stepSize: 0.03, maxTime: 600 })
+    }
+})
+
+
+systems.push({
+    metadata: {
         title: 'Horiztonal, fixed at both ends',
         description: `A fixed weight at each end. Initial velocity : (30,0)`,
         initialVelocity : {
@@ -127,9 +178,9 @@ systems.push({
 systems.push({
     metadata: {
         title: 'Horiztonal, fixed at left end',
-        description: `A fixed weight at each end. Initial velocity : (60,0)`,
+        description: `A fixed weight at each end. 16 weights Initial velocity : (-40,0). Spring K = 5`,
         initialVelocity: {
-            x: 60,
+            x: -40,
             y: 0
         }
     },
@@ -156,7 +207,7 @@ systems.push({
 
 
         const createMassChain = (() => {
-            const massCount = 10;
+            const massCount = 16;
             const initialXVelocity = this.metadata.initialVelocity.x;
             const massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
             let lastMass = f1;
@@ -167,14 +218,124 @@ systems.push({
                         x: fixedPosition1.x + massSpacing * i,
                         y: fixedPosition1.y
                     },
-                    velocity: { x: i == 1 ? initialXVelocity : 0, y: 0 },
+                    velocity: { x: i == massCount ? initialXVelocity : 0, y: 0 },
                     mass: 10,
                 })
-                graph.addEdge(lastMass, littleMass)
+                graph.addEdge(lastMass, littleMass, 5)
                 lastMass = littleMass;
             }
 
         })()
+    }
+})
+
+systems.push({
+    metadata: {
+        title: 'Horiztonal, fixed at left end',
+        description: `A fixed weight at each end. 16 weights Initial velocity : (-80,0). Spring K = 10`,
+        initialVelocity: {
+            x: -80,
+            y: 0
+        }
+    },
+    build: function () {
+        const { width, height } = springCanvas.getDimensions();
+
+        const fixedPosition1 = {
+            x: roundToNearest((width + 100) / 10), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const fixedPosition2 = {
+            x: roundToNearest(width - 100), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const f1 = graph.addWeight({
+            position: fixedPosition1,
+            velocity: { x: 0, y: 0 },
+            mass: 1,
+            initiallyFixed: true
+        })
+
+
+
+        const createMassChain = (() => {
+            const massCount = 16;
+            const initialXVelocity = this.metadata.initialVelocity.x;
+            const massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+            let lastMass = f1;
+
+            for (let i = 1; i <= massCount; i++) {
+                const littleMass = graph.addWeight({
+                    position: {
+                        x: fixedPosition1.x + massSpacing * i,
+                        y: fixedPosition1.y
+                    },
+                    velocity: { x: i == massCount ? initialXVelocity : 0, y: 0 },
+                    mass: 10,
+                })
+                graph.addEdge(lastMass, littleMass, 10)
+                lastMass = littleMass;
+            }
+
+        })()
+    }
+})
+
+
+systems.push({
+    metadata: {
+        title: 'Horiztonal, fixed at left end',
+        description: `A fixed weight at each end. 30 weights of mass 1 Initial velocity : (-40,0). Spring K = 2`,
+        initialVelocity: {
+            x: -40,
+            y: 0
+        }
+    },
+    build: function () {
+        const { width, height } = springCanvas.getDimensions();
+
+        const fixedPosition1 = {
+            x: roundToNearest((width + 100) / 10), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const fixedPosition2 = {
+            x: roundToNearest(width - 100), //rounding position.x to nearest 100 pixels of the first 1/10 + at least 100 pixels
+            y: roundToNearest(height / 2)
+        }
+
+        const f1 = graph.addWeight({
+            position: fixedPosition1,
+            velocity: { x: 0, y: 0 },
+            mass: 1,
+            initiallyFixed: true
+        })
+
+
+
+        const createMassChain = (() => {
+            const massCount = 30;
+            const initialXVelocity = this.metadata.initialVelocity.x;
+            const massSpacing = (fixedPosition2.x - fixedPosition1.x) / (massCount + 1);
+            let lastMass = f1;
+
+            for (let i = 1; i <= massCount; i++) {
+                const littleMass = graph.addWeight({
+                    position: {
+                        x: fixedPosition1.x + massSpacing * i,
+                        y: fixedPosition1.y
+                    },
+                    velocity: { x: i == massCount ? initialXVelocity : 0, y: 0 },
+                    mass: 1,
+                })
+                graph.addEdge(lastMass, littleMass, 2)
+                lastMass = littleMass;
+            }
+
+        })()
+        // system.setSolver({ stepSize: 0.03, maxTime: 600 })
     }
 })
 
