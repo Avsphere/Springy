@@ -6,7 +6,7 @@ const logger = require('./logger')
 
 router.get('/', async (req, res) => {
   try {
-    res.render('index', {})
+    res.render('springs', {})
   } catch (err) {
     logger.error('/error %O', err)
     res.statusMessage = err.message

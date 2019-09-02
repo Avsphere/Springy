@@ -33091,12 +33091,12 @@ function () {
             }
 
             _learning_main_js__WEBPACK_IMPORTED_MODULE_5__["default"].init();
-            _context.next = 7;
+            _context.next = 11;
             break;
 
           case 4:
             if (!pathname.includes('spring')) {
-              _context.next = 7;
+              _context.next = 9;
               break;
             }
 
@@ -33104,6 +33104,14 @@ function () {
             return _springs_main_js__WEBPACK_IMPORTED_MODULE_6__["default"].init();
 
           case 7:
+            _context.next = 11;
+            break;
+
+          case 9:
+            _context.next = 11;
+            return _springs_main_js__WEBPACK_IMPORTED_MODULE_6__["default"].init();
+
+          case 11:
           case "end":
             return _context.stop();
         }
@@ -37509,8 +37517,8 @@ logic.init = function () {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/avsp/dev/Springy/node_modules/@babel/polyfill */"./node_modules/@babel/polyfill/lib/index.js");
-module.exports = __webpack_require__(/*! /home/avsp/dev/Springy/src/main.js */"./src/main.js");
+__webpack_require__(/*! E:\Dev\greg\springy\node_modules\@babel\polyfill */"./node_modules/@babel/polyfill/lib/index.js");
+module.exports = __webpack_require__(/*! E:\Dev\greg\springy\src\main.js */"./src/main.js");
 
 
 /***/ })

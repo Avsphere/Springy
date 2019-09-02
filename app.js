@@ -9,7 +9,7 @@ const app = express();
 const logger = require('./logger')
 const config = require('config')
 const mongoose = require('mongoose')
-const PORT = config.port || 3000;
+const PORT = config.port || 4000;
 
 
 app.set('views', path.join(__dirname, 'views'));

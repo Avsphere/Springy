@@ -21,6 +21,8 @@ const init = async() => {
     learning.init()
   } else if (pathname.includes('spring')) {
     await springs.init()
+  } else {
+    await springs.init() //making default for demo purposes
   }
 }
 
