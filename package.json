@@ -44,7 +44,7 @@
     "events": "^3.0.0",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
-    "jquery": "^3.3.1",
+    "jquery": "^3.5.0",
     "mongoose": "^5.5.6",
     "morgan": "^1.9.0",
     "odex": "^2.0.4",
